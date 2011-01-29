@@ -1,0 +1,85 @@
+GRAVITI
+
+
+Purpose
+
+Massively reduce rearchitecture / redesign risk
+Drive consistency of dev platforms, tooling, apps
+Significantly simplify deployment, maintenance and management of large clusters
+Embrace the cloud - lots of small, simple machines
+Rapid deployment of new functionality
+
+
+Caveats
+
+Too much capacity is just that!
+Data layer (initially) simple
+
+
+Core concepts
+- self-managing overlay 'connecting' the nodes
+- complete decentralisation
+- abstraction-light approach to scaling - no magic middleware
+- single-machine and multi-machine worlds are different - embrace both and pick tradeoffs
+- routing / messaging servuces
+- data layer / DHT
+- idempotence (see repartitioning discussion in apostate paper)
+- explicit CAP 2-out-of-3 tradeoffs
+- embrace locality / multi-site, multi-DC deployments
+- programming model that guides best practices (high-level apis, async / side-effect free, patterns)
+- embrace + handle existence of multiple versions of stuff
+
+Design outline
+
+P2P Overlay
+- pastry overlay
+- local + global rings - inter-ring routing is via known anycaast topics
+- anycast and multicast support
+
+Resource model
+- everything is a resource
+- addressing is via mapping to id-space through a known hash (md5, sha1?)
+- need to ensure that all representations of a resource - e.g. both its physical representation (a vm, a media stream) and its dht state record are mappable to the same id
+- need to capture: app name, ring scope (global, named, local), actual resource (virtual dir), type of message (msg, anycast, multicast)
+- can do with uri scheme - so hash just the resource path (virtual dir), let core layer manage the rest
+	p2p:dht.global/users/scooby
+	p2p:myapp.global/users/scooby
+- internal / core level stuff has app name, e.g. 'core'
+
+DHT
+- key-value store
+- embedded db or flat files?
+- rest verbs
+- json, hence automatic binding to JS objects
+- updates via POST with optimistic concurrency
+- reads and writes need to be easily tunable to trade off 
+- record updates are via appends and periodic 'offline' collapsing / auto-vacuuming
+- need to support complements / auto-merging of offline updates
+
+Messaging
+- udp, resends with backoff until response or ack
+- json, hence automatic binding to JS objects
+- one-off messages (how do we handle auto-ack?), req-resp, anycast, multicast
+	... OR do we want to drop req / resp semantics altogether?? e.g. where req'd we would instead post response back
+- messages have certain common headers
+- received messages emitted as events, can just listen to events
+
+Apps
+- respond to lifecycle events (active, passive)
+- can mix in certain common capabilities
+- multiple types - always on - others to be discussed / defined
+- some common / demo apps
+
+Security
+- ???
+
+Packgaing
+- Known / common package manager (rpm? npm? something else)
+- Differentiate between packaging the whole 'thing' versus single p2p app
+
+Tooling
+- tentakel clone
+- standard overlay management website with stats?
+- monitoring?
+
+

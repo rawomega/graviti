@@ -1,0 +1,7 @@
+buffertools@1.0.0   Working with node.js buffers made easy.    =bnoordhuis active installed latest remote buffer buffers
+chain-gang@0.2.1    =technoweenie active installed latest remote
+expresso@0.7.2      TDD framework, light-weight, fast, CI-friendly    =tjholowaychuk active installed latest remote
+gently@0.8.0        =felixge active installed latest remote
+node-uuid@1.1.0     Simple, fast generation of RFC4122(v4) UUIDs.    =broofa active installed latest remote uuid guid rfc4122
+npm@0.2.15          A package manager for node    =isaacs active installed remote package manager modules install package.json
+opts@1.2.1          Command line argument parser written in the style of commonjs. To be used with node.js    =mazzarelli active installed latest remote
