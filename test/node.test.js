@@ -28,7 +28,7 @@ function setupStartExpectations() {
 module.exports = {
 	setUp : function() {
 	},
-	shouldStartWithoutBootstraps : function() {
+	shouldStart : function() {
 		// setup
 		setupStartExpectations();
 
