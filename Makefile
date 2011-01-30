@@ -1,4 +1,4 @@
-all: clean lint test npm-deps
+all: clean lint coverage npm-deps
 
 .PHONY: test
 
