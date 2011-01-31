@@ -11,8 +11,11 @@ Description
 Requirements
 -------------------
 
+See Wiki for setup instructions
+
  * node.js v0.3.5
  * npm v0.2.1
+ * jsl v0.3.0
 
 Installation
 --------------
