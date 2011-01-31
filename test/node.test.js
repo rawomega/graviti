@@ -28,6 +28,7 @@ function setupStartExpectations() {
 module.exports = {
 	setUp : function() {
 	},
+	
 	shouldStart : function() {
 		// setup
 		setupStartExpectations();
@@ -38,6 +39,7 @@ module.exports = {
 		// assert
 		gently.verify();
 	},
+	
 	shouldHandleListeningEventOnStart : function() {
 		// setup
 		setupStartExpectations();
@@ -52,6 +54,7 @@ module.exports = {
 		// assert
 		gently.verify();
 	},
+	
 	shouldHandleMessageCallback : function() {
 		// setup
 		setupStartExpectations();
@@ -64,6 +67,27 @@ module.exports = {
 		// assert
 		gently.verify();
 	},
+	
+	shouldSend : function() {
+		// setup
+		var msg = {"key" : "val"};
+		var server = new Object();
+		mod_node.server = server;
+		gently.expect(mod_node.server, "send", function(buf, offset, len, port, addr) {
+			assert.ok(buf !== null);
+			assert.eql(0, offset);
+			assert.eql(len, buf.length);
+			assert.eql(port, 2222);
+			assert.eql('1.1.1.1', addr);
+		});
+
+		// act
+		mod_node.send("1.1.1.1", 2222, msg);
+
+		// assert
+		gently.verify();
+	},
+	
 	shouldStop : function() {
 		// setup
 		var server = new Object();
@@ -76,5 +100,5 @@ module.exports = {
 
 		// assert
 		gently.verify();
-	}	
+	}
 }
