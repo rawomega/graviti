@@ -33,9 +33,9 @@ module.exports = {
 	
 	shouldStartAndInitiateBootstrapsOnJoiningAnExistingRing : function() {
 		// setup
-		gently.expect(gently.hijacked['./node'], 'start', function(port, addr) {
+		gently.expect(gently.hijacked['./node'], 'start', function(port, bindAddr) {
 				assert.eql(1234, port);
-				assert.eql("127.0.0.1", addr);
+				assert.eql("127.0.0.1", bindAddr);
 		});
 
 		// act
