@@ -1,4 +1,4 @@
-all: clean lint test npm-deps
+all: clean lint coverage npm-deps
 
 .PHONY: test
 
@@ -9,6 +9,10 @@ lint:
 	jsl --conf etc/jsl.conf
 
 test: lint
+	-mkdir -p build
+	expresso -q -I lib
+
+coverage: lint
 	-rm -rf build/lib-cov
 	mkdir -p build
 	node-jscoverage lib/ build/lib-cov
