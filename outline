@@ -32,8 +32,8 @@ Core concepts
 Design outline
 
 P2P Overlay
-- pastry overlay
-- local + global rings - inter-ring routing is via known anycaast topics
+- structured overlay
+- local + global rings - inter-ring routing is via known anycast topics
 - anycast and multicast support
 
 Resource model
@@ -49,6 +49,7 @@ Resource model
 DHT
 - key-value store
 - embedded db or flat files?
+- data replication
 - rest verbs
 - json, hence automatic binding to JS objects
 - updates via POST with optimistic concurrency
@@ -58,6 +59,7 @@ DHT
 
 Messaging
 - udp, resends with backoff until response or ack
+- perhaps udp for "infrastructure stuff" like pings etc and tcp for app-level message passing?
 - json, hence automatic binding to JS objects
 - one-off messages (how do we handle auto-ack?), req-resp, anycast, multicast
 	... OR do we want to drop req / resp semantics altogether?? e.g. where req'd we would instead post response back
@@ -67,7 +69,7 @@ Messaging
 Apps
 - respond to lifecycle events (active, passive)
 - can mix in certain common capabilities
-- multiple types - always on - others to be discussed / defined
+- multiple types - always on - others to be discussed / defined. Perhaps use gossip to find out from your peers if you need to start an app?
 - some common / demo apps
 
 Security
