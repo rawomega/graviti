@@ -2,7 +2,7 @@ var gently = global.GENTLY = new (require('gently'));
 var assert = require('assert');
 var overlay = require('overlay');
 
-module.exports = {
+module.exports = {	
 	shouldJustStartNodeWhenStartingNewRing : function() {
 		// setup
 		gently.expect(gently.hijacked['./node'], 'start', function(port, addr) {
@@ -54,5 +54,5 @@ module.exports = {
 		
 		// assert
 		gently.verify();
-	},
-}
+	}
+};

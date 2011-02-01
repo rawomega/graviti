@@ -23,7 +23,7 @@ function setupStartExpectations() {
         	assert.eql(1234, port);
                 assert.eql("127.0.0.1", addr);
         });
-};
+}
 
 module.exports = {
 	setUp : function() {
@@ -55,7 +55,7 @@ module.exports = {
 		gently.verify();
 	},
 	
-	shouldHandleMessageCallback : function() {
+	shouldHandleUnparseableMessageCallback : function() {
 		// setup
 		setupStartExpectations();
 		var rinfo = { 'address' : '127.0.0.1', 'port' : 1234 };
@@ -66,6 +66,27 @@ module.exports = {
 
 		// assert
 		gently.verify();
+	},
+	
+	shouldHandleParseableMessageCallback : function() {
+		// setup
+		setupStartExpectations();
+		var rinfo = { 'address' : '127.0.0.2', 'port' : 1234 };
+
+		var receivedMessage = undefined;
+		mod_node.on("message", function(msg) {
+			receivedMessage = msg;
+		});
+
+		// act
+		mod_node.start(1234, "127.0.0.1");
+		messageCallback('{"key" : "val"}', rinfo);
+
+		// assert
+		gently.verify();
+		assert.eql('val', receivedMessage.key);
+		assert.eql('127.0.0.2', receivedMessage.sender_addr);
+		assert.eql(1234, receivedMessage.sender_port);
 	},
 	
 	shouldSend : function() {
@@ -101,4 +122,4 @@ module.exports = {
 		// assert
 		gently.verify();
 	}
-}
+};
