@@ -11,18 +11,18 @@ function setupStartExpectations() {
 		assert.eql('udp4', proto);
 		return server;
 	});
-        gently.expect(server, "on", function(evt, callback) {
-                assert.eql('listening', evt);
-		listeningCallback = callback;
-        });
-        gently.expect(server, "on", function(evt, callback) {
-        	assert.eql('message', evt);
+	gently.expect(server, "on", function(evt, callback) {
+	    assert.eql('listening', evt);
+	    listeningCallback = callback;
+	});
+	gently.expect(server, "on", function(evt, callback) {
+		assert.eql('message', evt);
 		messageCallback = callback;
-        });
+	    });
 	gently.expect(server, "bind", function(port, addr) {
-        	assert.eql(1234, port);
-                assert.eql("127.0.0.1", addr);
-        });
+		assert.eql(1234, port);
+	    assert.eql("127.0.0.1", addr);
+	});
 }
 
 module.exports = {
@@ -48,7 +48,7 @@ module.exports = {
                 });
 
 		// act
-                mod_node.start(1234, "127.0.0.1");
+		mod_node.start(1234, "127.0.0.1");
 		listeningCallback();
 
 		// assert
@@ -67,26 +67,43 @@ module.exports = {
 		// assert
 		gently.verify();
 	},
+
+	shouldThrowIfNoUriInMessage : function() {
+		// setup
+		setupStartExpectations();
+		var rinfo = { 'address' : '127.0.0.2', 'port' : 1234 };
+
+		mod_node.start(1234, "127.0.0.1");
+
+		// assert
+		assert.throws(function() {
+				messageCallback('{"key" : "val"}', rinfo);            
+			}, /no uri/i
+		);
+	},
 	
 	shouldHandleParseableMessageCallback : function() {
 		// setup
 		setupStartExpectations();
 		var rinfo = { 'address' : '127.0.0.2', 'port' : 1234 };
 
-		var receivedMessage = undefined;
-		mod_node.on("message", function(msg) {
-			receivedMessage = msg;
+		var rcvdmsg = undefined;
+		var rcvdmsginfo = undefined;
+		mod_node.on("message", function(msg, msginfo) {
+			rcvdmsg = msg;
+			rcvdmsginfo = msginfo
 		});
 
 		// act
 		mod_node.start(1234, "127.0.0.1");
-		messageCallback('{"key" : "val"}', rinfo);
+		messageCallback('{"uri" : "p2p:myapp/myresource", "key" : "val"}', rinfo);
 
 		// assert
 		gently.verify();
-		assert.eql('val', receivedMessage.key);
-		assert.eql('127.0.0.2', receivedMessage.sender_addr);
-		assert.eql(1234, receivedMessage.sender_port);
+		assert.eql('val', rcvdmsg.key);
+		assert.eql('127.0.0.2', rcvdmsginfo.sender_addr);
+		assert.eql(1234, rcvdmsginfo.sender_port);
+		assert.eql('myapp', rcvdmsginfo.app_name);
 	},
 	
 	shouldSend : function() {

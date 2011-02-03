@@ -2,6 +2,10 @@ var langutil = require('langutil');
 var assert = require('assert');
 
 module.exports = {
+	shouldExtendEmptyWithUndefined : function() {
+		assert.eql({}, langutil.extend({}, undefined));
+	},
+	
 	shouldExtendEmptyWithEmpty : function() {
 		assert.eql({}, langutil.extend({}, {}));
 	},
