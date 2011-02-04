@@ -7,6 +7,9 @@ var lowerId = '65B658373C7841A7B66521637C25069758B46189';
 var wrappedId = '0F5147A002B4482EB6D912E3E6518F5CC80EBEE6';
 var oneMoreId = 'F45A18416DD849ACAA55D926C2D7946064A69EF3';
 var oneLessId = 'F45A18416DD849ACAA55D926C2D7946064A69EF1';
+var nearEdgeId= 'FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFE';
+var overEdgeId= '0000000000000000000000000000000000000001';
+var slightlyLessNearEdgeId= 'FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFC'; 
 
 module.exports = {
 	shouldFindNoNearestIdWhenIdSetUndefined: function() {
@@ -43,6 +46,14 @@ module.exports = {
 		
 		assert.eql(oneMoreId, lowerFirst);
 		assert.eql(oneMoreId, higherFirst);
+	},
+	
+	shouldGiveNearestIdClockwiseWhenSameDistanceWithWraparound : function() {
+		var lowerFirst = ringutil.getNearestId(nearEdgeId, [slightlyLessNearEdgeId, overEdgeId]);
+		var higherFirst = ringutil.getNearestId(nearEdgeId, [overEdgeId, slightlyLessNearEdgeId]);
+		
+		assert.eql(overEdgeId, lowerFirst);
+		assert.eql(overEdgeId, higherFirst);
 	},
 	
 	shouldBeAbleToGetNearestIdOrSelfWhenNoIdsGiven : function() {
