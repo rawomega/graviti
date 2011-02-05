@@ -83,4 +83,6 @@ module.exports = {
 	shouldDetermineIfGivenIdIsNearestToOwnIdThanAnyLeafsetIdsWhenLeafsetContainsNearerId: function() {
 		assert.eql(false, ringutil.isForMe(higherId, anId, [oneMoreId, lowerId]));
 	}
+	
+	// todo: test to show this works for leafset passed in as object OR array
 };
