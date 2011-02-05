@@ -16,7 +16,9 @@ module.exports = {
 		// assert
 		gently.verify();
 	},
-	
+
+// todo: move these to bootstrapper
+/*	
 	shouldFailToStartWhenBootstrapListMissing : function() {
 		assert.throws(function() {
 		            overlay.join(123, 'abc');
@@ -30,7 +32,7 @@ module.exports = {
 		    }, /bootstrap list/
 		);
 	},
-	
+*/	
 	shouldStartAndInitiateBootstrapsOnJoiningAnExistingRing : function() {
 		// setup
 		gently.expect(gently.hijacked['./node'], 'start', function(port, bindAddr) {

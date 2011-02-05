@@ -30,5 +30,29 @@ module.exports = {
 						{a:{nested:true}, x:"y"}
 				)
 		);
+	},
+	
+	shouldBeAbleToTellThatEmptyObjectIsNotAnArray : function() {
+		assert.eql(false, langutil.isArray({}));
+	},
+	
+	shouldBeAbleToTellThatUndefinedObjectIsNotAnArray : function() {
+		assert.eql(false, langutil.isArray(undefined));
+	},
+	
+	shouldBeAbleToTellThatSimpleObjectIsNotAnArray : function() {
+		assert.eql(false, langutil.isArray({a:'b'}));
+	},
+	
+	shouldBeAbleToTellThatStringIsNotAnArray : function() {
+		assert.eql(false, langutil.isArray('str'));
+	},
+	
+	shouldBeAbleToTellThatEmptyArrayIsAnArray : function() {
+		assert.eql(true, langutil.isArray([]));
+	},
+	
+	shouldBeAbleToTellThatNonEmptyArrayIsAnArray : function() {
+		assert.eql(true, langutil.isArray([1,2,3]));
 	}
 };

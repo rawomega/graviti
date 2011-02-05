@@ -40,15 +40,19 @@ module.exports = {
 		gently.verify();
 	},
 	
-	shouldHandleListeningEventOnStart : function() {
+	shouldHandleListeningEventOnStartWithCallback : function() {
 		// setup
 		setupStartExpectations();
+		
 		gently.expect(server, "address", function() {
-                	return {address: "127.0.0.1", port: 1234};
-                });
+			return {address: "127.0.0.1", port: 1234};
+        });
 
+		var opts = {};
+		gently.expect(opts, "success", function () {});
+		
 		// act
-		mod_node.start(1234, "127.0.0.1");
+		mod_node.start(1234, "127.0.0.1", opts);
 		listeningCallback();
 
 		// assert

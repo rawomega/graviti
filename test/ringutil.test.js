@@ -69,20 +69,18 @@ module.exports = {
 	},
 	
 	shouldDetermineIfGivenIdIsNearestToOwnIdThanAnyLeafsetIdsWhenLeafsetEmpty : function() {
-		assert.eql(true, ringutil.isForMe(higherId, anId, []));
+		assert.eql(true, ringutil.isForMe(higherId, anId, {}));
 	},
 	
 	shouldDetermineIfGivenIdIsNearestToOwnIdThanAnyLeafsetIdsWhenLeafsetContainsOwnId: function() {
-		assert.eql(true, ringutil.isForMe(higherId, anId, [anId]));
+		assert.eql(true, ringutil.isForMe(higherId, anId, {anId : '1.2.3.4:1234'}));
 	},
 	
 	shouldDetermineIfGivenIdIsNearestToOwnIdThanAnyLeafsetIdsWhenLeafsetContainsFurtherId: function() {
-		assert.eql(true, ringutil.isForMe(higherId, anId, [lowerId]));
+		assert.eql(true, ringutil.isForMe(higherId, anId, {lowerId : '5.6.7.8:5678'}));
 	},
 	
 	shouldDetermineIfGivenIdIsNearestToOwnIdThanAnyLeafsetIdsWhenLeafsetContainsNearerId: function() {
 		assert.eql(false, ringutil.isForMe(higherId, anId, [oneMoreId, lowerId]));
 	}
-	
-	// todo: test to show this works for leafset passed in as object OR array
 };
