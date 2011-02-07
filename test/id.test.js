@@ -1,16 +1,22 @@
 var assert = require('assert');
-var mod_id = require('id');
+var mod_id = require('../lib/id');
+var testCase = require('nodeunit').testCase;
 
 module.exports = {
-	shouldGenerateUuid : function() {
-		var res = mod_id.generateUuid();
+	"id generation" : testCase({		
+		"should generate uuid" : function(test) {
+			var res = mod_id.generateUuid();
+	
+			test.ok(res.replace(/-/g, '').length === 32);
+			test.ok(res.replace(/[^-]/g, '').length === 4);			
+			test.done();
+		},
+		
+		"should generate node id" : function(test) {
+			var res = mod_id.generateNodeId();
 
-		assert.length(res.replace(/-/g, ''), 32);
-		assert.length(res.replace(/[^-]/g, ''), 4);
-	},
-	shouldGenerateNodeId : function() {
-		var res = mod_id.generateNodeId();
-
-		assert.length(res, 40);
-	}
+			test.ok(res.length === 40);			
+			test.done();
+		}
+	})
 };

@@ -1,6 +1,7 @@
-var ringutil = require('ringutil');
+var ringutil = require('../lib/ringutil');
 var assert = require('assert');
-var bigint = require('thirdparty/bigint');
+var bigint = require('../lib/thirdparty/bigint');
+var testCase = require('nodeunit').testCase;
 
 var anId = 'F45A18416DD849ACAA55D926C2D7946064A69EF2';
 var higherId = 'F7DB7ACE15254C87B81D05DA8FA49588540B1950';
@@ -13,119 +14,143 @@ var overEdgeId= '0000000000000000000000000000000000000001';
 var slightlyLessNearEdgeId= 'FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFC'; 
 
 module.exports = {
-	shouldFindNoNearestIdWhenIdSetUndefined: function() {
-		assert.eql(undefined, ringutil.getNearestId(anId, undefined).nearest);
-	},
-	
-	shouldFindNoNearestIdWhenIdSetEmpty : function() {
-		assert.eql(undefined, ringutil.getNearestId(anId, []).nearest);
-	},
-	
-	shouldFindNearestIdWhenIdSetContainsSelf : function() {
-		var res = ringutil.getNearestId(anId, [anId]);
+	"finding nearest id in ring" : testCase({
 		
-		assert.eql(anId, res.nearest);
-		assert.eql(anId, res.highest);
-		assert.eql(anId, res.lowest);
-	},
-	
-	shouldFindNearestIdWhenIdSetContainsHigherId  : function() {
-		var res = ringutil.getNearestId(anId, [higherId]);
+		"should find no nearest id when id set undefined" : function(test) {
+			test.strictEqual(undefined, ringutil.getNearestId(anId, undefined).nearest);
+			test.done();
+		},
 		
-		assert.eql(higherId, res.nearest);
-		assert.eql(higherId, res.highest);
-		assert.eql(higherId, res.lowest);
-	},
-	
-	shouldFindNearestIdWhenIdSetContainsLowerId  : function() {
-		var res = ringutil.getNearestId(anId, [lowerId]);
+		"should find no nearest id when id set empty" : function(test) {
+			test.strictEqual(undefined, ringutil.getNearestId(anId, []).nearest);
+			test.done();
+		},
 		
-		assert.eql(lowerId, res.nearest);
-		assert.eql(lowerId, res.highest);
-		assert.eql(lowerId, res.lowest);
-	},
-	
-	shouldFindNearestIdWhenItIsWrappedCW : function() {
-		var res = ringutil.getNearestId(anId, [lowerId, wrappedId]);
+		"should find nearest id when id set contains self" : function(test) {
+			var res = ringutil.getNearestId(anId, [anId]);
+			
+			test.strictEqual(anId, res.nearest);
+			test.strictEqual(anId, res.highest);
+			test.strictEqual(anId, res.lowest);
+			test.done();
+		},
 		
-		assert.eql(wrappedId, res.nearest);
-		assert.eql(lowerId, res.highest);
-		assert.eql(wrappedId, res.lowest);
-	},
-	
-	shouldFindNearestIdWhenWrappingNotAllowed : function() {
-		var res = ringutil.getNearestId(anId, [lowerId, wrappedId], false);
+		"should find nearest id when id set contains higher id"  : function(test) {
+			var res = ringutil.getNearestId(anId, [higherId]);
+			
+			test.strictEqual(higherId, res.nearest);
+			test.strictEqual(higherId, res.highest);
+			test.strictEqual(higherId, res.lowest);
+			test.done();
+		},
 		
-		assert.eql(lowerId, res.nearest);
-		assert.eql(lowerId, res.highest);
-		assert.eql(wrappedId, res.lowest);
-	},
-	
-	shouldFindNearestIdFromThree : function() {
-		var res = ringutil.getNearestId(anId, [lowerId, higherId, wrappedId]);
+		"should find nearest id when id set contains lower id"  : function(test) {
+			var res = ringutil.getNearestId(anId, [lowerId]);
+			
+			test.strictEqual(lowerId, res.nearest);
+			test.strictEqual(lowerId, res.highest);
+			test.strictEqual(lowerId, res.lowest);
+			test.done();
+		},
 		
-		assert.eql(higherId, res.nearest);
-		assert.eql(higherId, res.highest);
-		assert.eql(wrappedId, res.lowest);
-	},
-	
-	shouldFindNearestIdFromThreeWithoutWrapping : function() {
-		var res = ringutil.getNearestId(anId, [lowerId, higherId, wrappedId], false);
+		"should find nearest id when it is wrapped CW" : function(test) {
+			var res = ringutil.getNearestId(anId, [lowerId, wrappedId]);
+			
+			test.strictEqual(wrappedId, res.nearest);
+			test.strictEqual(lowerId, res.highest);
+			test.strictEqual(wrappedId, res.lowest);
+			test.done();
+		},
 		
-		assert.eql(higherId, res.nearest);
-		assert.eql(higherId, res.highest);
-		assert.eql(wrappedId, res.lowest);
-	},
-	
-	shouldFindNearestIdFromAnotherThreeWhereNearestIdIsWrapped : function() {
-		var res = ringutil.getNearestId(lowerId, [oneLessId, higherId, wrappedId]);
+		"should find nearest id when wrapping not allowed" : function(test) {
+			var res = ringutil.getNearestId(anId, [lowerId, wrappedId], false);
+			
+			test.strictEqual(lowerId, res.nearest);
+			test.strictEqual(lowerId, res.highest);
+			test.strictEqual(wrappedId, res.lowest);
+			test.done();
+		},
 		
-		assert.eql(wrappedId, res.nearest);
-		assert.eql(higherId, res.highest);
-		assert.eql(wrappedId, res.lowest);
-	},
-	
-	shouldFindNearestIdFromAnotherThreeWhereWrappingIsIgnored: function() {
-		var res = ringutil.getNearestId(lowerId, [oneLessId, higherId, wrappedId], false);
+		"should find nearest id from three" : function(test) {
+			var res = ringutil.getNearestId(anId, [lowerId, higherId, wrappedId]);
+			
+			test.strictEqual(higherId, res.nearest);
+			test.strictEqual(higherId, res.highest);
+			test.strictEqual(wrappedId, res.lowest);
+			test.done();
+		},		
 		
-		assert.eql(wrappedId, res.nearest);
-		assert.eql(higherId, res.highest);
-		assert.eql(wrappedId, res.lowest);
-	},
-	
-	shouldGiveNearestIdClockwiseWhenSameDistance : function() {
-		var resLowerFirst = ringutil.getNearestId(anId, [oneLessId, oneMoreId]);
-		var resHigherFirst = ringutil.getNearestId(anId, [oneMoreId, oneLessId]);
+		"should find nearest id from three without wrapping" : function(test) {
+			var res = ringutil.getNearestId(anId, [lowerId, higherId, wrappedId], false);
+			
+			test.strictEqual(higherId, res.nearest);
+			test.strictEqual(higherId, res.highest);
+			test.strictEqual(wrappedId, res.lowest);
+			test.done();
+		},
 		
-		assert.eql(oneMoreId, resLowerFirst.nearest);
-		assert.eql(oneMoreId, resHigherFirst.nearest);
-	},
-	
-	shouldGiveNearestIdClockwiseWhenSameDistanceWithWraparound : function() {
-		var resLowerFirst = ringutil.getNearestId(nearEdgeId, [slightlyLessNearEdgeId, overEdgeId]);
-		var resHigherFirst = ringutil.getNearestId(nearEdgeId, [overEdgeId, slightlyLessNearEdgeId]);
+		"should find nearest id from another three where nearest id is wrapped" : function(test) {
+			var res = ringutil.getNearestId(lowerId, [oneLessId, higherId, wrappedId]);
+			
+			test.strictEqual(wrappedId, res.nearest);
+			test.strictEqual(higherId, res.highest);
+			test.strictEqual(wrappedId, res.lowest);
+			test.done();
+		},
 		
-		assert.eql(overEdgeId, resLowerFirst.nearest);
-		assert.eql(overEdgeId, resHigherFirst.nearest);
-	},
-	
-	shouldDetermineIfGivenIdIsNearestToOwnIdThanAnyLeafsetIdsWhenNoLeafset : function() {
-		assert.eql(true, ringutil.amINearest(higherId, anId, undefined));
-	},
-	
-	shouldDetermineIfGivenIdIsNearestToOwnIdThanAnyLeafsetIdsWhenLeafsetEmpty : function() {
-		assert.eql(true, ringutil.amINearest(higherId, anId, {}));
-	},
-	
-	shouldDetermineIfGivenIdIsNearestToOwnIdThanAnyLeafsetIdsWhenLeafsetContainsOwnId: function() {
-		assert.eql(true, ringutil.amINearest(higherId, anId, {anId : '1.2.3.4:1234'}));
-	},
-	
-	shouldDetermineIfGivenIdIsNearestToOwnIdThanAnyLeafsetIdsWhenLeafsetContainsFurtherId: function() {
-		assert.eql(true, ringutil.amINearest(higherId, anId, {lowerId : '5.6.7.8:5678'}));
-	},
-	
-	shouldDetermineIfGivenIdIsNearestToOwnIdThanAnyLeafsetIdsWhenLeafsetContainsNearerId: function() {
-		assert.eql(false, ringutil.amINearest(higherId, anId, [oneMoreId, lowerId]));
-	}
+		"should find nearest id from another three where wrapping is ignored": function(test) {
+			var res = ringutil.getNearestId(lowerId, [oneLessId, higherId, wrappedId], false);
+			
+			test.strictEqual(wrappedId, res.nearest);
+			test.strictEqual(higherId, res.highest);
+			test.strictEqual(wrappedId, res.lowest);
+			test.done();
+		},
+		
+		"should give nearest id clockwise when same distance" : function(test) {
+			var resLowerFirst = ringutil.getNearestId(anId, [oneLessId, oneMoreId]);
+			var resHigherFirst = ringutil.getNearestId(anId, [oneMoreId, oneLessId]);
+			
+			test.strictEqual(oneMoreId, resLowerFirst.nearest);
+			test.strictEqual(oneMoreId, resHigherFirst.nearest);
+			test.done();
+		},
+		
+		"should give nearest id clockwise when same distance with wraparound" : function(test) {
+			var resLowerFirst = ringutil.getNearestId(nearEdgeId, [slightlyLessNearEdgeId, overEdgeId]);
+			var resHigherFirst = ringutil.getNearestId(nearEdgeId, [overEdgeId, slightlyLessNearEdgeId]);
+			
+			test.strictEqual(overEdgeId, resLowerFirst.nearest);
+			test.strictEqual(overEdgeId, resHigherFirst.nearest);
+			test.done();
+		},
+	}),
+
+	"determining if given id is nearest to a specific id" : testCase ({
+
+		"should determine if given id is nearest to own id than any leafset ids when no leafset" : function(test) {
+			test.ok(ringutil.amINearest(higherId, anId, undefined));
+			test.done();
+		},
+		
+		"should determine if given id is nearest to own id than any leafset ids when leafset empty" : function(test) {
+			test.ok(ringutil.amINearest(higherId, anId, {}));
+			test.done();
+		},
+		
+		"should determine if given id is nearest to own id than any leafset ids when leafset contains own id": function(test) {
+			test.ok(ringutil.amINearest(higherId, anId, {anId : '1.2.3.4:1234'}));
+			test.done();
+		},
+
+		"should determine if given id is nearest to own id than any leafset ids when leafset contains further id": function(test) {
+			test.ok(ringutil.amINearest(higherId, anId, {lowerId : '5.6.7.8:5678'}));
+			test.done();
+		},
+		
+		"should determine if given id is nearest to own id than any leafset ids when leafset contains nearer id": function(test) {
+			test.strictEqual(false, ringutil.amINearest(higherId, anId, [oneMoreId, lowerId]));
+			test.done();
+		}
+	})
 };

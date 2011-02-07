@@ -1,20 +1,18 @@
-var gently = global.GENTLY = new (require('gently'));
-var assert = require('assert');
 var overlay = require('overlay');
+var assert = require('assert');
+var sinon = require('sinon');
 
-module.exports = {	
+module.exports = {
 	shouldJustStartNodeWhenStartingNewRing : function() {
 		// setup
-		gently.expect(gently.hijacked['./node'], 'start', function(port, addr) {
-				assert.eql(1234, port);
-				assert.eql("127.0.0.1", addr);
-		});
-
+		var mocknode = sinon.mock(require('node'));
+		mocknode.expects('start').withArgs(1234, "127.0.0.1");
+		
 		// act
 		overlay.init(1234, "127.0.0.1");
 
 		// assert
-		gently.verify();
+		mocknode.verify();
 	},
 
 // todo: move these to bootstrapper
@@ -33,28 +31,28 @@ module.exports = {
 		);
 	},
 */	
+
 	shouldStartAndInitiateBootstrapsOnJoiningAnExistingRing : function() {
 		// setup
-		gently.expect(gently.hijacked['./node'], 'start', function(port, bindAddr) {
-				assert.eql(1234, port);
-				assert.eql("127.0.0.1", bindAddr);
-		});
+		var mocknode = sinon.mock(require('node'));
+		mocknode.expects('start').withArgs(1234, "127.0.0.1");
 
 		// act
 		overlay.join(1234, "127.0.0.1", '127.0.0.1:4567');
 		
 		// assert
-		gently.verify();
+		mocknode.verify();
 	},
-	
-	shouldStopNodeOnLeavingRing : function() {
+
+	shouldStopNodeOnLeavingRing : function() {	
 		// setup
-		gently.expect(gently.hijacked['./node'], 'stop');
+		var mocknode = sinon.mock(require('node'));
+		mocknode.expects('stop');
 
 		// act
 		overlay.leave();
 		
 		// assert
-		gently.verify();
+		mocknode.verify();
 	}
 };

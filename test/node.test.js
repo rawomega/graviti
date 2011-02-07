@@ -1,16 +1,13 @@
-var gently = global.GENTLY = new (require('gently'));
+var sinon = require('sinon');
 var assert = require('assert');
-var mod_node = require('node');
+var node = require('node');
 
+/*
 var server = undefined;
 var listeningCallback = undefined;
 var messageCallback = undefined;
 function setupStartExpectations() {
 	server = new Object();
-	gently.expect(gently.hijacked.dgram, 'createSocket', function(proto) {
-		assert.eql('udp4', proto);
-		return server;
-	});
 	gently.expect(server, "on", function(evt, callback) {
 	    assert.eql('listening', evt);
 	    listeningCallback = callback;
@@ -24,60 +21,84 @@ function setupStartExpectations() {
 	    assert.eql("127.0.0.1", addr);
 	});
 }
+*/
+
 
 module.exports = {
-	setUp : function() {
-	},
-	
-	shouldStart : function() {
+/*
+	"should start normally" : function() {
 		// setup
-		setupStartExpectations();
+		var svr = { on : function() {}, bind : function() {}, address : function() {} };
+		sinon.stub(svr, 'on');
+		sinon.stub(svr, 'bind');
+		sinon.stub(svr, 'address');
+
+		var mockdgram = sinon.mock(require('dgram'));
+		mockdgram.expects('createSocket').withArgs('udp4').returns(svr);
 
 		// act
-		mod_node.start(1234, "127.0.0.1");
+		node.start(1234, "127.0.0.1");
 
 		// assert
-		gently.verify();
+		mockdgram.verify();		
+		assert.ok(svr.on.calledWith('listening'));
+		assert.ok(svr.on.calledWith('message'));
+		assert.ok(svr.bind.calledOnce);
 	},
-	
-	shouldHandleListeningEventOnStartWithCallback : function() {
-		// setup
-		setupStartExpectations();
-		
-		gently.expect(server, "address", function() {
-			return {address: "127.0.0.1", port: 1234};
-        });
+ */	
 
-		var opts = {};
-		gently.expect(opts, "success", function () {});
+	"should handle listening event on start with callback" : function() {
+		// setup
+		var svr = { on : function() {}, bind : function() {}, address : function() {} };
+		sinon.stub(svr, 'bind');
+		sinon.stub(svr, 'address').returns({address: "127.0.0.1", port: 1234});
+		sinon.stub(svr, 'on', function(evt, cbk) {
+			if (evt === 'listening')
+				cbk();
+		});
+
+		var mockdgram = sinon.mock(require('dgram'));
+		mockdgram.expects('createSocket').withArgs('udp4').returns(svr);
+
+		var success = sinon.stub();
 		
 		// act
-		mod_node.start(1234, "127.0.0.1", opts);
-		listeningCallback();
+		node.start(1234, "127.0.0.1", { success : success } );
 
 		// assert
-		gently.verify();
+		assert.ok(success.called);
 	},
 	
-	shouldHandleUnparseableMessageCallback : function() {
-		// setup
-		setupStartExpectations();
+	"should handle unparseable message callback" : function() {
+		// setup		
 		var rinfo = { 'address' : '127.0.0.1', 'port' : 1234 };
+		
+		var svr = { on : function() {}, bind : function() {}, address : function() {} };
+		sinon.stub(svr, 'bind');
+		sinon.stub(svr, 'address'); //.returns({address: "127.0.0.1", port: 1234});
+		sinon.stub(svr, 'on', function(evt, cbk) {
+			if (evt === 'message')
+				cbk('badmsg', rinfo);
+		});
+
+		var mockdgram = sinon.mock(require('dgram'));
+		mockdgram.expects('createSocket').withArgs('udp4').returns(svr);
+
+		var emit = sinon.spy(node, 'emit');
 
 		// act
-		mod_node.start(1234, "127.0.0.1");
-		messageCallback('msg', rinfo);
+		node.start(1234, "127.0.0.1");
 
 		// assert
-		gently.verify();
+		assert.eql(false, emit.called);
 	},
-
+/*
 	shouldThrowIfNoUriInMessage : function() {
 		// setup
 		setupStartExpectations();
 		var rinfo = { 'address' : '127.0.0.2', 'port' : 1234 };
 
-		mod_node.start(1234, "127.0.0.1");
+		node.start(1234, "127.0.0.1");
 
 		// assert
 		assert.throws(function() {
@@ -93,13 +114,13 @@ module.exports = {
 
 		var rcvdmsg = undefined;
 		var rcvdmsginfo = undefined;
-		mod_node.on("message", function(msg, msginfo) {
+		node.on("message", function(msg, msginfo) {
 			rcvdmsg = msg;
 			rcvdmsginfo = msginfo
 		});
 
 		// act
-		mod_node.start(1234, "127.0.0.1");
+		node.start(1234, "127.0.0.1");
 		messageCallback('{"uri" : "p2p:myapp/myresource", "key" : "val"}', rinfo);
 
 		// assert
@@ -114,8 +135,8 @@ module.exports = {
 		// setup
 		var msg = {"key" : "val"};
 		var server = new Object();
-		mod_node.server = server;
-		gently.expect(mod_node.server, "send", function(buf, offset, len, port, addr) {
+		node.server = server;
+		gently.expect(node.server, "send", function(buf, offset, len, port, addr) {
 			assert.ok(buf !== null);
 			assert.eql(0, offset);
 			assert.eql(len, buf.length);
@@ -124,7 +145,7 @@ module.exports = {
 		});
 
 		// act
-		mod_node.send("1.1.1.1", 2222, msg);
+		node.send("1.1.1.1", 2222, msg);
 
 		// assert
 		gently.verify();
@@ -133,14 +154,15 @@ module.exports = {
 	shouldStop : function() {
 		// setup
 		var server = new Object();
-		mod_node.server = server;
-		gently.expect(mod_node.server, "close", function() {
+		node.server = server;
+		gently.expect(node.server, "close", function() {
 		});
 
 		// act
-		mod_node.stop();
+		node.stop();
 
 		// assert
 		gently.verify();
 	}
+*/	
 };
