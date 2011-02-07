@@ -1,168 +1,145 @@
 var sinon = require('sinon');
 var assert = require('assert');
-var node = require('node');
+var node = require('../lib/node');
+var testCase = require('nodeunit').testCase;
+var dgram = require('dgram');
 
-/*
-var server = undefined;
-var listeningCallback = undefined;
-var messageCallback = undefined;
-function setupStartExpectations() {
-	server = new Object();
-	gently.expect(server, "on", function(evt, callback) {
-	    assert.eql('listening', evt);
-	    listeningCallback = callback;
-	});
-	gently.expect(server, "on", function(evt, callback) {
-		assert.eql('message', evt);
-		messageCallback = callback;
-	    });
-	gently.expect(server, "bind", function(port, addr) {
-		assert.eql(1234, port);
-	    assert.eql("127.0.0.1", addr);
-	});
-}
-*/
+module.exports = {		
+	"starting a node" : testCase({
+		setUp : function(done) {
+			var _this = this;
+		 	
+			this.rawmsg = '{"uri" : "p2p:myapp/myresource", "key" : "val"}';
+			this.rinfo = { 'address' : '127.0.0.2', 'port' : 5678 }
+			this.emit = node.emit;
+			this.svr = { on : function() {}, bind : function() {}, address : function() {} };
+			sinon.stub(this.svr, 'bind');
+			sinon.stub(this.svr, 'address').returns({address: "127.0.0.1", port: 1234});
+			sinon.stub(this.svr, 'on', function(evt, cbk) {
+				if (evt === 'listening')
+					cbk();
+				else if (evt === 'message')
+					cbk(_this.rawmsg, _this.rinfo);
+			});
+			
+			dgram.createSocket = sinon.stub().returns(this.svr);			
 
-
-module.exports = {
-/*
-	"should start normally" : function() {
-		// setup
-		var svr = { on : function() {}, bind : function() {}, address : function() {} };
-		sinon.stub(svr, 'on');
-		sinon.stub(svr, 'bind');
-		sinon.stub(svr, 'address');
-
-		var mockdgram = sinon.mock(require('dgram'));
-		mockdgram.expects('createSocket').withArgs('udp4').returns(svr);
-
-		// act
-		node.start(1234, "127.0.0.1");
-
-		// assert
-		mockdgram.verify();		
-		assert.ok(svr.on.calledWith('listening'));
-		assert.ok(svr.on.calledWith('message'));
-		assert.ok(svr.bind.calledOnce);
-	},
- */	
-
-	"should handle listening event on start with callback" : function() {
-		// setup
-		var svr = { on : function() {}, bind : function() {}, address : function() {} };
-		sinon.stub(svr, 'bind');
-		sinon.stub(svr, 'address').returns({address: "127.0.0.1", port: 1234});
-		sinon.stub(svr, 'on', function(evt, cbk) {
-			if (evt === 'listening')
-				cbk();
-		});
-
-		var mockdgram = sinon.mock(require('dgram'));
-		mockdgram.expects('createSocket').withArgs('udp4').returns(svr);
-
-		var success = sinon.stub();
+			done();
+		},
 		
-		// act
-		node.start(1234, "127.0.0.1", { success : success } );
-
-		// assert
-		assert.ok(success.called);
-	},
+		tearDown : function(done) {
+			node.emit = this.emit;
+			done();
+		},
 	
-	"should handle unparseable message callback" : function() {
-		// setup		
-		var rinfo = { 'address' : '127.0.0.1', 'port' : 1234 };
+		"should start normally" : function(test) {
+			// act
+			node.start(1234, "127.0.0.1");
+	
+			// assert		
+			test.ok(this.svr.on.calledWith('listening'));
+			test.ok(this.svr.on.calledWith('message'));
+			test.ok(this.svr.bind.calledOnce);
+			test.done();
+		},
+			
+		"should handle listening event on start with callback" : function(test) {
+			// setup			
+			var success = sinon.stub();
+			
+			// act
+			node.start(1234, "127.0.0.1", { success : success } );
+			
+			// assert
+			test.ok(success.called);
+			test.done();
+		},
+	
+		"should handle unparseable message callback" : function(test) {
+			// setup		
+			this.rawmsg = 'badmsg';
+			var emit = sinon.spy();
+			node.emit = emit;
+			
+			// act
+			node.start(1234, "127.0.0.1");
+			
+			// assert
+			test.strictEqual(false, emit.called);
+			test.done();
+		},
+
+		"should throw if no uri in message" : function(test) {
+			// setup
+			this.rawmsg = '{"key" : "val"}';
+			var emit = sinon.spy();
+			node.emit = emit;
+			
+			// act
+	
+			// assert
+			assert.throws(function() {
+				node.start(1234, "127.0.0.1");
+			}, /no uri/i);
+			test.strictEqual(false, emit.called);			
+			test.done();
+		},
 		
-		var svr = { on : function() {}, bind : function() {}, address : function() {} };
-		sinon.stub(svr, 'bind');
-		sinon.stub(svr, 'address'); //.returns({address: "127.0.0.1", port: 1234});
-		sinon.stub(svr, 'on', function(evt, cbk) {
-			if (evt === 'message')
-				cbk('badmsg', rinfo);
-		});
-
-		var mockdgram = sinon.mock(require('dgram'));
-		mockdgram.expects('createSocket').withArgs('udp4').returns(svr);
-
-		var emit = sinon.spy(node, 'emit');
-
-		// act
-		node.start(1234, "127.0.0.1");
-
-		// assert
-		assert.eql(false, emit.called);
-	},
-/*
-	shouldThrowIfNoUriInMessage : function() {
-		// setup
-		setupStartExpectations();
-		var rinfo = { 'address' : '127.0.0.2', 'port' : 1234 };
-
-		node.start(1234, "127.0.0.1");
-
-		// assert
-		assert.throws(function() {
-				messageCallback('{"key" : "val"}', rinfo);            
-			}, /no uri/i
-		);
-	},
+		"should handle parseable message callback" : function(test) {
+			// setup
+			var rcvdmsg = undefined;
+			var rcvdmsginfo = undefined;
+			node.on("message", function(msg, msginfo) {
+				rcvdmsg = msg;
+				rcvdmsginfo = msginfo
+			});
 	
-	shouldHandleParseableMessageCallback : function() {
-		// setup
-		setupStartExpectations();
-		var rinfo = { 'address' : '127.0.0.2', 'port' : 1234 };
-
-		var rcvdmsg = undefined;
-		var rcvdmsginfo = undefined;
-		node.on("message", function(msg, msginfo) {
-			rcvdmsg = msg;
-			rcvdmsginfo = msginfo
-		});
-
-		// act
-		node.start(1234, "127.0.0.1");
-		messageCallback('{"uri" : "p2p:myapp/myresource", "key" : "val"}', rinfo);
-
-		// assert
-		gently.verify();
-		assert.eql('val', rcvdmsg.key);
-		assert.eql('127.0.0.2', rcvdmsginfo.sender_addr);
-		assert.eql(1234, rcvdmsginfo.sender_port);
-		assert.eql('myapp', rcvdmsginfo.app_name);
-	},
+			// act
+			node.start(1234, "127.0.0.1");
 	
-	shouldSend : function() {
-		// setup
-		var msg = {"key" : "val"};
-		var server = new Object();
-		node.server = server;
-		gently.expect(node.server, "send", function(buf, offset, len, port, addr) {
-			assert.ok(buf !== null);
-			assert.eql(0, offset);
-			assert.eql(len, buf.length);
-			assert.eql(port, 2222);
-			assert.eql('1.1.1.1', addr);
-		});
-
-		// act
-		node.send("1.1.1.1", 2222, msg);
-
-		// assert
-		gently.verify();
-	},
+			// assert
+			test.strictEqual('val', rcvdmsg.key);
+			test.strictEqual('127.0.0.2', rcvdmsginfo.sender_addr);
+			test.strictEqual(5678, rcvdmsginfo.sender_port);
+			test.strictEqual('myapp', rcvdmsginfo.app_name);
+			test.done();
+		}
+	}),
 	
-	shouldStop : function() {
-		// setup
-		var server = new Object();
-		node.server = server;
-		gently.expect(node.server, "close", function() {
-		});
-
-		// act
-		node.stop();
-
-		// assert
-		gently.verify();
-	}
-*/	
+	"message sending" : testCase({
+		"should send" : function(test) {
+			// setup
+			var msg = {"key" : "val"};
+			node.server = {send : function() {}};
+			var send = sinon.stub(node.server, 'send', function(buf, offset, len, port, addr) {
+				test.ok(buf !== null);
+				test.strictEqual(0, offset);
+				test.strictEqual(len, buf.length);
+				test.strictEqual(port, 2222);
+				test.strictEqual('1.1.1.1', addr);
+			});
+	
+			// act
+			node.send("1.1.1.1", 2222, msg);
+	
+			// assert
+			test.ok(send.called);
+			test.done();
+		}
+	}),
+	
+	"stopping a node" : testCase ({
+		"should stop" : function(test) {
+			// setup
+			node.server = {close : function() {}};
+			var close = sinon.stub(node.server, "close");
+	
+			// act
+			node.stop();
+	
+			// assert
+			test.ok(close.called);
+			test.done();
+		}
+	})
 };
