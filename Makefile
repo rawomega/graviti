@@ -10,7 +10,7 @@ lint:
 
 test: lint
 	-mkdir -p build
-	expresso -q -I lib
+	nodeunit test
 
 coverage: lint
 	-rm -rf build/lib-cov
