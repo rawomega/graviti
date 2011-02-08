@@ -124,6 +124,13 @@ module.exports = {
 			test.done();
 		},
 		
+		"routing to same id as node id should return nothing" : function(test) {
+			var res = routingmgr.getNextHop(anId);
+		
+			test.equal(undefined, res);
+			test.done();
+		},
+		
 		"routing via routing table with irrelevant entry should return nothing" : function(test) {
 			leafsetmgr.getRoutingHop = sinon.stub().returns(undefined);
 			routingmgr.updateRoutingTable(  'F78147A002B4482EB6D912E3E6518F5CC80EBEE6');
