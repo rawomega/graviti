@@ -1,11 +1,16 @@
 var assert = require('assert');
-var mod_id = require('../lib/id');
+var id = require('../lib/id');
 var testCase = require('nodeunit').testCase;
 
 module.exports = {
-	"id generation" : testCase({		
+	"id generation" : testCase({
+		"default id length should be 160 bits" : function(test) {
+			assert.strictEqual(160, id.lengthBits);
+			test.done();
+		},
+		
 		"should generate uuid" : function(test) {
-			var res = mod_id.generateUuid();
+			var res = id.generateUuid();
 	
 			test.ok(res.replace(/-/g, '').length === 32);
 			test.ok(res.replace(/[^-]/g, '').length === 4);			
@@ -13,7 +18,7 @@ module.exports = {
 		},
 		
 		"should generate node id" : function(test) {
-			var res = mod_id.generateNodeId();
+			var res = id.generateNodeId();
 
 			test.ok(res.length === 40);			
 			test.done();

@@ -22,7 +22,7 @@ coverage: lint
 	nodeunit test	# awaiting node-jscoverage integration
 
 npm-deps:
-	npm ls installed > npm-deps
+	-npm ls installed > npm-deps
 
 run-multi: kill-all
 	node lib/main.js --port 7111 &
