@@ -117,9 +117,9 @@ module.exports = {
 		"routing via routing table with exact match should return that match" : function(test) {
 			leafsetmgr.getRoutingHop = sinon.stub().returns(undefined);
 			routingmgr.updateRoutingTable('F7DB7ACE15254C87B81D05DA8FA49588540B1950');
-			
+
 			var res = routingmgr.getNextHop('F7DB7ACE15254C87B81D05DA8FA49588540B1950');
-		
+
 			test.equal('F7DB7ACE15254C87B81D05DA8FA49588540B1950', res);
 			test.done();
 		},
@@ -138,6 +138,26 @@ module.exports = {
 			var res = routingmgr.getNextHop('355607ACE1254C87B81D05DA8FA49588540B1950');
 		
 			test.equal(undefined, res);
+			test.done();
+		},
+		
+		"routing via routing table with a valid next hop entry should return that entry" : function(test) {
+			leafsetmgr.getRoutingHop = sinon.stub().returns(undefined);
+			routingmgr.updateRoutingTable(  'F456337A002B4482EB6D912E3E6518F5CC80EBE6');
+
+			var res = routingmgr.getNextHop('F45607ACE1254C87B81D05DA8FA49588540B1950');
+			
+			test.equal('F456337A002B4482EB6D912E3E6518F5CC80EBE6', res);
+			test.done();
+		},
+		
+		"routing via routing table to id with no common prefix w/node id should return closest entry" : function(test) {
+			leafsetmgr.getRoutingHop = sinon.stub().returns(undefined);
+			routingmgr.updateRoutingTable(  'A78147A002B4482EB6D912E3E6518F5CC80EBEE6');
+
+			var res = routingmgr.getNextHop('A45607ACE1254C87B81D05DA8FA49588540B1950');
+			
+			test.equal('A78147A002B4482EB6D912E3E6518F5CC80EBEE6', res);
 			test.done();
 		}
 	})

@@ -25,61 +25,61 @@ module.exports = {
 		}
 	}),
 	
-	"id digit differences" : testCase({
-		"detect first differing digit between two different ids" : function(test) {
-			var res = id.getFirstDifferentDigit('abc', 'bcc');
+	"common id prefix calcluation" : testCase({
+		"detect that there is no common prefix in two different ids" : function(test) {
+			var res = id.getCommonPrefixLength('abc', 'bcc');
 			
 			test.equal(0, res);
 			test.done();
 		},		
 		
-		"detect first differing digit between two different ids, ignoring casing" : function(test) {
-			var res = id.getFirstDifferentDigit('abc', 'ABD');
+		"detect common prefix from two different ids, ignoring casing" : function(test) {
+			var res = id.getCommonPrefixLength('abc', 'ABD');
 			
 			test.equal(2, res);
 			test.done();
 		},
 		
-		"detect first differing digit between two different ids where one is longer" : function(test) {
-			var res = id.getFirstDifferentDigit('abc', 'abde');
+		"detect common prefix between two different ids where one is longer" : function(test) {
+			var res = id.getCommonPrefixLength('abc', 'abde');
 			
 			test.equal(2, res);
 			test.done();
 		},
 		
-		"detect first differing digit between two identical ids" : function(test) {
-			var res = id.getFirstDifferentDigit('abc', 'ABC');
+		"detect common prefix between two identical ids" : function(test) {
+			var res = id.getCommonPrefixLength('abc', 'ABC');
 			
-			test.equal(-1, res);
+			test.equal(3, res);
 			test.done();
 		},
 		
-		"detect first differing digit between two ids where one is the prefix of another" : function(test) {
-			var res = id.getFirstDifferentDigit('abc', 'ABCde');
+		"detect common prefix for two ids where one is the prefix of another" : function(test) {
+			var res = id.getCommonPrefixLength('abc', 'ABCde');
 			
 			test.equal(3, res);
 			test.done();
 		},
 		
 
-		"detect first differing digit between two different ids where one is empty" : function(test) {
-			var res = id.getFirstDifferentDigit('abc', '');
+		"detect common prefix for two different ids where one is empty" : function(test) {
+			var res = id.getCommonPrefixLength('abc', '');
 			
 			test.equal(0, res);
 			test.done();
 		},
 		
-		"detect first differing digit between two different ids where both are empty" : function(test) {
-			var res = id.getFirstDifferentDigit('', '');
+		"detect common prefix for two different ids where both are empty" : function(test) {
+			var res = id.getCommonPrefixLength('', '');
 			
-			test.equal(-1, res);
+			test.equal(0, res);
 			test.done();
 		},
 		
-		"detect first differing digit between two different ids where one is undefined" : function(test) {
-			var res = id.getFirstDifferentDigit('abc', undefined);
+		"detect common prefix for two different ids where one is undefined" : function(test) {
+			var res = id.getCommonPrefixLength('abc', undefined);
 			
-			test.equal(-1, res);
+			test.equal(0, res);
 			test.done();
 		}
 	})
