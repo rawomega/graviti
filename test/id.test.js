@@ -23,5 +23,64 @@ module.exports = {
 			test.ok(res.length === 40);			
 			test.done();
 		}
+	}),
+	
+	"id digit differences" : testCase({
+		"detect first differing digit between two different ids" : function(test) {
+			var res = id.getFirstDifferentDigit('abc', 'bcc');
+			
+			test.equal(0, res);
+			test.done();
+		},		
+		
+		"detect first differing digit between two different ids, ignoring casing" : function(test) {
+			var res = id.getFirstDifferentDigit('abc', 'ABD');
+			
+			test.equal(2, res);
+			test.done();
+		},
+		
+		"detect first differing digit between two different ids where one is longer" : function(test) {
+			var res = id.getFirstDifferentDigit('abc', 'abde');
+			
+			test.equal(2, res);
+			test.done();
+		},
+		
+		"detect first differing digit between two identical ids" : function(test) {
+			var res = id.getFirstDifferentDigit('abc', 'ABC');
+			
+			test.equal(-1, res);
+			test.done();
+		},
+		
+		"detect first differing digit between two ids where one is the prefix of another" : function(test) {
+			var res = id.getFirstDifferentDigit('abc', 'ABCde');
+			
+			test.equal(3, res);
+			test.done();
+		},
+		
+
+		"detect first differing digit between two different ids where one is empty" : function(test) {
+			var res = id.getFirstDifferentDigit('abc', '');
+			
+			test.equal(0, res);
+			test.done();
+		},
+		
+		"detect first differing digit between two different ids where both are empty" : function(test) {
+			var res = id.getFirstDifferentDigit('', '');
+			
+			test.equal(-1, res);
+			test.done();
+		},
+		
+		"detect first differing digit between two different ids where one is undefined" : function(test) {
+			var res = id.getFirstDifferentDigit('abc', undefined);
+			
+			test.equal(-1, res);
+			test.done();
+		}
 	})
 };
