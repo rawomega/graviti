@@ -19,57 +19,80 @@ module.exports = {
 			done();
 		},
 		
-		"should return self as next routing hop when leafset empty" : function(test) {			
-			test.strictEqual(anId, leafsetmgr.getRoutingHop(anId));
+		"should return self as next routing hop when leafset empty" : function(test) {
+			var res = leafsetmgr.getRoutingHop(anId)
+			test.strictEqual(anId, res.next_hop_id);
+			test.strictEqual(undefined, res.next_hop_addr);
+			test.strictEqual(undefined, res.next_hop_port);
 			test.done();
 		},
 		
 		"should return self as next routing hop when leafset contains higher id node" : function(test) {
-			leafsetmgr.leafset[higherId] = "1.2.3.4";
+			leafsetmgr.leafset[higherId] = "1.2.3.4:1234";
 			
-			test.strictEqual(anId, leafsetmgr.getRoutingHop(anId));
+			var res = leafsetmgr.getRoutingHop(anId);
+			
+			test.strictEqual(anId, res.next_hop_id);
+			test.strictEqual(undefined, res.next_hop_addr);
+			test.strictEqual(undefined, res.next_hop_port);
 			test.done();
 		},
 		
 		"should return self as next routing hop when leafset contains lower id node" : function(test) {
-			leafsetmgr.leafset[lowerId] = "1.2.3.4";
+			leafsetmgr.leafset[lowerId] = "1.2.3.4:1234";
 			
-			test.strictEqual(anId, leafsetmgr.getRoutingHop(anId));
+			var res = leafsetmgr.getRoutingHop(anId);
+			
+			test.strictEqual(anId, res.next_hop_id);
+			test.strictEqual(undefined, res.next_hop_addr);
+			test.strictEqual(undefined, res.next_hop_port);
 			test.done();
 		},
 		
 		"should return self as next routing hop whne leafset contains higher and lower id node" : function(test) {
-			leafsetmgr.leafset[higherId] = "1.2.3.4";
-			leafsetmgr.leafset[lowerId] = "1.2.3.4";
+			leafsetmgr.leafset[higherId] = "1.2.3.4:1234";
+			leafsetmgr.leafset[lowerId] = "1.2.3.4:1234";
 			
-			test.strictEqual(anId, leafsetmgr.getRoutingHop(anId));
+			var res = leafsetmgr.getRoutingHop(anId);
+			
+			test.strictEqual(anId, res.next_hop_id);
+			test.strictEqual(undefined, res.next_hop_addr);
+			test.strictEqual(undefined, res.next_hop_port);
 			test.done();
 		},
 		
 		"should return nearest node as next routing hop when within leafset range" : function(test) {
-			leafsetmgr.leafset[wrappedId] = "1.2.3.4";
-			leafsetmgr.leafset[higherId] = "1.2.3.4";
-			leafsetmgr.leafset[oneLessId] = "1.2.3.4";
+			leafsetmgr.leafset[wrappedId] = "1.2.3.4:1234";
+			leafsetmgr.leafset[higherId] = "6.7.8.9:6789";
+			leafsetmgr.leafset[oneLessId] = "3.4.5.6:3456";
 			
-			test.strictEqual(wrappedId, leafsetmgr.getRoutingHop(lowerId));
+			var res = leafsetmgr.getRoutingHop(lowerId);
+			
+			test.strictEqual(wrappedId, res.next_hop_id);
+			test.strictEqual('1.2.3.4', res.next_hop_addr);
+			test.strictEqual('1234', res.next_hop_port);
 			test.done();
 		},
 		
 		"should return blank next routing hop when below leafset range" : function(test) {
-			leafsetmgr.leafset[lowerId] = "1.2.3.4";
-			leafsetmgr.leafset[higherId] = "1.2.3.4";
-			leafsetmgr.leafset[oneLessId] = "1.2.3.4";
+			leafsetmgr.leafset[lowerId] = "1.2.3.4:1234";
+			leafsetmgr.leafset[higherId] = "1.2.3.4:5678";
+			leafsetmgr.leafset[oneLessId] = "1.2.3.4:9012";
 			
-			test.strictEqual(undefined, leafsetmgr.getRoutingHop(wrappedId));
+			var res = leafsetmgr.getRoutingHop(wrappedId);
+			
+			test.strictEqual(undefined, res);
 			test.done();
 		},
 		
 		"should return blank next routing hop when above leafset range" : function(test) {
-			leafsetmgr.leafset[lowerId] = "1.2.3.4";
-			leafsetmgr.leafset[oneLessId] = "1.2.3.4";
-			leafsetmgr.leafset[wrappedId] = "1.2.3.4";
+			leafsetmgr.leafset[lowerId] = "1.2.3.4:1234";
+			leafsetmgr.leafset[oneLessId] = "1.2.3.4:5678";
+			leafsetmgr.leafset[wrappedId] = "1.2.3.4:9012";
 			
-			test.strictEqual(undefined, leafsetmgr.getRoutingHop(higherId));
+			var res = leafsetmgr.getRoutingHop(higherId);
+			
+			test.strictEqual(undefined, res);
 			test.done();
 		}
 	}),

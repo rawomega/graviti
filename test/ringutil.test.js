@@ -124,6 +124,18 @@ module.exports = {
 			test.strictEqual(overEdgeId, resHigherFirst.nearest);
 			test.done();
 		},
+		
+		"should find nearest id from an associative array by looking at keys" : function(test) {
+			var obj = {};
+			obj[anId] = 'garbage to be ignored';
+			
+			var res = ringutil.getNearestId(anId, obj);
+			
+			test.strictEqual(anId, res.nearest);
+			test.strictEqual(anId, res.highest);
+			test.strictEqual(anId, res.lowest);
+			test.done();
+		}
 	}),
 
 	"determining if given id is nearest to a specific id" : testCase ({
