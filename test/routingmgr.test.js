@@ -102,12 +102,12 @@ module.exports = {
 		
 		"when we can route based on the leafset, just use that" : function(test) {
 			leafsetmgr.getRoutingHop = sinon.stub().returns({
-				next_hop_id : 'F7DB7ACE15254C87B81D05DA8FA49588540B1950'
+				id : 'F7DB7ACE15254C87B81D05DA8FA49588540B1950'
 			});
 			
 			var res = routingmgr.getNextHop('F7DB7ACE15254C87B81D05DA8FA49588540B1950');
 		
-			test.equal('F7DB7ACE15254C87B81D05DA8FA49588540B1950', res.next_hop_id);
+			test.equal('F7DB7ACE15254C87B81D05DA8FA49588540B1950', res.id);
 			test.done();
 		},
 		
@@ -116,9 +116,9 @@ module.exports = {
 			
 			var res = routingmgr.getNextHop('F7DB7ACE15254C87B81D05DA8FA49588540B1950');
 		
-			test.strictEqual(anId, res.next_hop_id);
-			test.strictEqual(undefined, res.next_hop_addr);
-			test.strictEqual(undefined, res.next_hop_port);
+			test.strictEqual(anId, res.id);
+			test.strictEqual(undefined, res.addr);
+			test.strictEqual(undefined, res.port);
 			test.done();
 		},
 		
@@ -128,18 +128,18 @@ module.exports = {
 
 			var res = routingmgr.getNextHop('F7DB7ACE15254C87B81D05DA8FA49588540B1950');
 
-			test.strictEqual("F7DB7ACE15254C87B81D05DA8FA49588540B1950", res.next_hop_id);
-			test.strictEqual('1.1.1.1', res.next_hop_addr);
-			test.strictEqual('1111', res.next_hop_port);
+			test.strictEqual("F7DB7ACE15254C87B81D05DA8FA49588540B1950", res.id);
+			test.strictEqual('1.1.1.1', res.addr);
+			test.strictEqual('1111', res.port);
 			test.done();
 		},
 		
 		"routing to same id as node id should return node id as nearest" : function(test) {
 			var res = routingmgr.getNextHop(anId);
 		
-			test.strictEqual(anId, res.next_hop_id);
-			test.strictEqual(undefined, res.next_hop_addr);
-			test.strictEqual(undefined, res.next_hop_port);
+			test.strictEqual(anId, res.id);
+			test.strictEqual(undefined, res.addr);
+			test.strictEqual(undefined, res.port);
 			test.done();
 		},
 		
@@ -149,9 +149,9 @@ module.exports = {
 			
 			var res = routingmgr.getNextHop('355607ACE1254C87B81D05DA8FA49588540B1950');
 		
-			test.strictEqual(anId, res.next_hop_id);
-			test.strictEqual(undefined, res.next_hop_addr);
-			test.strictEqual(undefined, res.next_hop_port);
+			test.strictEqual(anId, res.id);
+			test.strictEqual(undefined, res.addr);
+			test.strictEqual(undefined, res.port);
 			test.done();
 		},
 		
@@ -161,9 +161,9 @@ module.exports = {
 
 			var res = routingmgr.getNextHop('A45607ACE1254C87B81D05DA8FA49588540B1950');
 			
-			test.equal('A78147A002B4482EB6D912E3E6518F5CC80EBEE6', res.next_hop_id);
-			test.strictEqual('1.1.1.1', res.next_hop_addr);
-			test.strictEqual('1111', res.next_hop_port);
+			test.equal('A78147A002B4482EB6D912E3E6518F5CC80EBEE6', res.id);
+			test.strictEqual('1.1.1.1', res.addr);
+			test.strictEqual('1111', res.port);
 			test.done();
 		},
 		
@@ -173,9 +173,9 @@ module.exports = {
 
 			var res = routingmgr.getNextHop('F45607ACE1254C87B81D05DA8FA49588540B1950');
 			
-			test.equal('F456337A002B4482EB6D912E3E6518F5CC80EBE6', res.next_hop_id);
-			test.strictEqual('1.1.1.1', res.next_hop_addr);
-			test.strictEqual('1111', res.next_hop_port);
+			test.equal('F456337A002B4482EB6D912E3E6518F5CC80EBE6', res.id);
+			test.strictEqual('1.1.1.1', res.addr);
+			test.strictEqual('1111', res.port);
 			test.done();
 		},
 		
@@ -185,9 +185,9 @@ module.exports = {
 
 			var res = routingmgr.getNextHop('F78607ACE1254C87B81D05DA8FA49588540B1950');
 			
-			test.equal('F756337A002B4482EB6D912E3E6518F5CC80EBE6', res.next_hop_id);
-			test.strictEqual('1.1.1.1', res.next_hop_addr);
-			test.strictEqual('1111', res.next_hop_port);
+			test.equal('F756337A002B4482EB6D912E3E6518F5CC80EBE6', res.id);
+			test.strictEqual('1.1.1.1', res.addr);
+			test.strictEqual('1111', res.port);
 			test.done();
 		},
 		
@@ -197,9 +197,9 @@ module.exports = {
 
 			var res = routingmgr.getNextHop('F08607ACE1254C87B81D05DA8FA49588540B1950');
 			
-			test.equal('EFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF', res.next_hop_id);
-			test.strictEqual('1.1.1.1', res.next_hop_addr);
-			test.strictEqual('1111', res.next_hop_port);
+			test.equal('EFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF', res.id);
+			test.strictEqual('1.1.1.1', res.addr);
+			test.strictEqual('1111', res.port);
 			test.done();
 		},
 		
@@ -209,9 +209,9 @@ module.exports = {
 
 			var res = routingmgr.getNextHop('DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD');
 			
-			test.equal('EFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF', res.next_hop_id);
-			test.strictEqual('1.1.1.1', res.next_hop_addr);
-			test.strictEqual('1111', res.next_hop_port);
+			test.equal('EFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF', res.id);
+			test.strictEqual('1.1.1.1', res.addr);
+			test.strictEqual('1111', res.port);
 			test.done();
 		},
 		
@@ -222,9 +222,9 @@ module.exports = {
 
 			var res = routingmgr.getNextHop('008607ACE1254C87B81D05DA8FA49588540B1950');
 			
-			test.equal('FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF', res.next_hop_id);
-			test.strictEqual('5.6.7.8', res.next_hop_addr);
-			test.strictEqual('5678', res.next_hop_port);
+			test.equal('FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF', res.id);
+			test.strictEqual('5.6.7.8', res.addr);
+			test.strictEqual('5678', res.port);
 			test.done();
 		},
 		
@@ -240,9 +240,9 @@ module.exports = {
 
 			var res = routingmgr.getNextHop('1010101010101010101010101010101010101010');
 			
-			test.equal('1000000000000000000000000000000000000000', res.next_hop_id);
-			test.strictEqual('1.1.1.1', res.next_hop_addr);
-			test.strictEqual('1111', res.next_hop_port);
+			test.equal('1000000000000000000000000000000000000000', res.id);
+			test.strictEqual('1.1.1.1', res.addr);
+			test.strictEqual('1111', res.port);
 			test.done();
 		}
 	})

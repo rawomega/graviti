@@ -21,9 +21,9 @@ module.exports = {
 		
 		"should return self as next routing hop when leafset empty" : function(test) {
 			var res = leafsetmgr.getRoutingHop(anId)
-			test.strictEqual(anId, res.next_hop_id);
-			test.strictEqual(undefined, res.next_hop_addr);
-			test.strictEqual(undefined, res.next_hop_port);
+			test.strictEqual(anId, res.id);
+			test.strictEqual(undefined, res.addr);
+			test.strictEqual(undefined, res.port);
 			test.done();
 		},
 		
@@ -32,9 +32,9 @@ module.exports = {
 			
 			var res = leafsetmgr.getRoutingHop(anId);
 			
-			test.strictEqual(anId, res.next_hop_id);
-			test.strictEqual(undefined, res.next_hop_addr);
-			test.strictEqual(undefined, res.next_hop_port);
+			test.strictEqual(anId, res.id);
+			test.strictEqual(undefined, res.addr);
+			test.strictEqual(undefined, res.port);
 			test.done();
 		},
 		
@@ -43,9 +43,9 @@ module.exports = {
 			
 			var res = leafsetmgr.getRoutingHop(anId);
 			
-			test.strictEqual(anId, res.next_hop_id);
-			test.strictEqual(undefined, res.next_hop_addr);
-			test.strictEqual(undefined, res.next_hop_port);
+			test.strictEqual(anId, res.id);
+			test.strictEqual(undefined, res.addr);
+			test.strictEqual(undefined, res.port);
 			test.done();
 		},
 		
@@ -55,9 +55,9 @@ module.exports = {
 			
 			var res = leafsetmgr.getRoutingHop(anId);
 			
-			test.strictEqual(anId, res.next_hop_id);
-			test.strictEqual(undefined, res.next_hop_addr);
-			test.strictEqual(undefined, res.next_hop_port);
+			test.strictEqual(anId, res.id);
+			test.strictEqual(undefined, res.addr);
+			test.strictEqual(undefined, res.port);
 			test.done();
 		},
 		
@@ -68,9 +68,9 @@ module.exports = {
 			
 			var res = leafsetmgr.getRoutingHop(lowerId);
 			
-			test.strictEqual(wrappedId, res.next_hop_id);
-			test.strictEqual('1.2.3.4', res.next_hop_addr);
-			test.strictEqual('1234', res.next_hop_port);
+			test.strictEqual(wrappedId, res.id);
+			test.strictEqual('1.2.3.4', res.addr);
+			test.strictEqual('1234', res.port);
 			test.done();
 		},
 		
