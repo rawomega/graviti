@@ -152,5 +152,36 @@ module.exports = {
 			test.strictEqual(false, ringutil.amINearest(higherId, anId, [oneMoreId, lowerId]));
 			test.done();
 		}
+	}),
+	
+	"finding highest and lowest from a set of ids" : testCase({
+		"should find highest and lowest from a single id" : function(test) {
+			var res = ringutil.getHighestAndLowestIds([anId]);
+			
+			test.equal(anId, res.highest);
+			test.equal(anId, res.lowest);
+			test.done();
+		},
+		
+		"should find highest and lowest from a set of ids" : function(test) {
+			var res = ringutil.getHighestAndLowestIds([anId, higherId, lowerId, wrappedId]);
+			
+			test.equal(higherId, res.highest);
+			test.equal(wrappedId, res.lowest);
+			test.done();
+		},
+		
+		"should find highest and lowest from a set of object key ids" : function(test) {
+			var obj = {};
+			obj[anId] = 'moo';
+			obj[higherId] = 'baa';
+			obj[lowerId] = 'oink';
+			
+			var res = ringutil.getHighestAndLowestIds(obj);
+			
+			test.equal(higherId, res.highest);
+			test.equal(lowerId, res.lowest);
+			test.done();
+		}
 	})
 };

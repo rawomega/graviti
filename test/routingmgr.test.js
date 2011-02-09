@@ -92,6 +92,7 @@ module.exports = {
 	"getting the next routing hop" : testCase({
 		setUp : function(done) {
 			routingmgr.routingTable = {};
+			leafsetmgr.leafset = {};
 			node.nodeId = anId;
 			done();
 		},
@@ -141,7 +142,17 @@ module.exports = {
 			test.done();
 		},
 		
-		"routing via routing table with a valid next hop entry should return that entry" : function(test) {
+		"routing via routing table to id with no common prefix w/node id should return closest entry" : function(test) {
+			leafsetmgr.getRoutingHop = sinon.stub().returns(undefined);
+			routingmgr.updateRoutingTable(  'A78147A002B4482EB6D912E3E6518F5CC80EBEE6');
+
+			var res = routingmgr.getNextHop('A45607ACE1254C87B81D05DA8FA49588540B1950');
+			
+			test.equal('A78147A002B4482EB6D912E3E6518F5CC80EBEE6', res);
+			test.done();
+		},
+		
+		"routing via routing table with relevant next hop entry should return that entry" : function(test) {
 			leafsetmgr.getRoutingHop = sinon.stub().returns(undefined);
 			routingmgr.updateRoutingTable(  'F456337A002B4482EB6D912E3E6518F5CC80EBE6');
 
@@ -151,13 +162,44 @@ module.exports = {
 			test.done();
 		},
 		
-		"routing via routing table to id with no common prefix w/node id should return closest entry" : function(test) {
+		"routing via routing table w/o relevant next hop entry returns closest entry from [leafset, routingtable] when closest entry is in same row of routing table" : function(test) {
 			leafsetmgr.getRoutingHop = sinon.stub().returns(undefined);
-			routingmgr.updateRoutingTable(  'A78147A002B4482EB6D912E3E6518F5CC80EBEE6');
+			routingmgr.updateRoutingTable(  'F756337A002B4482EB6D912E3E6518F5CC80EBE6');
 
-			var res = routingmgr.getNextHop('A45607ACE1254C87B81D05DA8FA49588540B1950');
+			var res = routingmgr.getNextHop('F78607ACE1254C87B81D05DA8FA49588540B1950');
 			
-			test.equal('A78147A002B4482EB6D912E3E6518F5CC80EBEE6', res);
+			test.equal('F756337A002B4482EB6D912E3E6518F5CC80EBE6', res);
+			test.done();
+		},
+		
+		"routing via routing table w/o relevant next hop entry returns closest entry from [leafset, routingtable] when closest entry is in previous row of routing table" : function(test) {
+			leafsetmgr.getRoutingHop = sinon.stub().returns(undefined);
+			routingmgr.updateRoutingTable(  'EFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF');
+
+			var res = routingmgr.getNextHop('F08607ACE1254C87B81D05DA8FA49588540B1950');
+			
+			test.equal('EFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF', res);
+			test.done();
+		},
+		
+		"routing via routing table w/o relevant next hop entry returns closest entry from [leafset, routingtable] when no previous row in routing table" : function(test) {
+			leafsetmgr.getRoutingHop = sinon.stub().returns(undefined);
+			routingmgr.updateRoutingTable(  'EFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF');
+
+			var res = routingmgr.getNextHop('DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD');
+			
+			test.equal('EFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF', res);
+			test.done();
+		},
+		
+		"routing via routing table w/o relevant next hop entry returns closest entry from [leafset, routingtable] when closest entry is in leafset" : function(test) {
+			leafsetmgr.getRoutingHop = sinon.stub().returns(undefined);
+			leafsetmgr.leafset = {'EFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF' : '1.2.3.4:1234', 'FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF' : '5.6.7.8:5678'}
+			routingmgr.updateRoutingTable(  'EFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF');
+
+			var res = routingmgr.getNextHop('008607ACE1254C87B81D05DA8FA49588540B1950');
+			
+			test.equal('FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF', res);
 			test.done();
 		}
 	})
