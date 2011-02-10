@@ -29,7 +29,7 @@ run-multi: kill-all
 	sleep 1
 	node lib/main.js --port 7112 --bootstraps "localhost:7111" &
 	sleep 1
-#	node lib/main.js --port 7113 --bootstraps "localhost:7111" &
+	node lib/main.js --port 7113 --bootstraps "localhost:7111" &
 
 kill-all:
 	-killall node
