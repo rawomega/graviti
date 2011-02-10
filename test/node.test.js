@@ -85,6 +85,22 @@ module.exports = {
 			test.done();
 		},
 		
+		"should throw if hop count over 100" : function(test) {
+			// setup
+			this.rawmsg = '{"uri" : "p2p:graviti/something", "hops" : 101}';
+			var emit = sinon.spy();
+			node.emit = emit;
+			
+			// act
+	
+			// assert
+			assert.throws(function() {
+				node.start(1234, "127.0.0.1");
+			}, /too many hops/i);
+			test.strictEqual(false, emit.called);			
+			test.done();
+		},
+		
 		"should handle parseable message callback" : function(test) {
 			// setup
 			var rcvdmsg = undefined;
@@ -107,16 +123,33 @@ module.exports = {
 	}),
 	
 	"message sending" : testCase({
-		"should send" : function(test) {
+		"should send with hop zero" : function(test) {
 			// setup
 			var msg = {"key" : "val"};
 			node.server = {send : function() {}};
 			var send = sinon.stub(node.server, 'send', function(buf, offset, len, port, addr) {
 				test.ok(buf !== null);
+				test.strictEqual(0, JSON.parse(buf).hops);
 				test.strictEqual(0, offset);
 				test.strictEqual(len, buf.length);
 				test.strictEqual(port, 2222);
 				test.strictEqual('1.1.1.1', addr);
+			});
+	
+			// act
+			node.send("1.1.1.1", 2222, msg);
+	
+			// assert
+			test.ok(send.called);
+			test.done();
+		},
+		
+		"should increment hop count when sending" : function(test) {
+			// setup
+			var msg = {key : "val", hops : 11};
+			node.server = {send : function() {}};
+			var send = sinon.stub(node.server, 'send', function(buf, offset, len, port, addr) {
+				test.strictEqual(12, JSON.parse(buf).hops);				
 			});
 	
 			// act
