@@ -89,9 +89,77 @@ module.exports = {
 				"1":{"7":{id:"F7DB7ACE15254C87B81D05DA8FA49588540B1950",ap:'1.2.3.4:1234'}}
 			}, routingmgr.routingTable);
 			test.done();
+		},
+		
+		"should be able to update routing table by passing multiple nodes at once" : function(test) {
+			routingmgr.updateRoutingTable({
+				'F7DB7ACE15254C87B81D05DA8FA49588540B1950' : '1.2.3.4:1234',
+				'F8D147A002B4482EB6D912E3E6518F5CC80EBEE6' : '5.6.7.8:5678'
+			});
+			
+			test.deepEqual({
+				"1":{
+					"7":{id:"F7DB7ACE15254C87B81D05DA8FA49588540B1950",ap:'1.2.3.4:1234'},
+					"8":{id:"F8D147A002B4482EB6D912E3E6518F5CC80EBEE6",ap:'5.6.7.8:5678'}
+				}
+			}, routingmgr.routingTable);
+			test.done();
 		}
 	}),
 
+	"merging another routing table into our one" : testCase({
+		setUp : function(done) {
+			routingmgr.routingTable = {};
+			node.nodeId = anId;
+			done();
+		},
+		
+		"should merge empty routing table into empty" : function(test) {
+			routingmgr.mergeRoutingTable({});
+			
+			test.deepEqual({}, routingmgr.routingTable);
+			test.done();
+		},
+		
+		"should merge non-empty routing table into empty" : function(test) {
+			var rt = {
+				"1":{
+					"7":{id:"F7DB7ACE15254C87B81D05DA8FA49588540B1950",ap:'1.2.3.4:1234'},
+					"8":{id:"F8D147A002B4482EB6D912E3E6518F5CC80EBEE6",ap:'5.6.7.8:5678'}
+				}
+			};
+			
+			routingmgr.mergeRoutingTable(rt);
+			
+			test.deepEqual(rt, routingmgr.routingTable);
+			test.done();
+		},
+		
+		"should merge non-empty routing table into non-empty, without replacing existing entries" : function(test) {
+			routingmgr.updateRoutingTable('F700000015254C87B81D05DA8FA49588540B1950','9.0.1.2:9012');
+			routingmgr.updateRoutingTable('C695A1A002B4482EB6D912E3E6518F5CC80EBEE6','3.4.5.6:3456');
+			var rt = {
+				"1":{
+					"7":{id:"F7DB7ACE15254C87B81D05DA8FA49588540B1950",ap:'1.2.3.4:1234'},
+					"8":{id:"F8D147A002B4482EB6D912E3E6518F5CC80EBEE6",ap:'5.6.7.8:5678'}
+				}
+			};
+			
+			routingmgr.mergeRoutingTable(rt);
+			
+			test.deepEqual({
+				"0":{
+					"C":{id:'C695A1A002B4482EB6D912E3E6518F5CC80EBEE6',ap:'3.4.5.6:3456'}
+				},
+				"1":{
+					"7":{id:"F700000015254C87B81D05DA8FA49588540B1950",ap:'9.0.1.2:9012'},
+					"8":{id:"F8D147A002B4482EB6D912E3E6518F5CC80EBEE6",ap:'5.6.7.8:5678'}
+				}
+			}, routingmgr.routingTable);
+			test.done();
+		}
+	}),
+	
 	"getting the next routing hop" : testCase({
 		setUp : function(done) {
 			routingmgr.routingTable = {};
