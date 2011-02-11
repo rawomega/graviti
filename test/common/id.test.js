@@ -1,5 +1,5 @@
 var assert = require('assert');
-var id = require('../lib/id');
+var id = require('../../lib/common/id');
 var testCase = require('nodeunit').testCase;
 
 module.exports = {

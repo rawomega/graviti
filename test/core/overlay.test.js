@@ -1,4 +1,4 @@
-var overlay = require('../lib/overlay');
+var overlay = require('../../lib/core/overlay');
 var assert = require('assert');
 var sinon = require('sinon');
 var testCase = require('nodeunit').testCase;
@@ -7,7 +7,7 @@ module.exports = {
 	"initiating a new overlay" : testCase({		
 		"should start node when starting new ring" : function(test) {
 			// setup
-			var mocknode = sinon.mock(require('../lib/node'));
+			var mocknode = sinon.mock(require('../../lib/core/node'));
 			mocknode.expects('start').withArgs(1234, "127.0.0.1");
 			
 			// act
@@ -39,7 +39,7 @@ module.exports = {
 	"joining an existing ring" : testCase({		
 		"should start node and initiate bootstrapping when joining an existing ring" : function(test) {
 			// setup
-			var mocknode = sinon.mock(require('../lib/node'));
+			var mocknode = sinon.mock(require('../../lib/core/node'));
 			mocknode.expects('start').withArgs(1234, "127.0.0.1");
 	
 			// act
@@ -54,7 +54,7 @@ module.exports = {
 	"leaving a ring" : testCase({
 		"should stop node when leaving ring" : function(test) {	
 			// setup
-			var mocknode = sinon.mock(require('../lib/node'));
+			var mocknode = sinon.mock(require('../../lib/core/node'));
 			mocknode.expects('stop');
 	
 			// act

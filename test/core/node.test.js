@@ -1,6 +1,6 @@
 var sinon = require('sinon');
 var assert = require('assert');
-var node = require('../lib/node');
+var node = require('../../lib/core/node');
 var testCase = require('nodeunit').testCase;
 var dgram = require('dgram');
 

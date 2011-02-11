@@ -1,6 +1,6 @@
-var leafsetmgr = require('../lib/leafsetmgr');
+var leafsetmgr = require('../../lib/core/leafsetmgr');
 var assert = require('assert');
-var node = require('../lib/node');
+var node = require('../../lib/core/node');
 var testCase = require('nodeunit').testCase;
 
 var anId = 'F45A18416DD849ACAA55D926C2D7946064A69EF2';

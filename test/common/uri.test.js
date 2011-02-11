@@ -1,4 +1,4 @@
-var uri = require('../lib/uri');
+var uri = require('../../lib/common/uri');
 var assert = require('assert');
 var testCase = require('nodeunit').testCase;
 

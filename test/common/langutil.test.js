@@ -1,4 +1,4 @@
-var langutil = require('../lib/langutil');
+var langutil = require('../../lib/common/langutil');
 var assert = require('assert');
 var testCase = require('nodeunit').testCase;
 
