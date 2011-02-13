@@ -2,33 +2,26 @@ var sinon = require('sinon');
 var assert = require('assert');
 var node = require('../../lib/core/node');
 var testCase = require('nodeunit').testCase;
-var dgram = require('dgram');
+var connmgr = require('../../lib/core/connmgr');
 
 module.exports = {		
 	"starting a node" : testCase({
 		setUp : function(done) {
 			var _this = this;
 		 	
-			this.rawmsg = '{"uri" : "p2p:myapp/myresource", "key" : "val"}';
-			this.rinfo = { 'address' : '127.0.0.2', 'port' : 5678 }
-			this.emit = node.emit;
-			this.svr = { on : function() {}, bind : function() {}, address : function() {} };
-			sinon.stub(this.svr, 'bind');
-			sinon.stub(this.svr, 'address').returns({address: "127.0.0.1", port: 1234});
-			sinon.stub(this.svr, 'on', function(evt, cbk) {
-				if (evt === 'listening')
-					cbk();
-				else if (evt === 'message')
-					cbk(_this.rawmsg, _this.rinfo);
+			this.msg = {"uri" : "p2p:myapp/myresource", "key" : "val"};
+			this.msginfo = {};
+			this.connmgrOn = connmgr.on;
+			sinon.stub(connmgr, 'on', function(evt, cbk) {
+				if (evt === 'message')
+					cbk(_this.msg, _this.msginfo);
 			});
-			
-			dgram.createSocket = sinon.stub().returns(this.svr);			
 
 			done();
 		},
 		
 		tearDown : function(done) {
-			node.emit = this.emit;
+			connmgr.on = this.connmgrOn;
 			done();
 		},
 	
@@ -37,71 +30,11 @@ module.exports = {
 			node.start(1234, "127.0.0.1");
 	
 			// assert		
-			test.ok(this.svr.on.calledWith('listening'));
-			test.ok(this.svr.on.calledWith('message'));
-			test.ok(this.svr.bind.calledOnce);
+			test.ok(connmgr.on.calledWith('message'));
 			test.done();
 		},
 			
-		"should handle listening event on start with callback" : function(test) {
-			// setup			
-			var success = sinon.stub();
-			
-			// act
-			node.start(1234, "127.0.0.1", { success : success } );
-			
-			// assert
-			test.ok(success.called);
-			test.done();
-		},
-	
-		"should handle unparseable message callback" : function(test) {
-			// setup		
-			this.rawmsg = 'badmsg';
-			var emit = sinon.spy();
-			node.emit = emit;
-			
-			// act
-			node.start(1234, "127.0.0.1");
-			
-			// assert
-			test.strictEqual(false, emit.called);
-			test.done();
-		},
-
-		"should throw if no uri in message" : function(test) {
-			// setup
-			this.rawmsg = '{"key" : "val"}';
-			var emit = sinon.spy();
-			node.emit = emit;
-			
-			// act
-	
-			// assert
-			assert.throws(function() {
-				node.start(1234, "127.0.0.1");
-			}, /no uri/i);
-			test.strictEqual(false, emit.called);			
-			test.done();
-		},
-		
-		"should throw if hop count over 100" : function(test) {
-			// setup
-			this.rawmsg = '{"uri" : "p2p:graviti/something", "hops" : 101}';
-			var emit = sinon.spy();
-			node.emit = emit;
-			
-			// act
-	
-			// assert
-			assert.throws(function() {
-				node.start(1234, "127.0.0.1");
-			}, /too many hops/i);
-			test.strictEqual(false, emit.called);			
-			test.done();
-		},
-		
-		"should handle parseable message callback" : function(test) {
+		"should re-emit message callback" : function(test) {
 			// setup
 			var rcvdmsg = undefined;
 			var rcvdmsginfo = undefined;
@@ -114,10 +47,8 @@ module.exports = {
 			node.start(1234, "127.0.0.1");
 	
 			// assert
-			test.strictEqual('val', rcvdmsg.key);
-			test.strictEqual('127.0.0.2', rcvdmsginfo.sender_addr);
-			test.strictEqual(5678, rcvdmsginfo.sender_port);
-			test.strictEqual('myapp', rcvdmsginfo.app_name);
+			test.deepEqual(this.msg, rcvdmsg);
+			test.deepEqual(this.msginfo, rcvdmsginfo);
 			test.done();
 		}
 	}),
@@ -126,14 +57,11 @@ module.exports = {
 		"should send with hop zero" : function(test) {
 			// setup
 			var msg = {"key" : "val"};
-			node.server = {send : function() {}};
-			var send = sinon.stub(node.server, 'send', function(buf, offset, len, port, addr) {
-				test.ok(buf !== null);
-				test.strictEqual(0, JSON.parse(buf).hops);
-				test.strictEqual(0, offset);
-				test.strictEqual(len, buf.length);
-				test.strictEqual(port, 2222);
-				test.strictEqual('1.1.1.1', addr);
+			connmgr.send = function() {};
+			var send = sinon.stub(connmgr, 'send', function(port, host, data) {
+				test.deepEqual(JSON.stringify(msg), data);
+				test.strictEqual(2222, port);
+				test.strictEqual('1.1.1.1', host);
 			});
 	
 			// act
@@ -147,9 +75,9 @@ module.exports = {
 		"should increment hop count when sending" : function(test) {
 			// setup
 			var msg = {key : "val", hops : 11};
-			node.server = {send : function() {}};
-			var send = sinon.stub(node.server, 'send', function(buf, offset, len, port, addr) {
-				test.strictEqual(12, JSON.parse(buf).hops);				
+			connmgr.send = function() {};
+			var send = sinon.stub(connmgr, 'send', function(port, host, data) {
+				test.strictEqual(12, JSON.parse(data).hops);				
 			});
 	
 			// act
@@ -164,14 +92,16 @@ module.exports = {
 	"stopping a node" : testCase ({
 		"should stop" : function(test) {
 			// setup
-			node.server = {close : function() {}};
-			var close = sinon.stub(node.server, "close");
+			var close = sinon.stub(connmgr, "close", function() {
+				connmgr.emit('close');
+			});
 	
 			// act
 			node.stop();
 	
 			// assert
 			test.ok(close.called);
+			test.strictEqual(undefined, node.nodeId);
 			test.done();
 		}
 	})
