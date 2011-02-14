@@ -92,7 +92,7 @@ module.exports = {
 	"stopping a node" : testCase ({
 		"should stop" : function(test) {
 			// setup
-			var close = sinon.stub(connmgr, "close", function() {
+			var close = sinon.stub(connmgr, "stopListening", function() {
 				connmgr.emit('close');
 			});
 	
