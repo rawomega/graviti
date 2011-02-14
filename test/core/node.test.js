@@ -1,8 +1,8 @@
 var sinon = require('sinon');
 var assert = require('assert');
 var node = require('../../lib/core/node');
-var testCase = require('nodeunit').testCase;
 var connmgr = require('../../lib/core/connmgr');
+var testCase = require('nodeunit').testCase;
 
 module.exports = {		
 	"starting a node" : testCase({
