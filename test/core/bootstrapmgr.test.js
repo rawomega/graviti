@@ -11,8 +11,12 @@ module.exports = {
 		setUp : function(done) {
 			node.nodeId = '1234';
 			this.overlayCallback = { on : function() {}, sendToAddr : function() {} };
-			this.on = sinon.stub(this.overlayCallback, 'on');
-			
+			this.on = sinon.collection.stub(this.overlayCallback, 'on');
+			done();
+		},
+		
+		tearDown : function(done) {
+			sinon.collection.restore();
 			done();
 		},
 		
@@ -25,7 +29,7 @@ module.exports = {
 		},
 		
 		"bootstrap manager for node joining a ring should initiate sending of bootstrap requests" : function(test) {
-			var sendToAddr = sinon.stub(this.overlayCallback, 'sendToAddr');
+			var sendToAddr = sinon.collection.stub(this.overlayCallback, 'sendToAddr');
 			bootstrapmgr.pendingRequestCheckIntervalMsec = 50;
 			
 			bootstrapmgr.start(this.overlayCallback, '1.2.3.4:1234,5.6.7.8:5678,myhost:8888');
@@ -56,7 +60,7 @@ module.exports = {
 			}, 200);
 		}
 	}),
-	
+
 	"handling bootstrap requests" : testCase ({
 		setUp : function(done) {
 			node.nodeId = '1234';
@@ -66,18 +70,23 @@ module.exports = {
 			};
 			
 			leafsetmgr.leafset = {};
-			leafsetmgr.updateLeafset = function() {};
-			this.updateLeafset = sinon.stub(leafsetmgr, 'updateLeafset');
+			this.updateLeafset = sinon.collection.stub(leafsetmgr, 'updateLeafset');
 			
 			routingmgr.routingTable = {};
-			routingmgr.updateRoutingTable = function() {};
-			this.updateRoutingTable = sinon.stub(routingmgr, 'updateRoutingTable');
+			this.updateRoutingTable = sinon.collection.stub(routingmgr, 'updateRoutingTable');
 			
 			this.overlayCallback = langutil.extend(new events.EventEmitter(), { sendToAddr : function() {}, send : function() {} });
-			this.sendToAddr = sinon.stub(this.overlayCallback, 'sendToAddr');
-			this.send = sinon.stub(this.overlayCallback, 'send');
+			this.sendToAddr = sinon.collection.stub(this.overlayCallback, 'sendToAddr');
+			this.send = sinon.collection.stub(this.overlayCallback, 'send');
 			bootstrapmgr.overlayCallback = this.overlayCallback;
 		
+			done();
+		},
+		
+		tearDown : function(done) {
+			sinon.collection.restore();
+			leafsetmgr.leafset = {};
+			routingmgr.routingTable = {};
 			done();
 		},
 		
@@ -199,7 +208,7 @@ module.exports = {
 			test.done();
 		}
 	}),
-	
+
 	"handling bootstrap responses" : testCase ({
 		setUp : function(done) {
 			node.nodeId = '1234';
@@ -210,17 +219,18 @@ module.exports = {
 				sender_port : 2222
 			};
 	
-			leafsetmgr.updateLeafset = function() {};
-			this.updateLeafset = sinon.stub(leafsetmgr, 'updateLeafset');
-			
-			routingmgr.updateRoutingTable = function() {};
-			routingmgr.mergeRoutingTable = function() {};
-			this.updateRoutingTable = sinon.stub(routingmgr, 'updateRoutingTable');
-			this.mergeRoutingTable = sinon.stub(routingmgr, 'mergeRoutingTable');
+			this.updateLeafset = sinon.collection.stub(leafsetmgr, 'updateLeafset');		
+			this.updateRoutingTable = sinon.collection.stub(routingmgr, 'updateRoutingTable');
+			this.mergeRoutingTable = sinon.collection.stub(routingmgr, 'mergeRoutingTable');
 	
 			this.overlayCallback = new events.EventEmitter();
 			bootstrapmgr.overlayCallback = this.overlayCallback;
 			
+			done();
+		},
+		
+		tearDown : function(done) {
+			sinon.collection.restore();
 			done();
 		},
 		

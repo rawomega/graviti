@@ -12,7 +12,7 @@ module.exports = {
 			this.msg = {"uri" : "p2p:myapp/myresource", "key" : "val"};
 			this.msginfo = {};
 			this.connmgrOn = connmgr.on;
-			sinon.stub(connmgr, 'on', function(evt, cbk) {
+			sinon.collection.stub(connmgr, 'on', function(evt, cbk) {
 				if (evt === 'message')
 					cbk(_this.msg, _this.msginfo);
 			});
@@ -21,7 +21,7 @@ module.exports = {
 		},
 		
 		tearDown : function(done) {
-			connmgr.on = this.connmgrOn;
+			sinon.collection.restore();
 			done();
 		},
 	
@@ -54,11 +54,16 @@ module.exports = {
 	}),
 	
 	"message sending" : testCase({
+		tearDown : function(done) {
+			sinon.collection.restore();
+			done();
+		},
+		
 		"should send with hop zero" : function(test) {
 			// setup
 			var msg = {"key" : "val"};
 			connmgr.send = function() {};
-			var send = sinon.stub(connmgr, 'send', function(port, host, data) {
+			var send = sinon.collection.stub(connmgr, 'send', function(port, host, data) {
 				test.deepEqual(JSON.stringify(msg), data);
 				test.strictEqual(2222, port);
 				test.strictEqual('1.1.1.1', host);
@@ -76,7 +81,7 @@ module.exports = {
 			// setup
 			var msg = {key : "val", hops : 11};
 			connmgr.send = function() {};
-			var send = sinon.stub(connmgr, 'send', function(port, host, data) {
+			var send = sinon.collection.stub(connmgr, 'send', function(port, host, data) {
 				test.strictEqual(12, JSON.parse(data).hops);				
 			});
 	
@@ -90,9 +95,14 @@ module.exports = {
 	}),
 	
 	"stopping a node" : testCase ({
+		tearDown : function(done) {
+			sinon.collection.restore();
+			done();
+		},
+		
 		"should stop" : function(test) {
 			// setup
-			var close = sinon.stub(connmgr, "stopListening", function() {
+			var close = sinon.collection.stub(connmgr, "stopListening", function() {
 				connmgr.emit('close');
 			});
 	

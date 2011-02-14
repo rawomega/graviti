@@ -12,18 +12,22 @@ module.exports = {
 			this.rawmsg = '{"uri" : "p2p:myapp/myresource", "key" : "val"}';
 			
 			this.server = langutil.extend(new events.EventEmitter(), {listen : function() {}, close : function() {}});
-			sinon.stub(this.server, 'listen');
+			sinon.collection.stub(this.server, 'listen');
 
 			this.socket = langutil.extend(new events.EventEmitter(), {remoteAddress : '6.6.6.6'});
+						
+			sinon.collection.stub(net, 'createServer').returns(this.server);
 			
-			net.createServer = function() {};			
-			sinon.stub(net, 'createServer').returns(this.server);
-			
+			done();
+		},
+		
+		tearDown : function(done) {
+			sinon.collection.restore();
 			done();
 		},
 	
 		"should start to listen normally" : function(test) {
-			var on = sinon.stub(this.server, 'on');
+			var on = sinon.collection.stub(this.server, 'on');
 			
 			connmgr.listen(1234, "127.0.0.1");
 	
@@ -155,13 +159,18 @@ module.exports = {
 			this.client = langutil.extend(new events.EventEmitter(), { write : function() {}, setEncoding : function() {} } );
 			
 			net.createConnection = function () {};
-			sinon.stub(net, 'createConnection').returns(this.client);
+			sinon.collection.stub(net, 'createConnection').returns(this.client);
+			done();
+		},
+		
+		tearDown : function(done) {
+			sinon.collection.restore();
 			done();
 		},
 		
 		"should establish connection and send" : function(test) {
-			var setEncoding = sinon.stub(this.client, 'setEncoding');
-			var write = sinon.stub(this.client, 'write');
+			var setEncoding = sinon.collection.stub(this.client, 'setEncoding');
+			var write = sinon.collection.stub(this.client, 'write');
 			
 			connmgr.send(2222, "1.1.1.1", this.rawmsg);
 			this.client.emit('connect');
@@ -188,11 +197,16 @@ module.exports = {
 		}
 	}),
 	
-	"stopping the listener" : testCase ({
+	"stopping the listener" : testCase ({		
+		tearDown : function(done) {
+			sinon.collection.restore();
+			done();
+		},
+		
 		"should stop listening" : function(test) {
 			// setup
 			connmgr.server = {close : function() {}};
-			var close = sinon.stub(connmgr.server, "close");
+			var close = sinon.collection.stub(connmgr.server, "close");
 	
 			// act
 			connmgr.stopListening();

@@ -15,7 +15,6 @@ var slightlyLessNearEdgeId= 'FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFC';
 
 module.exports = {
 	"finding nearest id in ring" : testCase({
-		
 		"should find no nearest id when id set undefined" : function(test) {
 			test.strictEqual(undefined, ringutil.getNearestId(anId, undefined).nearest);
 			test.done();

@@ -19,24 +19,7 @@ module.exports = {
 		}
 	}),
 
-// todo: move these to bootstrapper
-/*	
-	shouldFailToStartWhenBootstrapListMissing : function() {
-		assert.throws(function() {
-		            overlay.join(123, 'abc');
-		    }, /bootstrap list/
-		);
-	},
-	
-	shouldFailToStartWhenBootstrapListEmpty : function() {
-		assert.throws(function() {
-		            overlay.join(123, 'abc', '');
-		    }, /bootstrap list/
-		);
-	},
-*/	
-
-	"joining an existing ring" : testCase({		
+ 	"joining an existing ring" : testCase({		
 		"should start node and initiate bootstrapping when joining an existing ring" : function(test) {
 			// setup
 			var mocknode = sinon.mock(require('../../lib/core/node'));
