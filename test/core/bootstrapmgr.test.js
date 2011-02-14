@@ -104,6 +104,7 @@ module.exports = {
 
 			// assert no call to send
 			test.ok(!this.send.called);
+			
 			// assert on response
 			test.strictEqual(this.sendToAddr.args[0][0], 'p2p:graviti/statetables');
 			test.deepEqual(this.sendToAddr.args[0][1], 	{
@@ -119,6 +120,7 @@ module.exports = {
 			});
 			test.strictEqual(this.sendToAddr.args[0][3], '2.2.2.2');
 			test.strictEqual(this.sendToAddr.args[0][4], 	2222);
+			
 			// assert on state table updates
 			test.ok(this.updateLeafset.calledWith('ABCDEF', '2.2.2.2:2222'));
 			test.ok(this.updateRoutingTable.calledWith('ABCDEF', '2.2.2.2:2222'));
@@ -151,6 +153,7 @@ module.exports = {
 					method : 'GET',
 					dest_id : 'ABCDEF'
 			});
+			
 			// assert on response
 			test.strictEqual(this.sendToAddr.args[0][0], 'p2p:graviti/statetables');
 			test.deepEqual(this.sendToAddr.args[0][1], 	{
@@ -165,6 +168,7 @@ module.exports = {
 			});
 			test.strictEqual(this.sendToAddr.args[0][3], '3.3.3.3');
 			test.strictEqual(this.sendToAddr.args[0][4], 3333);
+			
 			// assert on state table updates
 			test.ok(this.updateLeafset.calledWith('ABCDEF', '3.3.3.3:3333'));
 			test.ok(this.updateRoutingTable.calledWith('ABCDEF', '3.3.3.3:3333'));
@@ -187,6 +191,7 @@ module.exports = {
 			
 			// assert no call to send
 			test.ok(!this.send.called);
+			
 			// assert on response
 			test.strictEqual(this.sendToAddr.args[0][0], 'p2p:graviti/statetables');
 			test.deepEqual(this.sendToAddr.args[0][1], 	{
@@ -202,6 +207,7 @@ module.exports = {
 			});
 			test.strictEqual(this.sendToAddr.args[0][3], '3.3.3.3');
 			test.strictEqual(this.sendToAddr.args[0][4], 3333);
+			
 			// assert on state table updates
 			test.ok(this.updateLeafset.calledWith('ABCDEF', '3.3.3.3:3333'));
 			test.ok(this.updateRoutingTable.calledWith('ABCDEF', '3.3.3.3:3333'));
