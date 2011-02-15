@@ -8,3 +8,4 @@ npm@0.2.15                A package manager for node    =isaacs active installed
 opts@1.2.1                Command line argument parser written in the style of commonjs. To be used with node.js    =mazzarelli active installed latest remote
 request@1.2.0             Simplified HTTP request client.    =mikeal active installed remote
 sinon@1.0.1               JavaScript test spies, stubs and mocks.    =cjohansen =seeflanigan active installed latest remote
+sinon-nodeunit@0.1.1      nodeunit adapter for Sinon.JS: JavaScript test spies, stubs and mocks.    =cjohansen active installed latest remote

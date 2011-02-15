@@ -1,9 +1,9 @@
 var assert = require('assert');
 var routingmgr = require('../../lib/core/routingmgr');
-var testCase = require('nodeunit').testCase;
 var node = require('../../lib/core/node');
 var sinon = require('sinon');
 var leafsetmgr = require('../../lib/core/leafsetmgr');
+var testCase = require("nodeunit").testCase;
 
 var anId = 'F45A18416DD849ACAA55D926C2D7946064A69EF2';
 var higherId = 'F7DB7ACE15254C87B81D05DA8FA49588540B1950';
@@ -28,7 +28,7 @@ module.exports = {
 			test.equal(0, Object.keys(routingmgr.routingTable).length);
 			test.done();
 		},
-		
+
 		"update empty routing table with an id with no bits in common" : function(test) {
 			routingmgr.updateRoutingTable('0F5147A002B4482EB6D912E3E6518F5CC80EBEE6', '1.2.3.4:1234');
 			
@@ -107,7 +107,7 @@ module.exports = {
 		}
 	}),
 
-	"merging another routing table into our one" : testCase({
+	"merging another routing table into our one" : sinon.testCase({
 		setUp : function(done) {
 			routingmgr.routingTable = {};
 			node.nodeId = anId;
@@ -160,7 +160,7 @@ module.exports = {
 		}
 	}),
 	
-	"getting the next routing hop" : testCase({
+	"getting the next routing hop" : sinon.testCase({
 		setUp : function(done) {
 			routingmgr.routingTable = {};
 			leafsetmgr.leafset = {};
@@ -174,7 +174,7 @@ module.exports = {
 		},
 		
 		"when we can route based on the leafset, just use that" : function(test) {
-			leafsetmgr.getRoutingHop = sinon.collection.stub().returns({
+			sinon.collection.stub(leafsetmgr, 'getRoutingHop').returns({
 				id : 'F7DB7ACE15254C87B81D05DA8FA49588540B1950'
 			});
 			
@@ -185,7 +185,7 @@ module.exports = {
 		},
 		
 		"routing via empty routing table should return self" : function(test) {
-			leafsetmgr.getRoutingHop = sinon.collection.stub().returns(undefined);
+			sinon.collection.stub(leafsetmgr, 'getRoutingHop').returns(undefined);
 			
 			var res = routingmgr.getNextHop('F7DB7ACE15254C87B81D05DA8FA49588540B1950');
 		
@@ -196,7 +196,7 @@ module.exports = {
 		},
 		
 		"routing via routing table with exact match should return that match" : function(test) {
-			leafsetmgr.getRoutingHop = sinon.collection.stub().returns(undefined);
+			sinon.collection.stub(leafsetmgr, 'getRoutingHop').returns(undefined);
 			routingmgr.updateRoutingTable('F7DB7ACE15254C87B81D05DA8FA49588540B1950', '1.1.1.1:1111');
 
 			var res = routingmgr.getNextHop('F7DB7ACE15254C87B81D05DA8FA49588540B1950');
@@ -217,7 +217,7 @@ module.exports = {
 		},
 		
 		"routing via routing table with irrelevant entry should return self" : function(test) {
-			leafsetmgr.getRoutingHop = sinon.collection.stub().returns(undefined);
+			sinon.collection.stub(leafsetmgr, 'getRoutingHop').returns(undefined);
 			routingmgr.updateRoutingTable(  'F78147A002B4482EB6D912E3E6518F5CC80EBEE6', '1.1.1.1:1111');
 			
 			var res = routingmgr.getNextHop('355607ACE1254C87B81D05DA8FA49588540B1950');
@@ -229,7 +229,7 @@ module.exports = {
 		},
 		
 		"routing via routing table to id with no common prefix w/node id should return closest entry" : function(test) {
-			leafsetmgr.getRoutingHop = sinon.collection.stub().returns(undefined);
+			sinon.collection.stub(leafsetmgr, 'getRoutingHop').returns(undefined);
 			routingmgr.updateRoutingTable(  'A78147A002B4482EB6D912E3E6518F5CC80EBEE6', '1.1.1.1:1111');
 
 			var res = routingmgr.getNextHop('A45607ACE1254C87B81D05DA8FA49588540B1950');
@@ -241,7 +241,7 @@ module.exports = {
 		},
 		
 		"routing via routing table with relevant next hop entry should return that entry" : function(test) {
-			leafsetmgr.getRoutingHop = sinon.collection.stub().returns(undefined);
+			sinon.collection.stub(leafsetmgr, 'getRoutingHop').returns(undefined);
 			routingmgr.updateRoutingTable(  'F456337A002B4482EB6D912E3E6518F5CC80EBE6', '1.1.1.1:1111');
 
 			var res = routingmgr.getNextHop('F45607ACE1254C87B81D05DA8FA49588540B1950');
@@ -253,7 +253,7 @@ module.exports = {
 		},
 		
 		"routing via routing table w/o relevant next hop entry returns closest entry from [leafset, routingtable] when closest entry is in same row of routing table" : function(test) {
-			leafsetmgr.getRoutingHop = sinon.collection.stub().returns(undefined);
+			sinon.collection.stub(leafsetmgr, 'getRoutingHop').returns(undefined);
 			routingmgr.updateRoutingTable(  'F756337A002B4482EB6D912E3E6518F5CC80EBE6', '1.1.1.1:1111');
 
 			var res = routingmgr.getNextHop('F78607ACE1254C87B81D05DA8FA49588540B1950');
@@ -265,7 +265,7 @@ module.exports = {
 		},
 		
 		"routing via routing table w/o relevant next hop entry returns closest entry from [leafset, routingtable] when closest entry is in previous row of routing table" : function(test) {
-			leafsetmgr.getRoutingHop = sinon.collection.stub().returns(undefined);
+			sinon.collection.stub(leafsetmgr, 'getRoutingHop').returns(undefined);
 			routingmgr.updateRoutingTable(  'EFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF', '1.1.1.1:1111');
 
 			var res = routingmgr.getNextHop('F08607ACE1254C87B81D05DA8FA49588540B1950');
@@ -277,7 +277,7 @@ module.exports = {
 		},
 		
 		"routing via routing table w/o relevant next hop entry returns closest entry from [leafset, routingtable] when no previous row in routing table" : function(test) {
-			leafsetmgr.getRoutingHop = sinon.collection.stub().returns(undefined);
+			sinon.collection.stub(leafsetmgr, 'getRoutingHop').returns(undefined);
 			routingmgr.updateRoutingTable(  'EFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF', '1.1.1.1:1111');
 
 			var res = routingmgr.getNextHop('DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD');
@@ -289,7 +289,7 @@ module.exports = {
 		},
 		
 		"routing via routing table w/o relevant next hop entry returns closest entry from [leafset, routingtable] when closest entry is in leafset" : function(test) {
-			leafsetmgr.getRoutingHop = sinon.collection.stub().returns(undefined);
+			sinon.collection.stub(leafsetmgr, 'getRoutingHop').returns(undefined);
 			leafsetmgr.leafset = {'EFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF' : '1.2.3.4:1234', 'FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF' : '5.6.7.8:5678'}
 			routingmgr.updateRoutingTable(  'EFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF', '1.2.3.4:1234');
 
@@ -303,7 +303,7 @@ module.exports = {
 		
 		"routing via routing table  and leafset with multiple 'contrived' entries should route correctly" : function(test) {
 			node.nodeId = '1111111111111111111111111111111111111111';
-			leafsetmgr.getRoutingHop = sinon.collection.stub().returns(undefined);
+			sinon.collection.stub(leafsetmgr, 'getRoutingHop').returns(undefined);
 			leafsetmgr.leafset = {'EFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF' : '1.2.3.4:1234', 'FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF' : '5.6.7.8:5678'}
 			routingmgr.updateRoutingTable(  'EFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF', '1.2.3.4:1234');
 			routingmgr.updateRoutingTable(  '1000000000000000000000000000000000000000', '1.1.1.1:1111');
