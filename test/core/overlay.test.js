@@ -15,6 +15,7 @@ module.exports = {
 			this.nodeStart = sinon.collection.stub(node, 'start', function(a, b, opt) {
 				opt.success();
 			});
+			this.nodeOn = sinon.collection.stub(node, 'on');
 			this.bootstrapStart = sinon.collection.stub(bootstrapmgr, 'start');
 			this.callback = sinon.stub();
 			done();
@@ -29,6 +30,7 @@ module.exports = {
 			overlay.init(1234, "127.0.0.1", this.callback);
 				
 			test.ok(this.nodeStart.calledWith(1234, "127.0.0.1"));
+			test.ok(this.nodeOn.calledWith('message', overlay._processMessage));
 			test.ok(this.bootstrapStart.calledWith(overlay));
 			test.ok(this.callback.called);
 			test.done();
@@ -39,6 +41,7 @@ module.exports = {
 			overlay.emit('bootstrap-completed');
 			
 			test.ok(this.nodeStart.calledWith(1234, "127.0.0.1"));
+			test.ok(this.nodeOn.calledWith('message', overlay._processMessage));
 			test.ok(this.bootstrapStart.calledWith(overlay, '127.0.0.1:4567'));
 			test.ok(this.callback.called);
 			test.done();
@@ -153,6 +156,99 @@ module.exports = {
 			test.ok(!this.appForwarding.called);
 			test.deepEqual(this.appReceived.args[0][0], this.msg);
 			test.deepEqual(this.appReceived.args[0][1], { app_name : 'myapp' });
+			test.done();
+		}
+	}),
+	
+	"handling of received messages" : testCase({
+		setUp : function(done) {
+			node.nodeId = 'ABCD';
+			this.send = sinon.collection.stub(node, 'send');
+			this.appForwarding = sinon.stub();
+			this.appReceived = sinon.stub();
+			this.gravitiForwarding = sinon.stub();
+			this.gravitiReceived = sinon.stub();
+			this.msg = { dest_id : 'FEED', he : 'llo'};
+			this.msginfo = {
+					app_name : 'myapp'					
+			};
+
+			overlay.on('myapp-app-message-forwarding', this.appForwarding);
+			overlay.on('myapp-app-message-received', this.appReceived);
+			overlay.on('graviti-message-forwarding', this.gravitiForwarding);
+			overlay.on('graviti-message-received', this.gravitiReceived);
+
+			sinon.collection.stub(routingmgr, 'getNextHop').returns({
+				id : 'CDEF',
+				addr : '5.5.5.5',
+				port : 5555
+			});
+			
+			done();
+		},
+		
+		tearDown : function(done) {
+			sinon.collection.restore();
+			done();
+		},
+		
+		"handle message destined for an app on this node" : function(test) {
+			sinon.collection.stub(ringutil, 'amINearest').returns(true);
+			
+			overlay._processMessage(this.msg, this.msginfo);
+			
+			test.deepEqual(this.appReceived.args[0][0], this.msg);
+			test.deepEqual(this.appReceived.args[0][1], this.msginfo);
+			test.ok(!this.appForwarding.called);
+			test.ok(!this.gravitiForwarding.called);
+			test.ok(!this.gravitiReceived.called);
+			test.done();
+		},
+		
+		"handle message destined for graviti on this node" : function(test) {
+			sinon.collection.stub(ringutil, 'amINearest').returns(true);
+			this.msginfo.app_name = 'graviti';
+			
+			overlay._processMessage(this.msg, this.msginfo);
+			
+			test.deepEqual(this.gravitiReceived.args[0][0], this.msg);
+			test.deepEqual(this.gravitiReceived.args[0][1], this.msginfo);
+			test.ok(!this.appForwarding.called);
+			test.ok(!this.appReceived.called);
+			test.ok(!this.gravitiForwarding.called);
+			test.done();
+		},
+		
+		"handle message destined for an app on another node" : function(test) {
+			sinon.collection.stub(ringutil, 'amINearest').returns(false);
+			
+			overlay._processMessage(this.msg, this.msginfo);
+			
+			test.strictEqual(this.send.args[0][0], '5.5.5.5');
+			test.strictEqual(this.send.args[0][1], 5555);		
+			test.deepEqual(this.send.args[0][2], this.msg);
+			test.deepEqual(this.appForwarding.args[0][0], this.msg);
+			test.deepEqual(this.appForwarding.args[0][1], this.msginfo);
+			test.ok(!this.appReceived.called);
+			test.ok(!this.gravitiForwarding.called);
+			test.ok(!this.gravitiReceived.called);
+			test.done();
+		},
+		
+		"handle message destined for graviti on another node" : function(test) {
+			sinon.collection.stub(ringutil, 'amINearest').returns(false);
+			this.msginfo.app_name = 'graviti';
+			
+			overlay._processMessage(this.msg, this.msginfo);
+			
+			test.strictEqual(this.send.args[0][0], '5.5.5.5');
+			test.strictEqual(this.send.args[0][1], 5555);		
+			test.deepEqual(this.send.args[0][2], this.msg);
+			test.deepEqual(this.gravitiForwarding.args[0][0], this.msg);
+			test.deepEqual(this.gravitiForwarding.args[0][1], this.msginfo);
+			test.ok(!this.appReceived.called);
+			test.ok(!this.appForwarding.called);
+			test.ok(!this.gravitiReceived.called);
 			test.done();
 		}
 	}),
