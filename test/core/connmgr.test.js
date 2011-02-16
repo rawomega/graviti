@@ -2,8 +2,8 @@ var sinon = require('sinon');
 var assert = require('assert');
 var events = require('events');
 var net = require('net');
-var langutil = require('../../lib/common/langutil');
-var connmgr = require('../../lib/core/connmgr');
+var langutil = require('common/langutil');
+var connmgr = require('core/connmgr');
 var testCase = require('nodeunit').testCase;
 
 module.exports = {		

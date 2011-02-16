@@ -1,8 +1,8 @@
 var assert = require('assert');
-var routingmgr = require('../../lib/core/routingmgr');
-var node = require('../../lib/core/node');
 var sinon = require('sinon');
-var leafsetmgr = require('../../lib/core/leafsetmgr');
+var routingmgr = require('core/routingmgr');
+var node = require('core/node');
+var leafsetmgr = require('core/leafsetmgr');
 var testCase = require("nodeunit").testCase;
 
 var anId = 'F45A18416DD849ACAA55D926C2D7946064A69EF2';

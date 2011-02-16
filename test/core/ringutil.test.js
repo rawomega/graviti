@@ -1,6 +1,6 @@
-var ringutil = require('../../lib/core/ringutil');
 var assert = require('assert');
-var bigint = require('../../lib/thirdparty/bigint');
+var ringutil = require('core/ringutil');
+var bigint = require('thirdparty/bigint');
 var testCase = require('nodeunit').testCase;
 
 var anId = 'F45A18416DD849ACAA55D926C2D7946064A69EF2';

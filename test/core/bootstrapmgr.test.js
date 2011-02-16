@@ -1,9 +1,9 @@
 var sinon = require('sinon');
-var bootstrapmgr = require('../../lib/core/bootstrapmgr');
-var langutil = require('../../lib/common/langutil');
-var node = require('../../lib/core/node');
-var leafsetmgr = require('../../lib/core/leafsetmgr');
-var routingmgr = require('../../lib/core/routingmgr');
+var bootstrapmgr = require('core/bootstrapmgr');
+var langutil = require('common/langutil');
+var node = require('core/node');
+var leafsetmgr = require('core/leafsetmgr');
+var routingmgr = require('core/routingmgr');
 var testCase = require('nodeunit').testCase;
 
 module.exports = {

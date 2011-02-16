@@ -1,13 +1,13 @@
 var assert = require('assert');
 var sinon = require('sinon');
 var testCase = require('nodeunit').testCase;
-var node = require('../../lib/core/node');
-var ringutil= require('../../lib/core/ringutil');
-var routingmgr = require('../../lib/core/routingmgr');
-var id = require('../../lib/common/id');
-var uri = require('../../lib/common/uri');
-var bootstrapmgr = require('../../lib/core/bootstrapmgr');
-var overlay = require('../../lib/core/overlay');
+var node = require('core/node');
+var ringutil= require('core/ringutil');
+var routingmgr = require('core/routingmgr');
+var id = require('common/id');
+var uri = require('common/uri');
+var bootstrapmgr = require('core/bootstrapmgr');
+var overlay = require('core/overlay');
 
 module.exports = {
 	"staring and joining an overlay" : testCase({

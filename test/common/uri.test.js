@@ -1,5 +1,5 @@
-var uri = require('../../lib/common/uri');
 var assert = require('assert');
+var uri = require('common/uri');
 var testCase = require('nodeunit').testCase;
 
 module.exports = {

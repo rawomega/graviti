@@ -1,7 +1,7 @@
 var sinon = require('sinon');
 var assert = require('assert');
-var node = require('../../lib/core/node');
-var connmgr = require('../../lib/core/connmgr');
+var node = require('core/node');
+var connmgr = require('core/connmgr');
 var testCase = require('nodeunit').testCase;
 
 module.exports = {		
