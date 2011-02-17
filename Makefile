@@ -3,6 +3,8 @@ all: clean lint coverage npm-deps
 .PHONY: test
 .PHONY: npm-deps
 
+export NODE_PATH = ./lib:./apps
+
 clean:
 	-rm -rf build
 
@@ -20,6 +22,7 @@ coverage: lint
 	#cp -R lib/thirdparty build/lib-cov
 	#expresso -q -I builnd/lib-cov
 	#awaiting nodeunit coverage integration
+	echo ${NODE_PATH}
 	nodeunit test/common test/core
 
 npm-deps:
