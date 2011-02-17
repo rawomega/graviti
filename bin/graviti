@@ -3,4 +3,3 @@ BASEDIR="$( cd "$( dirname "$0" )" && pwd )/.."
 export NODE_PATH=$BASEDIR/lib:$BASEDIR/apps
 
 node $BASEDIR/lib/main.js "$@"
-
