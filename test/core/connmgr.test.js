@@ -156,7 +156,7 @@ module.exports = {
 	"message sending" : testCase({
 		setUp : function(done) {
 			this.rawmsg = '{"key" : "val"}';
-			this.client = langutil.extend(new events.EventEmitter(), { write : function() {}, setEncoding : function() {} } );
+			this.client = langutil.extend(new events.EventEmitter(), { write : function() {}, end : function() {}, setEncoding : function() {} } );
 			
 			net.createConnection = function () {};
 			sinon.collection.stub(net, 'createConnection').returns(this.client);
@@ -170,13 +170,17 @@ module.exports = {
 		
 		"should establish connection and send" : function(test) {
 			var setEncoding = sinon.collection.stub(this.client, 'setEncoding');
-			var write = sinon.collection.stub(this.client, 'write');
+			var write = sinon.collection.stub(this.client, 'write', function(data, enc, cbk) {
+				cbk();
+			});
+			var end = sinon.collection.stub(this.client, 'end');
 			
 			connmgr.send(2222, "1.1.1.1", this.rawmsg);
 			this.client.emit('connect');
 	
 			test.ok(setEncoding.calledWith('UTF-8'));
 			test.ok(write.calledWith(this.rawmsg, 'UTF8'));
+			test.ok(end.called);
 			test.done();
 		},
 	
