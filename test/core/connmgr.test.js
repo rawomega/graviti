@@ -176,7 +176,7 @@ module.exports = {
 			this.client.emit('connect');
 	
 			test.ok(setEncoding.calledWith('UTF-8'));
-			test.ok(write.calledWith(this.rawmsg));
+			test.ok(write.calledWith(this.rawmsg, 'UTF8'));
 			test.done();
 		},
 	
@@ -184,7 +184,7 @@ module.exports = {
 			connmgr.send(2222, "1.1.1.1", this.rawmsg);
 			this.client.emit('close');
 	
-			// for now we just log
+			// for now we don't do anything
 			test.done();
 		},
 		
