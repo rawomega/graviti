@@ -26,16 +26,24 @@ module.exports = {
 		},
 	
 		"should start normally" : function(test) {
-			// act
 			node.start(1234, "127.0.0.1");
 	
-			// assert		
 			test.ok(connmgr.on.calledWith('message'));
+			test.ok(node.nodeId !== undefined);
+			test.done();
+		},
+		
+		"should not set nodeid if already set (to allow node id injection)" : function(test) {
+			node.nodeId = 'FACE'
+			
+			node.start(1234, "127.0.0.1");
+	
+			test.ok(connmgr.on.calledWith('message'));
+			test.ok(node.nodeId === 'FACE');
 			test.done();
 		},
 			
 		"should re-emit message callback" : function(test) {
-			// setup
 			var rcvdmsg = undefined;
 			var rcvdmsginfo = undefined;
 			node.on("message", function(msg, msginfo) {
@@ -43,10 +51,8 @@ module.exports = {
 				rcvdmsginfo = msginfo
 			});
 	
-			// act
 			node.start(1234, "127.0.0.1");
 	
-			// assert
 			test.deepEqual(this.msg, rcvdmsg);
 			test.deepEqual(this.msginfo, rcvdmsginfo);
 			test.done();
