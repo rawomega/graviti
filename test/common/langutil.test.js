@@ -30,6 +30,36 @@ module.exports = {
 			test.done();
 		},
 		
+		"should retain function" : function(test) {
+			var res = langutil.extend(
+					{a:"b", f: function(){return 3;}},
+					{c:"d"}
+			);
+			
+			test.equal(3, res.f());
+			test.done();
+		},
+		
+		"should replace function" : function(test) {
+			var res = langutil.extend(
+					{a:"b", f: function(){return 3;}},
+					{c:"d", f: function(){return 4;}}
+			);
+			
+			test.equal(4, res.f());
+			test.done();
+		},
+		
+		"should add function" : function(test) {
+			var res = langutil.extend(
+					{a:"b"},
+					{c:"d", f: function(){return 5;}}
+			);
+			
+			test.equal(5, res.f());
+			test.done();
+		},
+		
 		"should override existing object" : function(test) {
 			test.deepEqual(
 					{a: {nested: true}, b:"c", x:"y"},
