@@ -1,4 +1,4 @@
-all: clean lint coverage npm-deps
+all: clean lint test integration npm-deps
 
 .PHONY: test
 .PHONY: npm-deps
@@ -15,15 +15,17 @@ test: lint
 	-mkdir -p build
 	nodeunit test/common test/core
 
-coverage: lint
-	-rm -rf build/lib-cov
-	mkdir -p build
+#coverage: lint
+#	-rm -rf build/lib-cov
+#	mkdir -p build
 	#node-jscoverage lib/ build/lib-cov  --exclude thirdparty
 	#cp -R lib/thirdparty build/lib-cov
 	#expresso -q -I builnd/lib-cov
 	#awaiting nodeunit coverage integration
-	echo ${NODE_PATH}
-	nodeunit test/common test/core
+#	nodeunit test/common test/core
+
+integration: lint
+	nodeunit test/integration	
 
 npm-deps:
 	-npm ls installed > npm-deps
