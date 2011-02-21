@@ -14,6 +14,10 @@ module.exports = {
 			this.nodes = multinode.start({
 				node_ids : this.nodeIds
 			});
+			this.getLeafsetSize = function() {
+				return Object.keys(require('core/leafsetmgr').leafset).length;
+			};
+
 			done();
 		},
 		
@@ -24,9 +28,6 @@ module.exports = {
 
 		"should populate leafsets after bootstrapping" : function(test) {
 			var _this = this;
-			var getLeafsetSize = function() {
-				return Object.keys(require('core/leafsetmgr').leafset).length;
-			};
 			var getLeafset = function() {
 				return require('core/leafsetmgr').leafset;
 			};
@@ -35,7 +36,7 @@ module.exports = {
 			};
 			
 			// wait till leafset is sorted
-			this.nodes[0].waitUntilEqual(3, getLeafsetSize, test, function() {
+			this.nodes[0].waitUntilEqual(3, this.getLeafsetSize, test, function() {
 				
 				// leafset populated
 				_this.nodes[3].eval(getLeafset, test, function(res) {
@@ -52,6 +53,20 @@ module.exports = {
 						test.done();
 					});
 				});
+			});
+		},
+		
+		"should send and receive a bundle of messages" : function(test) {
+			var _this = this;
+			var getLeafsetSize = function() {
+				return Object.keys(require('core/leafsetmgr').leafset).length;
+			};			
+			
+			// wait till leafset is sorted
+			this.nodes[0].waitUntilEqual(3, this.getLeafsetSize, test, function() {
+				//this.nodes[0].eval()
+				
+				test.done();				
 			});
 		}
 	})
