@@ -100,7 +100,8 @@ module.exports = {
 	"updating the leafset" : testCase ({
 		setUp : function(done) {
 			node.nodeId = myId;
-			leafsetmgr.leafset = {};		
+			leafsetmgr.leafset = {};
+			leafsetmgr.leafsetSize = 3;
 			done();
 		},
 		
@@ -195,6 +196,23 @@ module.exports = {
 			test.equal('3.4.5.6', leafsetmgr.leafset[anId]);
 			test.equal('6.7.8.9', leafsetmgr.leafset[higherId]);
 			test.done();
+		},
+		
+		"should enforce max leafset size" : function(test) {
+			leafsetmgr.leafset[lowerId] = "1.2.3.4";
+			leafsetmgr.leafset[anId] = "2.3.4.5";
+			leafsetmgr.leafset[higherId] = "3.4.5.6";
+			
+			var upd = {};
+			upd[oneMoreId] = '4.5.6.7';
+			
+			leafsetmgr.updateLeafset(upd);
+			
+			test.equal(3, Object.keys(leafsetmgr.leafset).length);
+			test.equal('3.4.5.6', leafsetmgr.leafset[higherId]);
+			test.equal('2.3.4.5', leafsetmgr.leafset[anId]);
+			test.equal('4.5.6.7', leafsetmgr.leafset[oneMoreId]);
+			test.done();			
 		}
 	})
 };

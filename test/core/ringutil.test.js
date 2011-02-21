@@ -136,6 +136,43 @@ module.exports = {
 			test.done();
 		}
 	}),
+	
+	"finding furthest id in a ring" : testCase({
+		"should find furthest id from an empty set" : function(test) {
+			var res = ringutil.getFurthestId(anId, [], false);
+			
+			test.strictEqual(undefined, res);
+			test.done();
+		},
+		
+		"should be able to find furthest id from an unknown id" : function(test) {
+			var res = ringutil.getFurthestId(anId, [higherId], false);
+			
+			test.strictEqual(higherId, res);
+			test.done();
+		},
+		
+		"furthest id from single element id set should be that id" : function(test) {
+			var res = ringutil.getFurthestId(anId, [anId], false);
+			
+			test.strictEqual(anId, res);
+			test.done();
+		},
+		
+		"should find furthest id from a set of ids" : function(test) {
+			var res = ringutil.getFurthestId(anId, [higherId, lowerId, nearEdgeId], false);
+			
+			test.strictEqual(lowerId, res);
+			test.done();
+		},
+		
+		"should find furthest id from a set of ids with wrap" : function(test) {
+			var res = ringutil.getFurthestId(higherId, [nearEdgeId, overEdgeId, wrappedId], false);
+			
+			test.strictEqual(wrappedId, res);
+			test.done();
+		}
+	}),
 
 	"determining if given id is nearest to a specific id" : testCase ({
 

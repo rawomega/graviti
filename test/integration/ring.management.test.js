@@ -34,6 +34,7 @@ module.exports = {
 				return require('core/routingmgr').routingTable;
 			};
 			
+			// wait till leafset is sorted
 			this.nodes[0].waitUntilEqual(3, getLeafsetSize, test, function() {
 				
 				// leafset populated
