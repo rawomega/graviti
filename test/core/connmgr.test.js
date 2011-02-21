@@ -135,7 +135,6 @@ module.exports = {
 			var rcvdmsg = undefined;
 			var rcvdmsginfo = undefined;
 			connmgr.on("message", function(msg, msginfo) {
-				console.log('baa');
 				rcvdmsg = msg;
 				rcvdmsginfo = msginfo
 			});

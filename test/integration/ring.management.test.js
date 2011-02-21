@@ -58,15 +58,51 @@ module.exports = {
 		
 		"should send and receive a bundle of messages" : function(test) {
 			var _this = this;
-			var getLeafsetSize = function() {
-				return Object.keys(require('core/leafsetmgr').leafset).length;
+			
+			var trackReceivedMessages = function() {
+				var app = require('core/appmgr').apps[0];				
+				require('core/overlay').on(app.name + '-app-message-received', function(msg, msginfo) {						
+					if (!app.receivedMessages)
+						app.receivedMessages = [];
+					if (msg.content.greeting === 'hello')
+						app.receivedMessages.push(msg);
+				});
+			};
+
+			var doOnAllNodes = function(func, callback, idx) {
+				if (idx === undefined)
+					idx = 0;
+				if (idx >= _this.nodeIds.length) {
+					callback();
+					return;
+				}
+							
+				_this.nodes[idx].eval(func, test, function() {
+					doOnAllNodes(func, callback, idx+1);
+				});
+			};
+			
+			
+			var sendMessage = function() {
+				require('core/appmgr').apps[0].send(
+						'p2p:echoapp/somewhere', {greeting : 'hello'}, {method : 'POST'});
+			};
+			
+			var countMessages = function() {
+				var app = require('core/appmgr').apps[0];
+				return app.receivedMessages === undefined ? 0 : app.receivedMessages.length;
 			};			
 			
 			// wait till leafset is sorted
 			this.nodes[0].waitUntilEqual(3, this.getLeafsetSize, test, function() {
-				//this.nodes[0].eval()
 				
-				test.done();				
+				doOnAllNodes(trackReceivedMessages, function() {
+					
+					doOnAllNodes(sendMessage, function() {
+						
+						_this.nodes[1].waitUntilEqual(4, countMessages, test, test.done());
+					});
+				});				
 			});
 		}
 	})
