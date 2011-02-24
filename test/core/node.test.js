@@ -117,7 +117,6 @@ module.exports = {
 	
 			// assert
 			test.ok(close.called);
-			test.strictEqual(undefined, node.nodeId);
 			test.done();
 		}
 	})

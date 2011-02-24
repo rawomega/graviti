@@ -23,7 +23,21 @@ module.exports = {
 
 			test.ok(res.length === 40);			
 			test.done();
-		}		
+		},
+		
+		"should not generate dupes for a relatively small # of ids in quick succession" : function(test) {
+			var ids = {};
+			
+			for (var i = 0; i < 10000; i++) {
+				var newId = id.generateNodeId();
+				if (ids[newId] !== undefined)
+					test.fail('id ' + newId + ' already generated!');
+				else
+					ids[newId] = 'yay';
+			}
+			
+			test.done();
+		}
 	}),
 	
 	"id bigint conversion and padding" : testCase({
@@ -105,6 +119,18 @@ module.exports = {
 			var res = id.getCommonPrefixLength('abc', undefined);
 			
 			test.strictEqual(0, res);
+			test.done();
+		}
+	}),
+	
+	"id abbreviation" : testCase({
+		"should not blow up on undefined" : function(test) {
+			test.strictEqual(undefined, id.abbr(undefined));
+			test.done();
+		},
+		
+		"should abbreviate id" : function(test) {
+			test.strictEqual('123..DEF', id.abbr('1234ABCD89092093ABCDEF'));
 			test.done();
 		}
 	}),

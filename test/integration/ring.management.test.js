@@ -36,26 +36,27 @@ module.exports = {
 			};
 			
 			// wait till leafset is sorted
-			this.nodes[0].waitUntilEqual(3, this.getLeafsetSize, test, function() {
+			this.nodes.select(0).waitUntilEqual(3, this.getLeafsetSize, test);
+			this.nodes.select(3).waitUntilEqual(3, this.getLeafsetSize, test);
 				
-				// leafset populated
-				_this.nodes[3].eval(getLeafset, test, function(res) {
-					test.equal(3, Object.keys(res).length);
-					test.ok(res[_this.nodeIds[0]] !== undefined);
-					test.ok(res[_this.nodeIds[1]] !== undefined);
-					test.ok(res[_this.nodeIds[2]] !== undefined);
+			// leafset populated
+			this.nodes.select(3).eval(getLeafset, test, function(res) {
+				test.equal(3, Object.keys(res).length);
+				test.ok(res[_this.nodeIds[0]] !== undefined);
+				test.ok(res[_this.nodeIds[1]] !== undefined);
+				test.ok(res[_this.nodeIds[2]] !== undefined);
+			});
+
+			// routing table populated
+			this.nodes.select(3).eval(getRoutingTable, test, function(res) {
+				test.equal(_this.nodeIds[0], res[0][0].id);
+				test.equal(_this.nodeIds[1], res[0][4].id);
+				test.equal(_this.nodeIds[2], res[0][8].id);
 					
-					// routing table populated
-					_this.nodes[3].eval(getRoutingTable, test, function(res) {
-						test.equal(_this.nodeIds[0], res[0][0].id);
-						test.equal(_this.nodeIds[1], res[0][4].id);
-						test.equal(_this.nodeIds[2], res[0][8].id);
-						test.done();
-					});
-				});
+				_this.nodes.done(test);
 			});
 		},
-		
+
 		"should send and receive a bundle of messages" : function(test) {
 			var _this = this;
 			
@@ -64,28 +65,14 @@ module.exports = {
 				require('core/overlay').on(app.name + '-app-message-received', function(msg, msginfo) {						
 					if (!app.receivedMessages)
 						app.receivedMessages = [];
-					if (msg.content.greeting === 'hello')
+					if (msg.content.testecho === 'ping')
 						app.receivedMessages.push(msg);
 				});
 			};
-
-			var doOnAllNodes = function(func, callback, idx) {
-				if (idx === undefined)
-					idx = 0;
-				if (idx >= _this.nodeIds.length) {
-					callback();
-					return;
-				}
-							
-				_this.nodes[idx].eval(func, test, function() {
-					doOnAllNodes(func, callback, idx+1);
-				});
-			};
-			
 			
 			var sendMessage = function() {
 				require('core/appmgr').apps[0].send(
-						'p2p:echoapp/somewhere', {greeting : 'hello'}, {method : 'POST'});
+						'p2p:echoapp/somewhere', {testecho : 'ping'}, {method : 'POST'});
 			};
 			
 			var countMessages = function() {
@@ -94,16 +81,12 @@ module.exports = {
 			};			
 			
 			// wait till leafset is sorted
-			this.nodes[0].waitUntilEqual(3, this.getLeafsetSize, test, function() {
-				
-				doOnAllNodes(trackReceivedMessages, function() {
-					
-					doOnAllNodes(sendMessage, function() {
-						
-						_this.nodes[1].waitUntilEqual(4, countMessages, test, test.done());
-					});
-				});				
+			this.nodes.select(0).waitUntilEqual(3, this.getLeafsetSize, test);				
+			this.nodes.selectAll().eval(trackReceivedMessages, test);
+			this.nodes.selectAll().eval(sendMessage, test);
+			this.nodes.select(1).waitUntilEqual(4, countMessages, test, function() {
+				_this.nodes.done(test);
 			});
-		}
+		}		
 	})
 };
