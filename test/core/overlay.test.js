@@ -7,6 +7,7 @@ var routingmgr = require('core/routingmgr');
 var id = require('common/id');
 var uri = require('common/uri');
 var bootstrapmgr = require('core/bootstrapmgr');
+var heartbeater = require('core/heartbeater');
 var overlay = require('core/overlay');
 
 module.exports = {
@@ -17,6 +18,7 @@ module.exports = {
 			});
 			this.nodeOn = sinon.collection.stub(node, 'on');
 			this.bootstrapStart = sinon.collection.stub(bootstrapmgr, 'start');
+			this.heartbeatStart = sinon.collection.stub(heartbeater, 'start');
 			this.callback = sinon.stub();
 			done();
 		},
@@ -32,6 +34,7 @@ module.exports = {
 			test.ok(this.nodeStart.calledWith(1234, "127.0.0.1"));
 			test.ok(this.nodeOn.calledWith('message', overlay._processMessage));
 			test.ok(this.bootstrapStart.calledWith(overlay));
+			test.ok(this.heartbeatStart.calledWith(overlay));
 			test.ok(this.callback.called);
 			test.done();
 		},
@@ -43,6 +46,7 @@ module.exports = {
 			test.ok(this.nodeStart.calledWith(1234, "127.0.0.1"));
 			test.ok(this.nodeOn.calledWith('message', overlay._processMessage));
 			test.ok(this.bootstrapStart.calledWith(overlay, '127.0.0.1:4567'));
+			test.ok(this.heartbeatStart.calledWith(overlay));
 			test.ok(this.callback.called);
 			test.done();
 		}
@@ -256,6 +260,8 @@ module.exports = {
 	"leaving a ring" : testCase({
 		setUp : function(done) {
 			this.node = sinon.collection.mock(node);
+			this.heartbeater = sinon.collection.mock(heartbeater);
+			this.bootstrapmgr = sinon.collection.mock(bootstrapmgr);
 			done();
 		},
 		
@@ -264,14 +270,18 @@ module.exports = {
 			done();
 		},
 		
-		"should stop node when leaving ring" : function(test) {	
+		"should stop node, bootstrapper and heartbeater when leaving ring" : function(test) {	
 			// setup
+			this.heartbeater.expects('stop');
+			this.bootstrapmgr.expects('stop');
 			this.node.expects('stop');
 	
 			// act
 			overlay.leave();
 			
 			// assert
+			this.bootstrapmgr.verify();
+			this.heartbeater.verify();
 			this.node.verify();
 			test.done();
 		}
