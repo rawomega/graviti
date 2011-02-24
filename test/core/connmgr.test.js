@@ -40,19 +40,22 @@ module.exports = {
 		
 		"should try again if address in use" : function(test) {
 			connmgr.addrInUseRetryMsec = 100;
+			var failTimeoutId = undefined;
 			var listenCallCount = 0;			
 			this.server.listen = function(port, addr) {
 				listenCallCount++;
 				test.equal('127.0.0.1', addr);
 				test.equal(1234, port);
-				if (listenCallCount >= 2)
+				if (listenCallCount >= 2) {
 					test.done();
+					if (failTimeoutId) clearTimeout(failTimeoutId);
+				}
 			}
 			
 			connmgr.listen(1234, "127.0.0.1");
 			this.server.emit("error", { code : 'EADDRINUSE' });
 			
-			setTimeout(function() {
+			failTimeoutId = setTimeout(function() {
 				test.fail() ;test.done(); }, 500);
 		},
 		

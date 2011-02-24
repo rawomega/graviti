@@ -7,4 +7,4 @@ nodeunit-coverage@0.0.1   coverage reporter for nodeunit    =mikebannister activ
 npm@0.2.15                A package manager for node    =isaacs active installed remote package manager modules install package.json
 opts@1.2.1                Command line argument parser written in the style of commonjs. To be used with node.js    =mazzarelli active installed latest remote
 request@1.2.0             Simplified HTTP request client.    =mikeal active installed remote
-sinon@1.0.1               JavaScript test spies, stubs and mocks.    =cjohansen =seeflanigan active installed latest remote
+sinon@1.0.1               JavaScript test spies, stubs and mocks.    =cjohansen =seeflanigan active installed remote
