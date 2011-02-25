@@ -157,7 +157,7 @@ module.exports = {
 			// assert on response
 			test.strictEqual(this.sendToAddr.args[0][0], 'p2p:graviti/statetables');
 			test.deepEqual(this.sendToAddr.args[0][1], 	{
-				leafset : leafsetmgr.leafset,
+				leafset : leafsetmgr.compressedLeafset(),
 				routing_table : routingmgr.routingTable,
 				id : node.nodeId,
 				bootstrap_source_addr : '3.3.3.3',

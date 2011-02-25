@@ -28,7 +28,7 @@ module.exports = {
 		},
 		
 		"should return self as next routing hop when leafset contains higher id node" : function(test) {
-			leafsetmgr.leafset[higherId] = "1.2.3.4:1234";
+			leafsetmgr.leafset[higherId] = { ap : "1.2.3.4:1234", lastHeartbeat : 123456789 };
 			
 			var res = leafsetmgr.getRoutingHop(anId);
 			
@@ -39,7 +39,7 @@ module.exports = {
 		},
 		
 		"should return self as next routing hop when leafset contains lower id node" : function(test) {
-			leafsetmgr.leafset[lowerId] = "1.2.3.4:1234";
+			leafsetmgr.leafset[lowerId] = { ap : "1.2.3.4:1234", lastHeartbeat : 123456789 };
 			
 			var res = leafsetmgr.getRoutingHop(anId);
 			
@@ -50,8 +50,8 @@ module.exports = {
 		},
 		
 		"should return self as next routing hop whne leafset contains higher and lower id node" : function(test) {
-			leafsetmgr.leafset[higherId] = "1.2.3.4:1234";
-			leafsetmgr.leafset[lowerId] = "1.2.3.4:1234";
+			leafsetmgr.leafset[higherId] = { ap : "1.2.3.4:1234", lastHeartbeat : 123456789 };
+			leafsetmgr.leafset[lowerId] = { ap : "1.2.3.4:1234", lastHeartbeat : 123456789 };
 			
 			var res = leafsetmgr.getRoutingHop(anId);
 			
@@ -62,9 +62,9 @@ module.exports = {
 		},
 		
 		"should return nearest node as next routing hop when within leafset range" : function(test) {
-			leafsetmgr.leafset[wrappedId] = "1.2.3.4:1234";
-			leafsetmgr.leafset[higherId] = "6.7.8.9:6789";
-			leafsetmgr.leafset[oneLessId] = "3.4.5.6:3456";
+			leafsetmgr.leafset[wrappedId] = { ap : "1.2.3.4:1234", lastHeartbeat : 123456789 };
+			leafsetmgr.leafset[higherId] = { ap : "6.7.8.9:6789", lastHeartbeat : 123456789 };
+			leafsetmgr.leafset[oneLessId] = { ap : "3.4.5.6:3456", lastHeartbeat : 123456789 };
 			
 			var res = leafsetmgr.getRoutingHop(lowerId);
 			
@@ -75,9 +75,9 @@ module.exports = {
 		},
 		
 		"should return blank next routing hop when below leafset range" : function(test) {
-			leafsetmgr.leafset[lowerId] = "1.2.3.4:1234";
-			leafsetmgr.leafset[higherId] = "1.2.3.4:5678";
-			leafsetmgr.leafset[oneLessId] = "1.2.3.4:9012";
+			leafsetmgr.leafset[lowerId] = { ap : "1.2.3.4:1234", lastHeartbeat : 123456789 };
+			leafsetmgr.leafset[higherId] = { ap : "1.2.3.4:5678", lastHeartbeat : 123456789 };
+			leafsetmgr.leafset[oneLessId] = { ap : "1.2.3.4:9012", lastHeartbeat : 123456789 };
 			
 			var res = leafsetmgr.getRoutingHop(wrappedId);
 			
@@ -86,9 +86,9 @@ module.exports = {
 		},
 		
 		"should return blank next routing hop when above leafset range" : function(test) {
-			leafsetmgr.leafset[lowerId] = "1.2.3.4:1234";
-			leafsetmgr.leafset[oneLessId] = "1.2.3.4:5678";
-			leafsetmgr.leafset[wrappedId] = "1.2.3.4:9012";
+			leafsetmgr.leafset[lowerId] = { ap : "1.2.3.4:1234", lastHeartbeat : 123456789 };
+			leafsetmgr.leafset[oneLessId] = { ap : "1.2.3.4:5678", lastHeartbeat : 123456789 };
+			leafsetmgr.leafset[wrappedId] = { ap : "1.2.3.4:9012", lastHeartbeat : 123456789 };
 			
 			var res = leafsetmgr.getRoutingHop(higherId);
 			
@@ -116,7 +116,8 @@ module.exports = {
 			leafsetmgr.updateLeafset(anId, '1.2.3.4');
 			
 			test.equal(1, Object.keys(leafsetmgr.leafset).length);
-			test.equal('1.2.3.4', leafsetmgr.leafset[anId]);
+			test.equal('1.2.3.4', leafsetmgr.leafset[anId].ap);
+			test.ok(leafsetmgr.leafset[anId].lastHeartbeat > 0);
 			test.done();
 		},
 		
@@ -127,7 +128,8 @@ module.exports = {
 			leafsetmgr.updateLeafset(upd);
 			
 			test.equal(1, Object.keys(leafsetmgr.leafset).length);
-			test.equal('1.2.3.4', leafsetmgr.leafset[anId]);
+			test.equal('1.2.3.4', leafsetmgr.leafset[anId].ap);
+			test.ok(leafsetmgr.leafset[anId].lastHeartbeat > 0);
 			test.done();
 		},
 		
@@ -139,51 +141,60 @@ module.exports = {
 			leafsetmgr.updateLeafset(upd);
 			
 			test.equal(2, Object.keys(leafsetmgr.leafset).length);
-			test.equal('1.2.3.4', leafsetmgr.leafset[anId]);
-			test.equal('2.4.6.8', leafsetmgr.leafset[higherId]);
+			test.equal('1.2.3.4', leafsetmgr.leafset[anId].ap);
+			test.equal('2.4.6.8', leafsetmgr.leafset[higherId].ap);
+			test.ok(leafsetmgr.leafset[anId].lastHeartbeat > 0);
+			test.ok(leafsetmgr.leafset[higherId].lastHeartbeat > 0);
 			test.done();
 		},
 		
 		"should disregaard own node id when updating existing leafset" : function(test) {
-			leafsetmgr.leafset[lowerId] = "1.2.3.4";
-			leafsetmgr.leafset[anId] = "2.3.4.5";
+			leafsetmgr.leafset[lowerId] = { ap : "1.2.3.4", lastHeartbeat : 1};
+			leafsetmgr.leafset[anId] = { ap : "2.3.4.5", lastHeartbeat : 2};
 			
 			leafsetmgr.updateLeafset(myId, '3.4.5.6');
 			
 			test.equal(2, Object.keys(leafsetmgr.leafset).length);
-			test.equal('1.2.3.4', leafsetmgr.leafset[lowerId]);
-			test.equal('2.3.4.5', leafsetmgr.leafset[anId]);
+			test.equal('1.2.3.4', leafsetmgr.leafset[lowerId].ap);
+			test.equal('2.3.4.5', leafsetmgr.leafset[anId].ap);
+			test.equal(1, leafsetmgr.leafset[lowerId].lastHeartbeat);
+			test.equal(2, leafsetmgr.leafset[anId].lastHeartbeat);
 			test.done();
 		},
 		
 		"should update existing leafset from strings by replacing" : function(test) {
-			leafsetmgr.leafset[lowerId] = "1.2.3.4";
-			leafsetmgr.leafset[anId] = "2.3.4.5";
+			leafsetmgr.leafset[lowerId] = { ap : "1.2.3.4", lastHeartbeat : 1};
+			leafsetmgr.leafset[anId] = { ap : "2.3.4.5", lastHeartbeat : 2};
 			
 			leafsetmgr.updateLeafset(anId, '3.4.5.6');
 			
 			test.equal(2, Object.keys(leafsetmgr.leafset).length);
-			test.equal('1.2.3.4', leafsetmgr.leafset[lowerId]);
-			test.equal('3.4.5.6', leafsetmgr.leafset[anId]);
+			test.equal('1.2.3.4', leafsetmgr.leafset[lowerId].ap);
+			test.equal('3.4.5.6', leafsetmgr.leafset[anId].ap);
+			test.equal(1, leafsetmgr.leafset[lowerId].lastHeartbeat);
+			test.ok(leafsetmgr.leafset[anId].lastHeartbeat > 2);
 			test.done();
 		},
 		
 		"should update existing leafset from strings by adding" : function(test) {
-			leafsetmgr.leafset[lowerId] = "1.2.3.4";
-			leafsetmgr.leafset[anId] = "2.3.4.5";
+			leafsetmgr.leafset[lowerId] = { ap : "1.2.3.4", lastHeartbeat : 1};
+			leafsetmgr.leafset[anId] = { ap : "2.3.4.5", lastHeartbeat : 2};
 				
 			leafsetmgr.updateLeafset(higherId, '6.7.8.9');
 			
 			test.equal(3, Object.keys(leafsetmgr.leafset).length);
-			test.equal('1.2.3.4', leafsetmgr.leafset[lowerId]);
-			test.equal('2.3.4.5', leafsetmgr.leafset[anId]);
-			test.equal('6.7.8.9', leafsetmgr.leafset[higherId]);
+			test.equal('1.2.3.4', leafsetmgr.leafset[lowerId].ap);
+			test.equal('2.3.4.5', leafsetmgr.leafset[anId].ap);
+			test.equal('6.7.8.9', leafsetmgr.leafset[higherId].ap);
+			test.equal(1, leafsetmgr.leafset[lowerId].lastHeartbeat);
+			test.equal(2, leafsetmgr.leafset[anId].lastHeartbeat);
+			test.ok(leafsetmgr.leafset[higherId].lastHeartbeat > 2);
 			test.done();
 		},
 		
 		"should update existing leafset from object by replacing and adding" : function(test) {
-			leafsetmgr.leafset[lowerId] = "1.2.3.4";
-			leafsetmgr.leafset[anId] = "2.3.4.5";
+			leafsetmgr.leafset[lowerId] = { ap : "1.2.3.4", lastHeartbeat : 1};
+			leafsetmgr.leafset[anId] = { ap : "2.3.4.5", lastHeartbeat : 2};
 			
 			var upd = {};
 			upd[anId] = '3.4.5.6';
@@ -192,16 +203,19 @@ module.exports = {
 			leafsetmgr.updateLeafset(upd);
 			
 			test.equal(3, Object.keys(leafsetmgr.leafset).length);
-			test.equal('1.2.3.4', leafsetmgr.leafset[lowerId]);
-			test.equal('3.4.5.6', leafsetmgr.leafset[anId]);
-			test.equal('6.7.8.9', leafsetmgr.leafset[higherId]);
+			test.equal('1.2.3.4', leafsetmgr.leafset[lowerId].ap);
+			test.equal('3.4.5.6', leafsetmgr.leafset[anId].ap);
+			test.equal('6.7.8.9', leafsetmgr.leafset[higherId].ap);
+			test.equal(1, leafsetmgr.leafset[lowerId].lastHeartbeat);
+			test.ok(leafsetmgr.leafset[anId].lastHeartbeat > 2);
+			test.ok(leafsetmgr.leafset[higherId].lastHeartbeat > 2);
 			test.done();
 		},
 		
 		"should enforce max leafset size" : function(test) {
-			leafsetmgr.leafset[lowerId] = "1.2.3.4";
-			leafsetmgr.leafset[anId] = "2.3.4.5";
-			leafsetmgr.leafset[higherId] = "3.4.5.6";
+			leafsetmgr.leafset[lowerId] = { ap : "1.2.3.4", lastHeartbeat : 1};
+			leafsetmgr.leafset[anId] = { ap : "2.3.4.5", lastHeartbeat : 2};
+			leafsetmgr.leafset[higherId] = { ap : "3.4.5.6", lastHeartbeat : 3};
 			
 			var upd = {};
 			upd[oneMoreId] = '4.5.6.7';
@@ -209,10 +223,37 @@ module.exports = {
 			leafsetmgr.updateLeafset(upd);
 			
 			test.equal(3, Object.keys(leafsetmgr.leafset).length);
-			test.equal('3.4.5.6', leafsetmgr.leafset[higherId]);
-			test.equal('2.3.4.5', leafsetmgr.leafset[anId]);
-			test.equal('4.5.6.7', leafsetmgr.leafset[oneMoreId]);
+			test.equal('3.4.5.6', leafsetmgr.leafset[higherId].ap);
+			test.equal('2.3.4.5', leafsetmgr.leafset[anId].ap);
+			test.equal('4.5.6.7', leafsetmgr.leafset[oneMoreId].ap);
+			test.equal(3, leafsetmgr.leafset[higherId].lastHeartbeat);
+			test.equal(2, leafsetmgr.leafset[anId].lastHeartbeat);
+			test.ok(leafsetmgr.leafset[oneMoreId].lastHeartbeat > 2);
 			test.done();			
 		}
-	})
+	}),
+	
+	"getting a compressed version of the leafset" : testCase({
+		"should get empty compressed version of empty leafset" : function(test) {
+			leafsetmgr.leafset = {};
+			
+			var res = leafsetmgr.compressedLeafset();
+			
+			test.deepEqual({}, res);
+			test.done();
+		},
+		
+		"should get compressed version of non-empty leafset" : function(test) {
+			leafsetmgr.leafset = {};
+			leafsetmgr.updateLeafset(anId, '1.2.3.4');
+			leafsetmgr.updateLeafset(higherId, '2.2.2.2');			
+			
+			var res = leafsetmgr.compressedLeafset();
+			
+			test.equal(2, Object.keys(res).length);
+			test.equal('1.2.3.4', res[anId]);
+			test.equal('2.2.2.2', res[higherId]);
+			test.done();
+		}
+	})	
 };

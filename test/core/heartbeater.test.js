@@ -32,10 +32,8 @@ module.exports = {
 		
 		"should send heartbeat to leafset nodes shortly after startup" : function(test) {
 			var _this = this;
-			leafsetmgr.leafset = {
-					'ABCDEF0123ABCDEF0123ABCDEF0123ABCDEF0123' : '127.0.0.1:8888',
-					'1234567890123456789012345678901234567890' : '127.0.0.1:9999'
-			};
+			leafsetmgr.updateLeafset('ABCDEF0123ABCDEF0123ABCDEF0123ABCDEF0123','127.0.0.1:8888');
+			leafsetmgr.updateLeafset('1234567890123456789012345678901234567890','127.0.0.1:9999');
 			heartbeater.heartbeatIntervalMsec = 50;
 			
 			heartbeater.start(this.overlayCallback);
@@ -43,7 +41,7 @@ module.exports = {
 			setTimeout(function() {
 				test.strictEqual(_this.sendToAddr.args[0][0], 'p2p:graviti/heartbeat');
 				test.deepEqual(_this.sendToAddr.args[0][1], {
-						leafset : leafsetmgr.leafset,
+						leafset : leafsetmgr.compressedLeafset(),
 						routing_table : routingmgr.routingTable
 					});
 				test.deepEqual(_this.sendToAddr.args[0][2], {method : 'POST'});
@@ -52,7 +50,7 @@ module.exports = {
 				
 				test.strictEqual(_this.sendToAddr.args[1][0], 'p2p:graviti/heartbeat');
 				test.deepEqual(_this.sendToAddr.args[1][1], {
-						leafset : leafsetmgr.leafset,
+						leafset : leafsetmgr.compressedLeafset(),
 						routing_table : routingmgr.routingTable
 					});
 				test.deepEqual(_this.sendToAddr.args[1][2], {method : 'POST'});

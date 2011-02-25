@@ -17,6 +17,14 @@ module.exports = {
 			this.getLeafsetSize = function() {
 				return Object.keys(require('core/leafsetmgr').leafset).length;
 			};
+			this.heartbeatFrequently = function() {
+				var heartbeater = require('core/heartbeater');
+				var overlay = require('core/overlay');
+				
+				heartbeater.heartbeatIntervalMsec = 1000;
+				heartbeater.stop();
+				heartbeater.start(overlay);
+			};
 
 			done();
 		},
@@ -41,6 +49,7 @@ module.exports = {
 			// wait till leafset is sorted
 			this.nodes.select(0).waitUntilEqual(3, this.getLeafsetSize, test);
 			this.nodes.select(3).waitUntilEqual(3, this.getLeafsetSize, test);
+			this.nodes.selectAll().eval(this.heartbeatFrequently, test);
 				
 			// leafset populated
 			this.nodes.select(3).eval(getLeafset, test, function(res) {
@@ -106,16 +115,7 @@ module.exports = {
 						overlay.receivedHeartbeats[msg.source_id].push(msg);
 					}
 				});
-			};
-			
-			var heartbeatFrequently = function() {
-				var heartbeater = require('core/heartbeater');
-				var overlay = require('core/overlay');
-				
-				heartbeater.heartbeatIntervalMsec = 1000;
-				heartbeater.stop();
-				heartbeater.start(overlay);
-			};
+			};			
 			
 			var countReceivedHeartbeatsPerSender = function() {
 				var coll = require('core/overlay').receivedHeartbeats;
@@ -144,7 +144,7 @@ module.exports = {
 			// get leafset going, start tracking messages, make all nodes heartbeat every 1s
 			this.nodes.select(0).waitUntilEqual(3, this.getLeafsetSize, test);				
 			this.nodes.selectAll().eval(trackReceivedHeartbeats, test);
-			this.nodes.selectAll().eval(heartbeatFrequently, test);
+			this.nodes.selectAll().eval(this.heartbeatFrequently, test);
 			this.nodes.select(1).waitUntilAtLeast(8, countReceivedHeartbeats, test);			
 	
 			// check that on 2 different nodes we've had at least 1 heartbeat from every other node
