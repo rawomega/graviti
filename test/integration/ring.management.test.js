@@ -109,7 +109,12 @@ module.exports = {
 			};
 			
 			var heartbeatFrequently = function() {
-				require('core/heartbeater').heartbeatIntervalMsec = 1000;
+				var heartbeater = require('core/heartbeater');
+				var overlay = require('core/overlay');
+				
+				heartbeater.heartbeatIntervalMsec = 1000;
+				heartbeater.stop();
+				heartbeater.start(overlay);
 			};
 			
 			var countReceivedHeartbeatsPerSender = function() {

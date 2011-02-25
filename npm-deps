@@ -1,10 +1,10 @@
-buffertools@1.0.0         Working with node.js buffers made easy.    =bnoordhuis active installed latest remote buffer buffers
-chain-gang@0.2.1          =technoweenie active installed latest remote
-jslint-core@2011.01.09    The JavaScript Code Quality Tool    =bramstein active installed latest remote JavaScript lint jslint jslint-core fulljslint
-node-uuid@1.1.0           Simple, fast generation of RFC4122(v4) UUIDs.    =broofa active installed latest remote uuid guid rfc4122
-nodeunit@0.5.0            Easy unit testing for node.js and the browser.    =caolan active installed latest remote
-nodeunit-coverage@0.0.1   coverage reporter for nodeunit    =mikebannister active installed latest remote
-npm@0.2.15                A package manager for node    =isaacs active installed remote package manager modules install package.json
-opts@1.2.1                Command line argument parser written in the style of commonjs. To be used with node.js    =mazzarelli active installed latest remote
-request@1.2.0             Simplified HTTP request client.    =mikeal active installed remote
-sinon@1.0.1               JavaScript test spies, stubs and mocks.    =cjohansen =seeflanigan active installed remote
+buffertools@1.0.0         active installed
+chain-gang@0.2.1          active installed
+jslint-core@2011.01.09    active installed
+node-uuid@1.1.0           active installed
+nodeunit@0.5.0            active installed
+nodeunit-coverage@0.0.1   active installed
+npm@0.2.15                active installed
+opts@1.2.1                active installed
+request@1.2.0             active installed
+sinon@1.0.1               active installed
