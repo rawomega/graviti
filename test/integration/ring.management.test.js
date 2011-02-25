@@ -3,7 +3,7 @@ var multinode = require('testability/multinode');
 var nodeunit = require('nodeunit');
 
 module.exports = {
-	"start and stop a multi-node ring" : nodeunit.testCase({
+	"multi-node ring initialisation" : nodeunit.testCase({
 		setUp : function(done) {
 			this.nodeIds = [
 			    '0000000000000000000000000000000000000000',
@@ -23,7 +23,10 @@ module.exports = {
 		
 		tearDown : function(done) {
 			multinode.stop(this.nodes);
-			done();
+			setTimeout(function() {
+				util.log('\n\n========\n\n');
+				done();
+			}, 2000);
 		},
 
 		"should populate leafsets after bootstrapping" : function(test) {
@@ -84,9 +87,73 @@ module.exports = {
 			this.nodes.select(0).waitUntilEqual(3, this.getLeafsetSize, test);				
 			this.nodes.selectAll().eval(trackReceivedMessages, test);
 			this.nodes.selectAll().eval(sendMessage, test);
-			this.nodes.select(1).waitUntilEqual(4, countMessages, test, function() {
+			this.nodes.select(1).waitUntilAtLeast(4, countMessages, test, function() {
 				_this.nodes.done(test);
 			});
-		}		
+		},
+	
+		"should exchange heartbeats with leafset peers" : function(test) {
+			var _this = this;
+			
+			var trackReceivedHeartbeats = function() {
+				var overlay = require('core/overlay');				
+				overlay.on('graviti-message-received', function(msg, msginfo) {		
+					if (!overlay.receivedHeartbeats)
+						overlay.receivedHeartbeats = {};
+					if (/\/heartbeat/.test(msg.uri) && msg.method === 'POST') {
+						if (overlay.receivedHeartbeats[msg.source_id] === undefined)
+							overlay.receivedHeartbeats[msg.source_id] = [];
+						overlay.receivedHeartbeats[msg.source_id].push(msg);
+					}
+				});
+			};
+			
+			var heartbeatFrequently = function() {
+				require('core/heartbeater').heartbeatIntervalMsec = 1000;
+			};
+			
+			var countReceivedHeartbeatsPerSender = function() {
+				var coll = require('core/overlay').receivedHeartbeats;
+				var res = {};
+				if (!coll)
+					return res;
+				
+				for (var id in coll) {
+					res[id] = coll[id].length;
+				}
+				return res;
+			};
+			
+			var countReceivedHeartbeats = function() {
+				var coll = require('core/overlay').receivedHeartbeats;
+				var res = 0;
+				if (!coll)
+					return res;
+				
+				for (var id in coll) {
+					res += coll[id].length;
+				}
+				return res;
+			};
+			
+			// get leafset going, start tracking messages, make all nodes heartbeat every 1s
+			this.nodes.select(0).waitUntilEqual(3, this.getLeafsetSize, test);				
+			this.nodes.selectAll().eval(trackReceivedHeartbeats, test);
+			this.nodes.selectAll().eval(heartbeatFrequently, test);
+			this.nodes.select(1).waitUntilAtLeast(8, countReceivedHeartbeats, test);			
+	
+			// check that on 2 different nodes we've had at least 1 heartbeat from every other node
+			this.nodes.select(0).eval(countReceivedHeartbeatsPerSender, test, function(res) {
+				test.ok(res[_this.nodeIds[1]] > 1);
+				test.ok(res[_this.nodeIds[2]] > 1);
+				test.ok(res[_this.nodeIds[3]] > 1);
+			});
+			this.nodes.select(2).eval(countReceivedHeartbeatsPerSender, test, function(res) {
+				test.ok(res[_this.nodeIds[0]] > 1);
+				test.ok(res[_this.nodeIds[1]] > 1);
+				test.ok(res[_this.nodeIds[3]] > 1);
+				_this.nodes.done(test);
+			});
+		}
 	})
 };
