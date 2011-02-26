@@ -7,9 +7,8 @@ var testCase = require('nodeunit').testCase;
 module.exports = {
 	"startup" : testCase({
 		setUp : function(done) {
-			this.overlayCallback = { on : function() {}, sendToAddr : function() {} };
+			this.overlayCallback = { on : function() {} };
 			this.on = sinon.collection.stub(this.overlayCallback, 'on');
-			this.sendToAddr = sinon.collection.stub(this.overlayCallback, 'sendToAddr');
 			
 			leafsetmgr.leafset = {};			
 			routingmgr.routingTable = {};
@@ -28,6 +27,55 @@ module.exports = {
 			
 			test.ok(this.on.calledWith('graviti-message-received', heartbeater._handleReceivedGravitiMessage));
 			test.done();
+		}
+	}),
+
+	"stopping" : testCase({
+		setUp : function(done) {
+			leafsetmgr.leafset = {'ABCDEF0123ABCDEF0123ABCDEF0123ABCDEF0123' : '127.0.0.1:8888'};
+			
+			this.overlayCallback = { sendToAddr : function() {}, on : function() {} };
+			this.sendToAddr = sinon.collection.stub(this.overlayCallback, 'sendToAddr');
+			
+			done();
+		},
+		
+		tearDown : function(done) {
+			leafsetmgr.leafset = {};
+			sinon.collection.restore();
+			done();
+		},
+		
+		"should not invoke message sender after stopping" : function(test) {
+			var _this = this;
+			heartbeater.heartbeatIntervalMsec = 50;
+			heartbeater.heartbeatCheckIntervalMsec = 50;
+			heartbeater.start(this.overlayCallback);
+			
+			heartbeater.stop();
+			
+			setTimeout(function() {
+				test.ok(_this.sendToAddr.callCount < 2);
+				test.done();
+			}, 300);
+		}
+	}),
+	
+	"sending heartbeat messages" : testCase({
+		setUp : function(done) {
+			this.overlayCallback = { on : function() {}, sendToAddr : function() {} };
+			this.sendToAddr = sinon.collection.stub(this.overlayCallback, 'sendToAddr');
+			
+			leafsetmgr.leafset = {};			
+			routingmgr.routingTable = {};
+			
+			done();
+		},
+		
+		tearDown : function(done) {
+			heartbeater.stop();
+			sinon.collection.restore();
+			done();
 		},
 		
 		"should send heartbeat to leafset nodes shortly after startup" : function(test) {
@@ -97,35 +145,41 @@ module.exports = {
 			}, 200);
 		}
 	}),
-
-	"stopping" : testCase({
+	
+	"detecting timed out peers" : testCase({
 		setUp : function(done) {
-			leafsetmgr.leafset = {'ABCDEF0123ABCDEF0123ABCDEF0123ABCDEF0123' : '127.0.0.1:8888'};
-			
-			this.overlayCallback = { sendToAddr : function() {}, on : function() {} };
-			this.sendToAddr = sinon.collection.stub(this.overlayCallback, 'sendToAddr');
-			
+			this.overlayCallback = {on : function() {}};
+			leafsetmgr.leafset = {};			
+			heartbeater.heartbeatCheckIntervalMsec = 5000;
 			done();
 		},
 		
 		tearDown : function(done) {
-			leafsetmgr.leafset = {};
+			heartbeater.stop();
 			sinon.collection.restore();
 			done();
 		},
 		
-		"should not invoke message sender after stopping" : function(test) {
-			var _this = this;
-			heartbeater.heartbeatIntervalMsec = 50;
-			heartbeater.heartbeatCheckIntervalMsec = 50;
+		"should detect timed out peer in leafset, purge and raise event" : function(test) {
+			var callback = sinon.stub();
+			
+			leafsetmgr.updateLeafset('ABCDEF0123ABCDEF0123ABCDEF0123ABCDEF0123','127.0.0.1:8888');
+			leafsetmgr.updateLeafset('1234567890123456789012345678901234567890','127.0.0.1:9999');
+			leafsetmgr.leafset['ABCDEF0123ABCDEF0123ABCDEF0123ABCDEF0123'].lastHeartbeatReceived = (new Date().getTime() - 1000000);
+			leafsetmgr.leafset['1234567890123456789012345678901234567890'].lastHeartbeatReceived = (new Date().getTime() - 1000000);
+			
+			heartbeater.on('peer-departed', callback);
+			heartbeater.timedOutPeerCheckIntervalMsec = 50;
+			
 			heartbeater.start(this.overlayCallback);
 			
-			heartbeater.stop();
-			
 			setTimeout(function() {
-				test.ok(_this.sendToAddr.callCount < 2);
+				test.ok(leafsetmgr.leafset['ABCDEF0123ABCDEF0123ABCDEF0123ABCDEF0123'] === undefined);
+				test.ok(leafsetmgr.leafset['1234567890123456789012345678901234567890'] === undefined);
+				test.ok(callback.calledWith('ABCDEF0123ABCDEF0123ABCDEF0123ABCDEF0123'));
+				test.ok(callback.calledWith('1234567890123456789012345678901234567890'));
 				test.done();
-			}, 300);
+			}, 200);
 		}
 	}),
 	
