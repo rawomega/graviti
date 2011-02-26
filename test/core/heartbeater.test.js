@@ -35,6 +35,7 @@ module.exports = {
 			leafsetmgr.updateLeafset('ABCDEF0123ABCDEF0123ABCDEF0123ABCDEF0123','127.0.0.1:8888');
 			leafsetmgr.updateLeafset('1234567890123456789012345678901234567890','127.0.0.1:9999');
 			heartbeater.heartbeatIntervalMsec = 50;
+			heartbeater.heartbeatCheckIntervalMsec = 50;
 			
 			heartbeater.start(this.overlayCallback);
 			
@@ -56,6 +57,42 @@ module.exports = {
 				test.deepEqual(_this.sendToAddr.args[1][2], {method : 'POST'});
 				test.strictEqual(_this.sendToAddr.args[1][3], '127.0.0.1');
 				test.strictEqual(_this.sendToAddr.args[1][4], '9999');
+				test.done();
+			}, 200);
+		},
+		
+		"should update last heartbeat sent time after sending" : function(test) {
+			var _this = this;
+			leafsetmgr.updateLeafset('ABCDEF0123ABCDEF0123ABCDEF0123ABCDEF0123','127.0.0.1:8888');
+			leafsetmgr.updateLeafset('1234567890123456789012345678901234567890','127.0.0.1:9999');
+			
+			heartbeater.heartbeatIntervalMsec = 1000;
+			heartbeater.heartbeatCheckIntervalMsec = 50;
+			
+			heartbeater.start(this.overlayCallback);
+			
+			setTimeout(function() {
+				test.ok(leafsetmgr.leafset['ABCDEF0123ABCDEF0123ABCDEF0123ABCDEF0123'].lastHeartbeatSent > (new Date().getTime() - 1000));
+				test.ok(leafsetmgr.leafset['1234567890123456789012345678901234567890'].lastHeartbeatSent > (new Date().getTime() - 1000));
+				test.ok(_this.sendToAddr.calledTwice);
+				test.done();
+			}, 200);
+		},
+		
+		"should not send heartbeats when interval since last heartbeat not reached" : function(test) {
+			var _this = this;
+			leafsetmgr.updateLeafset('ABCDEF0123ABCDEF0123ABCDEF0123ABCDEF0123','127.0.0.1:8888');
+			leafsetmgr.updateLeafset('1234567890123456789012345678901234567890','127.0.0.1:9999');
+			leafsetmgr.leafset['ABCDEF0123ABCDEF0123ABCDEF0123ABCDEF0123'].lastHeartbeatSent = new Date().getTime();
+			leafsetmgr.leafset['1234567890123456789012345678901234567890'].lastHeartbeatSent = new Date().getTime();
+			
+			heartbeater.heartbeatIntervalMsec = 1000;
+			heartbeater.heartbeatCheckIntervalMsec = 50;
+			
+			heartbeater.start(this.overlayCallback);
+			
+			setTimeout(function() {
+				test.ok(!_this.sendToAddr.called);
 				test.done();
 			}, 200);
 		}
@@ -80,6 +117,7 @@ module.exports = {
 		"should not invoke message sender after stopping" : function(test) {
 			var _this = this;
 			heartbeater.heartbeatIntervalMsec = 50;
+			heartbeater.heartbeatCheckIntervalMsec = 50;
 			heartbeater.start(this.overlayCallback);
 			
 			heartbeater.stop();

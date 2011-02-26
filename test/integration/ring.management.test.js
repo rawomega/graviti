@@ -49,7 +49,6 @@ module.exports = {
 			// wait till leafset is sorted
 			this.nodes.select(0).waitUntilEqual(3, this.getLeafsetSize, test);
 			this.nodes.select(3).waitUntilEqual(3, this.getLeafsetSize, test);
-			this.nodes.selectAll().eval(this.heartbeatFrequently, test);
 				
 			// leafset populated
 			this.nodes.select(3).eval(getLeafset, test, function(res) {
