@@ -37,9 +37,9 @@ module.exports = {
 			test.ok(this.on.calledWith('graviti-message-received', bootstrapmgr._handleReceivedGravitiMessage));
 			test.ok(this.on.calledWith('graviti-message-forwarding', bootstrapmgr._handleForwardingGravitiMessage));
 			setTimeout(function() {
-				test.ok(sendToAddr.calledWith('p2p:graviti/statetables', {id : node.nodeId}, {method : 'GET'}, '1.2.3.4', '1234'));
-				test.ok(sendToAddr.calledWith('p2p:graviti/statetables', {id : node.nodeId}, {method : 'GET'}, '5.6.7.8', '5678'));
-				test.ok(sendToAddr.calledWith('p2p:graviti/statetables', {id : node.nodeId}, {method : 'GET'}, 'myhost', '8888'));
+				test.ok(sendToAddr.calledWith('p2p:graviti/peers', {id : node.nodeId}, {method : 'GET'}, '1.2.3.4', '1234'));
+				test.ok(sendToAddr.calledWith('p2p:graviti/peers', {id : node.nodeId}, {method : 'GET'}, '5.6.7.8', '5678'));
+				test.ok(sendToAddr.calledWith('p2p:graviti/peers', {id : node.nodeId}, {method : 'GET'}, 'myhost', '8888'));
 				test.done();
 			}, 200);
 		},
@@ -92,7 +92,7 @@ module.exports = {
 		
 		"when we are nearest to joining node's node id, should respond with state tables directly and update our own state tables" : function(test) {			
 			var msg = {
-				uri : 'p2p:graviti/statetables',
+				uri : 'p2p:graviti/peers',
 				method : 'GET',
 				content : {
 					id : 'ABCDEF'					
@@ -106,7 +106,7 @@ module.exports = {
 			test.ok(!this.send.called);
 			
 			// assert on response
-			test.strictEqual(this.sendToAddr.args[0][0], 'p2p:graviti/statetables');
+			test.strictEqual(this.sendToAddr.args[0][0], 'p2p:graviti/peers');
 			test.deepEqual(this.sendToAddr.args[0][1], 	{
 					leafset : leafsetmgr.leafset,
 					routing_table : routingmgr.routingTable,
@@ -130,7 +130,7 @@ module.exports = {
 		"when we are not nearest to joining node's node id, should respond with state tables, rebroadcast request into ring, and update our own state tables" : function(test) {			
 			leafsetmgr.leafset = {'AAAAAA' : '4.4.4.4:4444'};
 			var msg = {
-				uri : 'p2p:graviti/statetables',
+				uri : 'p2p:graviti/peers',
 				method : 'GET',
 				content : {
 					id : 'ABCDEF',
@@ -143,7 +143,7 @@ module.exports = {
 			this.overlayCallback.emit("graviti-message-received", msg, this.msginfo);
 
 			// assert on rebroadcast
-			test.strictEqual(this.send.args[0][0], 'p2p:graviti/statetables');
+			test.strictEqual(this.send.args[0][0], 'p2p:graviti/peers');
 			test.deepEqual(this.send.args[0][1], {
 					id : 'ABCDEF',
 					bootstrap_source_addr : '3.3.3.3',
@@ -155,7 +155,7 @@ module.exports = {
 			});
 			
 			// assert on response
-			test.strictEqual(this.sendToAddr.args[0][0], 'p2p:graviti/statetables');
+			test.strictEqual(this.sendToAddr.args[0][0], 'p2p:graviti/peers');
 			test.deepEqual(this.sendToAddr.args[0][1], 	{
 				leafset : leafsetmgr.compressedLeafset(),
 				routing_table : routingmgr.routingTable,
@@ -177,7 +177,7 @@ module.exports = {
 		
 		"when forwardig a bootstrap request, we should send our state tables to joining node" : function(test) {
 			var msg = {
-				uri : 'p2p:graviti/statetables',
+				uri : 'p2p:graviti/peers',
 				method : 'GET',
 				content : {
 					id : 'ABCDEF',
@@ -193,7 +193,7 @@ module.exports = {
 			test.ok(!this.send.called);
 			
 			// assert on response
-			test.strictEqual(this.sendToAddr.args[0][0], 'p2p:graviti/statetables');
+			test.strictEqual(this.sendToAddr.args[0][0], 'p2p:graviti/peers');
 			test.deepEqual(this.sendToAddr.args[0][1], 	{
 					leafset : leafsetmgr.leafset,
 					routing_table : routingmgr.routingTable,
@@ -243,7 +243,7 @@ module.exports = {
 		"should update state tables on receiving a bootstrap response" : function(test) {
 			var _this = this;
 			var msg = {
-				uri : 'p2p:graviti/statetables',
+				uri : 'p2p:graviti/peers',
 				method : 'POST',
 				content : {
 					id : 'ABCDEF',
@@ -267,7 +267,7 @@ module.exports = {
 			this.overlayCallback.on('bootstrap-completed', function() {bootstrapCompletedCalled = true;});
 			var _this = this;
 			var msg = {
-				uri : 'p2p:graviti/statetables',
+				uri : 'p2p:graviti/peers',
 				method : 'POST',
 				content : {
 					id : 'ABCDEF',
