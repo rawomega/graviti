@@ -161,13 +161,11 @@ module.exports = {
 		},
 		
 		"should detect timed out peer in leafset, purge and raise event" : function(test) {
-			var callback = sinon.stub();
-			
+			var callback = sinon.stub();			
 			leafsetmgr.updateLeafset('ABCDEF0123ABCDEF0123ABCDEF0123ABCDEF0123','127.0.0.1:8888');
 			leafsetmgr.updateLeafset('1234567890123456789012345678901234567890','127.0.0.1:9999');
 			leafsetmgr.leafset['ABCDEF0123ABCDEF0123ABCDEF0123ABCDEF0123'].lastHeartbeatReceived = (new Date().getTime() - 1000000);
-			leafsetmgr.leafset['1234567890123456789012345678901234567890'].lastHeartbeatReceived = (new Date().getTime() - 1000000);
-			
+			leafsetmgr.leafset['1234567890123456789012345678901234567890'].lastHeartbeatReceived = (new Date().getTime() - 1000000);			
 			heartbeater.on('peer-departed', callback);
 			heartbeater.timedOutPeerCheckIntervalMsec = 50;
 			
@@ -188,11 +186,16 @@ module.exports = {
 			this.msg = {
 				uri : 'p2p:graviti/heartbeat',
 				method : 'POST',
+				source_id : 'ABCDEF0123ABCDEF0123ABCDEF0123ABCDEF0123',
 				content : {
 					leafset : {a:'b'},
 					routing_table : {c : 'd'}
 				}
-			}
+			};
+			this.msginfo = {
+					sender_addr : '127.0.0.1',
+					sender_port : 1234
+			};
 		
 			this.updateLeafset = sinon.collection.stub(leafsetmgr, 'updateLeafset');
 			this.mergeRoutingTable = sinon.collection.stub(routingmgr, 'mergeRoutingTable');
@@ -209,7 +212,40 @@ module.exports = {
 			heartbeater._handleReceivedGravitiMessage(this.msg, this.msginfo);
 			
 			test.ok(this.updateLeafset.calledWith({a:'b'}));
+			test.ok(this.updateLeafset.calledWith('ABCDEF0123ABCDEF0123ABCDEF0123ABCDEF0123', '127.0.0.1:1234'));
 			test.ok(this.mergeRoutingTable.calledWith({c:'d'}));
+			test.done();
+		}
+	}),
+	
+	"handling departing peer messages" : testCase({
+		setUp : function(done) {
+			this.msg = {
+				uri : 'p2p:graviti/peers/ABCDEF0123ABCDEF0123ABCDEF0123ABCDEF0123',
+				method : 'DELETE'
+			}
+			this.msginfo = {
+				sender_addr : '127.0.0.1',
+				sender_port : 1234
+			};
+			
+			done();
+		},
+		
+		tearDown : function(done) {
+			sinon.collection.restore();
+			done();
+		},
+
+		"update leafset and routing table on receipt" : function(test) {
+			var callback = sinon.stub();			
+			leafsetmgr.updateLeafset('ABCDEF0123ABCDEF0123ABCDEF0123ABCDEF0123','127.0.0.1:8888');
+			heartbeater.on('peer-departed', callback);
+			
+			heartbeater._handleReceivedGravitiMessage(this.msg, this.msginfo);
+			
+			test.ok(leafsetmgr.leafset['ABCDEF0123ABCDEF0123ABCDEF0123ABCDEF0123'] === undefined);
+			test.ok(callback.calledWith('ABCDEF0123ABCDEF0123ABCDEF0123ABCDEF0123'));
 			test.done();
 		}
 	})
