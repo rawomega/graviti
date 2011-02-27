@@ -97,6 +97,61 @@ module.exports = {
 		}
 	}),
 	
+	"iterating over leafset" : testCase ({
+		setUp : function(done) {
+			leafsetmgr._leafset = {};
+			done();
+		},
+		
+		tearDown : function(done) {
+			leafsetmgr._leafset = {};
+			done();
+		},
+		
+		"should be able to invoke given anonymous function for each leafset member" : function(test) {
+			var callbacks = {};
+			leafsetmgr.updateLeafset(lowerId,"1.2.3.4:1234");
+			leafsetmgr.updateLeafset(higherId, "1.2.3.4:5678");
+			
+			leafsetmgr.each(function(id, item) {
+				callbacks[id] = item;
+			});
+			
+			test.equal(2, Object.keys(callbacks).length);
+			test.equal('1.2.3.4:1234', callbacks[lowerId].ap);
+			test.equal('1.2.3.4:5678', callbacks[higherId].ap);
+			test.done();
+		}
+	}),
+	
+	"removing elements from the leafset" : testCase ({
+		tearDown : function(done) {
+			leafsetmgr._leafset = {};
+			done();
+		},
+		
+		"should be able to remove a single element from the leafset" : function(test) {
+			leafsetmgr.updateLeafset(lowerId,"1.2.3.4:1234");
+			leafsetmgr.updateLeafset(higherId, "1.2.3.4:5678");
+			
+			leafsetmgr.remove(lowerId);
+			
+			test.strictEqual(1, Object.keys(leafsetmgr._leafset).length);
+			test.ok(leafsetmgr._leafset[higherId] !== undefined);
+			test.done();
+		},
+		
+		"should be able to clear everything from the leafset" : function(test) {
+			leafsetmgr.updateLeafset(lowerId,"1.2.3.4:1234");
+			leafsetmgr.updateLeafset(higherId, "1.2.3.4:5678");
+			
+			leafsetmgr.clear();
+			
+			test.strictEqual(0, Object.keys(leafsetmgr._leafset).length);
+			test.done();
+		}
+	}), 
+	
 	"updating the leafset" : testCase ({
 		setUp : function(done) {
 			node.nodeId = myId;

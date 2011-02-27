@@ -135,8 +135,8 @@ module.exports = {
 			heartbeater.start(this.overlayCallback);
 			
 			setTimeout(function() {
-				test.ok(leafsetmgr.internalLeafset()['ABCDEF0123ABCDEF0123ABCDEF0123ABCDEF0123'].lastHeartbeatSent > (new Date().getTime() - 1000));
-				test.ok(leafsetmgr.internalLeafset()['1234567890123456789012345678901234567890'].lastHeartbeatSent > (new Date().getTime() - 1000));
+				test.ok(leafsetmgr._leafset['ABCDEF0123ABCDEF0123ABCDEF0123ABCDEF0123'].lastHeartbeatSent > (new Date().getTime() - 1000));
+				test.ok(leafsetmgr._leafset['1234567890123456789012345678901234567890'].lastHeartbeatSent > (new Date().getTime() - 1000));
 				test.ok(_this.sendToAddr.calledTwice);
 				test.done();
 			}, 200);
@@ -146,8 +146,8 @@ module.exports = {
 			var _this = this;
 			leafsetmgr.updateLeafset('ABCDEF0123ABCDEF0123ABCDEF0123ABCDEF0123','127.0.0.1:8888');
 			leafsetmgr.updateLeafset('1234567890123456789012345678901234567890','127.0.0.1:9999');
-			leafsetmgr.internalLeafset()['ABCDEF0123ABCDEF0123ABCDEF0123ABCDEF0123'].lastHeartbeatSent = new Date().getTime();
-			leafsetmgr.internalLeafset()['1234567890123456789012345678901234567890'].lastHeartbeatSent = new Date().getTime();
+			leafsetmgr._leafset['ABCDEF0123ABCDEF0123ABCDEF0123ABCDEF0123'].lastHeartbeatSent = new Date().getTime();
+			leafsetmgr._leafset['1234567890123456789012345678901234567890'].lastHeartbeatSent = new Date().getTime();
 			
 			heartbeater.heartbeatIntervalMsec = 1000;
 			heartbeater.heartbeatCheckIntervalMsec = 50;
@@ -179,16 +179,16 @@ module.exports = {
 			var callback = sinon.stub();			
 			leafsetmgr.updateLeafset('ABCDEF0123ABCDEF0123ABCDEF0123ABCDEF0123','127.0.0.1:8888');
 			leafsetmgr.updateLeafset('1234567890123456789012345678901234567890','127.0.0.1:9999');
-			leafsetmgr.internalLeafset()['ABCDEF0123ABCDEF0123ABCDEF0123ABCDEF0123'].lastHeartbeatReceived = (new Date().getTime() - 1000000);
-			leafsetmgr.internalLeafset()['1234567890123456789012345678901234567890'].lastHeartbeatReceived = (new Date().getTime() - 1000000);			
+			leafsetmgr._leafset['ABCDEF0123ABCDEF0123ABCDEF0123ABCDEF0123'].lastHeartbeatReceived = (new Date().getTime() - 1000000);
+			leafsetmgr._leafset['1234567890123456789012345678901234567890'].lastHeartbeatReceived = (new Date().getTime() - 1000000);			
 			heartbeater.on('peer-departed', callback);
 			heartbeater.timedOutPeerCheckIntervalMsec = 50;
 			
 			heartbeater.start(this.overlayCallback);
 			
 			setTimeout(function() {
-				test.ok(leafsetmgr.internalLeafset()['ABCDEF0123ABCDEF0123ABCDEF0123ABCDEF0123'] === undefined);
-				test.ok(leafsetmgr.internalLeafset()['1234567890123456789012345678901234567890'] === undefined);
+				test.ok(leafsetmgr._leafset['ABCDEF0123ABCDEF0123ABCDEF0123ABCDEF0123'] === undefined);
+				test.ok(leafsetmgr._leafset['1234567890123456789012345678901234567890'] === undefined);
 				test.ok(callback.calledWith('ABCDEF0123ABCDEF0123ABCDEF0123ABCDEF0123'));
 				test.ok(callback.calledWith('1234567890123456789012345678901234567890'));
 				test.done();
@@ -259,7 +259,7 @@ module.exports = {
 			
 			heartbeater._handleReceivedGravitiMessage(this.msg, this.msginfo);
 			
-			test.ok(leafsetmgr.internalLeafset()['ABCDEF0123ABCDEF0123ABCDEF0123ABCDEF0123'] === undefined);
+			test.ok(leafsetmgr._leafset['ABCDEF0123ABCDEF0123ABCDEF0123ABCDEF0123'] === undefined);
 			test.ok(callback.calledWith('ABCDEF0123ABCDEF0123ABCDEF0123ABCDEF0123'));
 			test.done();
 		}
