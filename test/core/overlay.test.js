@@ -49,6 +49,27 @@ module.exports = {
 			test.ok(this.heartbeatStart.calledWith(overlay));
 			test.ok(this.callback.called);
 			test.done();
+		},
+		
+		"should re-emit peer departed event for node leaving the ring, when this node has started a new ring" : function(test) {
+			overlay.init(1234, "127.0.0.1");
+			overlay.on('peer-departed', this.callback);
+			
+			heartbeater.emit('peer-departed', 'ABCDEF');
+			
+			test.ok(this.callback.calledWith('ABCDEF'));
+			test.done();
+		},
+		
+		"should re-emit peer departed event for node leaving the ring, when this node has joined an existing ring" : function(test) {
+			var callback = sinon.stub();
+			overlay.join(1234, "127.0.0.1");
+			overlay.on('peer-departed', this.callback);
+			
+			heartbeater.emit('peer-departed', 'ABCDEF');
+			
+			test.ok(this.callback.calledWith('ABCDEF'));
+			test.done();
 		}
 	}),
 	
