@@ -2,7 +2,7 @@ var assert = require('assert');
 var sinon = require('sinon');
 var testCase = require('nodeunit').testCase;
 var node = require('core/node');
-var ringutil= require('core/ringutil');
+var leafsetmgr = require('core/leafsetmgr');
 var routingmgr = require('core/routingmgr');
 var id = require('common/id');
 var uri = require('common/uri');
@@ -117,7 +117,7 @@ module.exports = {
 		
 		"be able to send a message to a uri mapping to a remote node" : function(test) {
 			this.msg.dest_id = uri.parse(this.uri).hash;
-			sinon.collection.stub(ringutil, 'amINearest').returns(false);
+			sinon.collection.stub(leafsetmgr, 'isThisNodeNearestTo').returns(false);
 			
 			overlay.send(this.uri, this.content, {method : 'POST'});
 			
@@ -132,7 +132,7 @@ module.exports = {
 		
 		"be able to send a message to a uri mapping to the current node" : function(test) {
 			this.msg.dest_id =  uri.parse(this.uri).hash;
-			sinon.collection.stub(ringutil, 'amINearest').returns(true);
+			sinon.collection.stub(leafsetmgr, 'isThisNodeNearestTo').returns(true);
 			
 			overlay.send(this.uri, this.content, {method : 'POST'});
 						
@@ -158,7 +158,7 @@ module.exports = {
 		
 		"be able to send a message directly to an id when remote node is nearest" : function(test) {
 			this.msg.dest_id = 'AAAA';
-			sinon.collection.stub(ringutil, 'amINearest').returns(false);
+			sinon.collection.stub(leafsetmgr, 'isThisNodeNearestTo').returns(false);
 						
 			overlay.sendToId(this.uri, this.content, {method : 'POST'}, 'AAAA');
 
@@ -173,7 +173,7 @@ module.exports = {
 		
 		"be able to send a message directly to an id when current node is nearest" : function(test) {
 			this.msg.dest_id = 'AAAA';
-			sinon.collection.stub(ringutil, 'amINearest').returns(true);
+			sinon.collection.stub(leafsetmgr, 'isThisNodeNearestTo').returns(true);
 						
 			overlay.sendToId(this.uri, this.content, {method : 'POST'}, 'AAAA');
 
@@ -218,7 +218,7 @@ module.exports = {
 		},
 		
 		"handle message destined for an app on this node" : function(test) {
-			sinon.collection.stub(ringutil, 'amINearest').returns(true);
+			sinon.collection.stub(leafsetmgr, 'isThisNodeNearestTo').returns(true);
 			
 			overlay._processMessage(this.msg, this.msginfo);
 			
@@ -231,7 +231,7 @@ module.exports = {
 		},
 		
 		"handle message destined for graviti on this node" : function(test) {
-			sinon.collection.stub(ringutil, 'amINearest').returns(true);
+			sinon.collection.stub(leafsetmgr, 'isThisNodeNearestTo').returns(true);
 			this.msginfo.app_name = 'graviti';
 			
 			overlay._processMessage(this.msg, this.msginfo);
@@ -245,7 +245,7 @@ module.exports = {
 		},
 		
 		"handle message destined for an app on another node" : function(test) {
-			sinon.collection.stub(ringutil, 'amINearest').returns(false);
+			sinon.collection.stub(leafsetmgr, 'isThisNodeNearestTo').returns(false);
 			
 			overlay._processMessage(this.msg, this.msginfo);
 			
@@ -261,7 +261,7 @@ module.exports = {
 		},
 		
 		"handle message destined for graviti on another node" : function(test) {
-			sinon.collection.stub(ringutil, 'amINearest').returns(false);
+			sinon.collection.stub(leafsetmgr, 'isThisNodeNearestTo').returns(false);
 			this.msginfo.app_name = 'graviti';
 			
 			overlay._processMessage(this.msg, this.msginfo);

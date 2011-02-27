@@ -310,5 +310,45 @@ module.exports = {
 			test.equal('2.2.2.2', res[higherId]);
 			test.done();
 		}
-	})	
+	}),
+	
+	"proximity to a given id" : testCase ({
+		setUp : function(done) {
+			node.nodeId = anId;
+			leafsetmgr._leafset = {};
+			done();
+		},
+		
+		tearDown : function(done) {
+			leafsetmgr._leafset = {};
+			done();
+		},
+		
+		"should be able to determine that current node is nearest to given id" : function(test) {
+			leafsetmgr.updateLeafset(lowerId,"1.2.3.4:1234");
+			leafsetmgr.updateLeafset(higherId, "1.2.3.4:1234");
+			
+			var res = leafsetmgr.isThisNodeNearestTo(oneLessId);
+			
+			test.ok(res);
+			test.done();
+		},
+		
+		"should be able to determine that current node not is nearest to given id" : function(test) {
+			leafsetmgr.updateLeafset(lowerId,"1.2.3.4:1234");
+			leafsetmgr.updateLeafset(higherId, "1.2.3.4:1234");
+			
+			var res = leafsetmgr.isThisNodeNearestTo(wrappedId);
+			
+			test.ok(!res);
+			test.done();
+		},
+		
+		"should be able to determine that current node is nearest when leafset is empty" : function(test) {
+			var res = leafsetmgr.isThisNodeNearestTo(wrappedId);
+			
+			test.ok(res);
+			test.done();
+		}
+	})
 };

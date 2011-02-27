@@ -128,7 +128,7 @@ module.exports = {
 		},
 		
 		"when we are not nearest to joining node's node id, should respond with state tables, rebroadcast request into ring, and update our own state tables" : function(test) {			
-			sinon.collection.stub(leafsetmgr, 'compressedLeafset').returns({'AAAAAA':'4.4.4.4:4444'});
+			sinon.collection.stub(leafsetmgr, 'isThisNodeNearestTo').returns(false);
 			var msg = {
 				uri : 'p2p:graviti/peers',
 				method : 'GET',
