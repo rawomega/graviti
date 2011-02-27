@@ -69,7 +69,7 @@ module.exports = {
 				sender_port : 2222
 			};
 			
-			leafsetmgr.leafset = {};
+			leafsetmgr.clear();
 			this.updateLeafset = sinon.collection.stub(leafsetmgr, 'updateLeafset');
 			
 			routingmgr.routingTable = {};
@@ -85,7 +85,7 @@ module.exports = {
 		
 		tearDown : function(done) {
 			sinon.collection.restore();
-			leafsetmgr.leafset = {};
+			leafsetmgr.clear();
 			routingmgr.routingTable = {};
 			done();
 		},
@@ -108,7 +108,7 @@ module.exports = {
 			// assert on response
 			test.strictEqual(this.sendToAddr.args[0][0], 'p2p:graviti/peers');
 			test.deepEqual(this.sendToAddr.args[0][1], 	{
-					leafset : leafsetmgr.leafset,
+					leafset : leafsetmgr.compressedLeafset(),
 					routing_table : routingmgr.routingTable,
 					id : node.nodeId,
 					bootstrap_source_addr : '2.2.2.2',
@@ -128,7 +128,7 @@ module.exports = {
 		},
 		
 		"when we are not nearest to joining node's node id, should respond with state tables, rebroadcast request into ring, and update our own state tables" : function(test) {			
-			leafsetmgr.leafset = {'AAAAAA' : '4.4.4.4:4444'};
+			sinon.collection.stub(leafsetmgr, 'compressedLeafset').returns({'AAAAAA':'4.4.4.4:4444'});
 			var msg = {
 				uri : 'p2p:graviti/peers',
 				method : 'GET',
@@ -195,7 +195,7 @@ module.exports = {
 			// assert on response
 			test.strictEqual(this.sendToAddr.args[0][0], 'p2p:graviti/peers');
 			test.deepEqual(this.sendToAddr.args[0][1], 	{
-					leafset : leafsetmgr.leafset,
+					leafset : leafsetmgr.compressedLeafset(),
 					routing_table : routingmgr.routingTable,
 					id : node.nodeId,
 					bootstrap_source_addr : '3.3.3.3',

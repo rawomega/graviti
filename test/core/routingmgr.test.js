@@ -163,7 +163,7 @@ module.exports = {
 	"getting the next routing hop" : sinon.testCase({
 		setUp : function(done) {
 			routingmgr.routingTable = {};
-			leafsetmgr.leafset = {};
+			leafsetmgr.clear();
 			node.nodeId = anId;
 			done();
 		},
@@ -290,7 +290,8 @@ module.exports = {
 		
 		"routing via routing table w/o relevant next hop entry returns closest entry from [leafset, routingtable] when closest entry is in leafset" : function(test) {
 			sinon.collection.stub(leafsetmgr, 'getRoutingHop').returns(undefined);
-			leafsetmgr.leafset = {'EFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF' : '1.2.3.4:1234', 'FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF' : '5.6.7.8:5678'}
+			leafsetmgr.updateLeafset('EFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF', '1.2.3.4:1234');
+			leafsetmgr.updateLeafset('FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF', '5.6.7.8:5678');
 			routingmgr.updateRoutingTable(  'EFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF', '1.2.3.4:1234');
 
 			var res = routingmgr.getNextHop('008607ACE1254C87B81D05DA8FA49588540B1950');
@@ -304,7 +305,8 @@ module.exports = {
 		"routing via routing table  and leafset with multiple 'contrived' entries should route correctly" : function(test) {
 			node.nodeId = '1111111111111111111111111111111111111111';
 			sinon.collection.stub(leafsetmgr, 'getRoutingHop').returns(undefined);
-			leafsetmgr.leafset = {'EFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF' : '1.2.3.4:1234', 'FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF' : '5.6.7.8:5678'}
+			leafsetmgr.updateLeafset('EFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF', '1.2.3.4:1234');
+			leafsetmgr.updateLeafset('FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF','5.6.7.8:5678');
 			routingmgr.updateRoutingTable(  'EFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF', '1.2.3.4:1234');
 			routingmgr.updateRoutingTable(  '1000000000000000000000000000000000000000', '1.1.1.1:1111');
 			routingmgr.updateRoutingTable(  '1100000000000000000000000000000000000000', '2.2.2.2:2222');

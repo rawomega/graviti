@@ -15,7 +15,7 @@ module.exports = {
 				node_ids : this.nodeIds
 			});
 			this.getLeafsetSize = function() {
-				return Object.keys(require('core/leafsetmgr').leafset).length;
+				return Object.keys(require('core/leafsetmgr').compressedLeafset()).length;
 			};
 			this.heartbeatFrequently = function() {
 				var heartbeater = require('core/heartbeater');
@@ -40,7 +40,7 @@ module.exports = {
 		"should populate leafsets after bootstrapping" : function(test) {
 			var _this = this;
 			var getLeafset = function() {
-				return require('core/leafsetmgr').leafset;
+				return require('core/leafsetmgr').compressedLeafset();
 			};
 			var getRoutingTable = function() {
 				return require('core/routingmgr').routingTable;
