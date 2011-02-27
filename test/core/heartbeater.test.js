@@ -2,6 +2,7 @@ var sinon = require('sinon');
 var heartbeater = require('core/heartbeater');
 var leafsetmgr = require('core/leafsetmgr');
 var routingmgr = require('core/routingmgr');
+var node = require('core/node');
 var testCase = require('nodeunit').testCase;
 
 module.exports = {
@@ -32,7 +33,8 @@ module.exports = {
 
 	"stopping" : testCase({
 		setUp : function(done) {
-			leafsetmgr.leafset = {'ABCDEF0123ABCDEF0123ABCDEF0123ABCDEF0123' : '127.0.0.1:8888'};
+			node.nodeId = '9876543210987654321098765432109876543210';
+			leafsetmgr.leafset = {};
 			
 			this.overlayCallback = { sendToAddr : function() {}, on : function() {} };
 			this.sendToAddr = sinon.collection.stub(this.overlayCallback, 'sendToAddr');
@@ -48,6 +50,7 @@ module.exports = {
 		
 		"should not invoke message sender after stopping" : function(test) {
 			var _this = this;
+			leafsetmgr.updateLeafset('ABCDEF0123ABCDEF0123ABCDEF0123ABCDEF0123','127.0.0.1:8888');
 			heartbeater.heartbeatIntervalMsec = 50;
 			heartbeater.heartbeatCheckIntervalMsec = 50;
 			heartbeater.start(this.overlayCallback);
@@ -58,6 +61,18 @@ module.exports = {
 				test.ok(_this.sendToAddr.callCount < 2);
 				test.done();
 			}, 300);
+		},
+		
+		"should send parting messages to leafset peers on stopping" : function(test) {
+			leafsetmgr.updateLeafset('ABCDEF0123ABCDEF0123ABCDEF0123ABCDEF0123','127.0.0.1:8888');
+			leafsetmgr.updateLeafset('1234567890123456789012345678901234567890','127.0.0.1:9999');
+			heartbeater.start(this.overlayCallback);
+			
+			heartbeater.stop();
+			
+			test.ok(this.sendToAddr.calledWith('p2p:graviti/peers/9876543210987654321098765432109876543210', undefined, {method : 'DELETE'}, '127.0.0.1', '8888'));
+			test.ok(this.sendToAddr.calledWith('p2p:graviti/peers/9876543210987654321098765432109876543210', undefined, {method : 'DELETE'}, '127.0.0.1', '9999'));
+			test.done();
 		}
 	}),
 	

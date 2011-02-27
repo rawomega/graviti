@@ -23,5 +23,11 @@ var self = module.exports = langutil.extend(new app.GravitiApp('echoapp'), {
 	},
 	
 	forwarding : function(msg, msginfo) {
+	},
+	
+	peerArrived : function(id) {		
+	},
+	
+	peerDeparted : function(id) {		
 	}
 });
