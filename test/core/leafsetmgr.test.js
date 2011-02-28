@@ -15,7 +15,11 @@ module.exports = {
 	"calculating next routing hop" : testCase ({
 		setUp : function(done) {
 			node.nodeId = anId;
-			leafsetmgr._leafset = {};		
+			done();
+		},
+		
+		tearDown : function(done) {
+			leafsetmgr.reset();
 			done();
 		},
 		
@@ -98,18 +102,14 @@ module.exports = {
 	}),
 	
 	"iterating over leafset" : testCase ({
-		setUp : function(done) {
-			leafsetmgr._leafset = {};
-			done();
-		},
-		
 		tearDown : function(done) {
-			leafsetmgr._leafset = {};
+			leafsetmgr.reset();
 			done();
 		},
 		
 		"should be able to invoke given anonymous function for each leafset member" : function(test) {
 			var callbacks = {};
+			leafsetmgr._deadset = {};
 			leafsetmgr.updateLeafset(lowerId,"1.2.3.4:1234");
 			leafsetmgr.updateLeafset(higherId, "1.2.3.4:5678");
 			
@@ -126,11 +126,11 @@ module.exports = {
 	
 	"removing elements from the leafset" : testCase ({
 		tearDown : function(done) {
-			leafsetmgr._leafset = {};
+			leafsetmgr.reset();
 			done();
 		},
 		
-		"should be able to remove a single element from the leafset" : function(test) {
+		"should be able to remove a single element from the leafset, adding it to 'deadset'" : function(test) {
 			leafsetmgr.updateLeafset(lowerId,"1.2.3.4:1234");
 			leafsetmgr.updateLeafset(higherId, "1.2.3.4:5678");
 			
@@ -138,16 +138,20 @@ module.exports = {
 			
 			test.strictEqual(1, Object.keys(leafsetmgr._leafset).length);
 			test.ok(leafsetmgr._leafset[higherId] !== undefined);
+			test.ok(leafsetmgr._leafset[higherId].deadAt === undefined);
+			test.strictEqual(1, Object.keys(leafsetmgr._deadset).length);
+			test.ok(leafsetmgr._deadset[lowerId].deadAt > (new Date().getTime() - 10000));
 			test.done();
 		},
 		
-		"should be able to clear everything from the leafset" : function(test) {
+		"should be able to remove all peers from the leafset and deadset" : function(test) {
 			leafsetmgr.updateLeafset(lowerId,"1.2.3.4:1234");
 			leafsetmgr.updateLeafset(higherId, "1.2.3.4:5678");
 			
-			leafsetmgr.clear();
+			leafsetmgr.reset();
 			
 			test.strictEqual(0, Object.keys(leafsetmgr._leafset).length);
+			test.strictEqual(0, Object.keys(leafsetmgr._deadset).length);
 			test.done();
 		}
 	}), 
@@ -155,8 +159,13 @@ module.exports = {
 	"updating the leafset" : testCase ({
 		setUp : function(done) {
 			node.nodeId = myId;
-			leafsetmgr._leafset = {};
 			leafsetmgr.leafsetSize = 3;
+			done();
+		},
+		
+		tearDown : function(done) {
+			leafsetmgr.leafsetSize = 20;
+			leafsetmgr.reset();
 			done();
 		},
 		
@@ -267,6 +276,17 @@ module.exports = {
 			test.done();
 		},
 		
+		"should ignore any peers in the deadset" : function(test) {
+			leafsetmgr._deadset[anId] = {ap : "1.2.3.4", deadAt : new Date().getTime()};
+			leafsetmgr._leafset[lowerId] = { ap : "1.2.3.4", lastHeartbeatReceived : 1};
+			
+			leafsetmgr.updateLeafset(anId, '2.3.4.5');
+			
+			test.equal(1, Object.keys(leafsetmgr._leafset).length);
+			test.equal('1.2.3.4', leafsetmgr._leafset[lowerId].ap);
+			test.done();
+		},
+		
 		"should enforce max leafset size" : function(test) {
 			leafsetmgr._leafset[lowerId] = { ap : "1.2.3.4", lastHeartbeatReceived : 1};
 			leafsetmgr._leafset[anId] = { ap : "2.3.4.5", lastHeartbeatReceived : 2};
@@ -315,12 +335,11 @@ module.exports = {
 	"proximity to a given id" : testCase ({
 		setUp : function(done) {
 			node.nodeId = anId;
-			leafsetmgr._leafset = {};
 			done();
 		},
 		
 		tearDown : function(done) {
-			leafsetmgr._leafset = {};
+			leafsetmgr.reset();
 			done();
 		},
 		

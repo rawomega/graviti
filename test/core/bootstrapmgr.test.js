@@ -69,7 +69,7 @@ module.exports = {
 				sender_port : 2222
 			};
 			
-			leafsetmgr.clear();
+			leafsetmgr.reset();
 			this.updateLeafset = sinon.collection.stub(leafsetmgr, 'updateLeafset');
 			
 			routingmgr.routingTable = {};
@@ -85,7 +85,7 @@ module.exports = {
 		
 		tearDown : function(done) {
 			sinon.collection.restore();
-			leafsetmgr.clear();
+			leafsetmgr.reset();
 			routingmgr.routingTable = {};
 			done();
 		},

@@ -11,7 +11,6 @@ module.exports = {
 			this.overlayCallback = { on : function() {} };
 			this.on = sinon.collection.stub(this.overlayCallback, 'on');
 			
-			leafsetmgr.clear();			
 			routingmgr.routingTable = {};
 			
 			done();
@@ -19,6 +18,7 @@ module.exports = {
 		
 		tearDown : function(done) {
 			heartbeater.stop();
+			leafsetmgr.reset();
 			sinon.collection.restore();
 			done();
 		},
@@ -34,7 +34,6 @@ module.exports = {
 	"stopping" : testCase({
 		setUp : function(done) {
 			node.nodeId = '9876543210987654321098765432109876543210';
-			leafsetmgr.clear();
 			
 			this.overlayCallback = { sendToAddr : function() {}, on : function() {} };
 			this.sendToAddr = sinon.collection.stub(this.overlayCallback, 'sendToAddr');
@@ -43,7 +42,7 @@ module.exports = {
 		},
 		
 		tearDown : function(done) {
-			leafsetmgr.clear();
+			leafsetmgr.reset();
 			sinon.collection.restore();
 			done();
 		},
@@ -73,15 +72,25 @@ module.exports = {
 			test.ok(this.sendToAddr.calledWith('p2p:graviti/peers/9876543210987654321098765432109876543210', undefined, {method : 'DELETE'}, '127.0.0.1', '8888'));
 			test.ok(this.sendToAddr.calledWith('p2p:graviti/peers/9876543210987654321098765432109876543210', undefined, {method : 'DELETE'}, '127.0.0.1', '9999'));
 			test.done();
+		},
+		
+		"should not send parting messages to leafset peers on stopping if notify peers flag disabled" : function(test) {
+			leafsetmgr.updateLeafset('ABCDEF0123ABCDEF0123ABCDEF0123ABCDEF0123','127.0.0.1:8888');
+			leafsetmgr.updateLeafset('1234567890123456789012345678901234567890','127.0.0.1:9999');
+			heartbeater.start(this.overlayCallback);
+			
+			heartbeater.stop(false);
+			
+			test.ok(!this.sendToAddr.called);
+			test.done();
 		}
 	}),
-	
+
 	"sending heartbeat messages" : testCase({
 		setUp : function(done) {
 			this.overlayCallback = { on : function() {}, sendToAddr : function() {} };
 			this.sendToAddr = sinon.collection.stub(this.overlayCallback, 'sendToAddr');
 			
-			leafsetmgr.clear();			
 			routingmgr.routingTable = {};
 			
 			done();
@@ -89,6 +98,7 @@ module.exports = {
 		
 		tearDown : function(done) {
 			heartbeater.stop();
+			leafsetmgr.reset();
 			sinon.collection.restore();
 			done();
 		},
@@ -163,14 +173,14 @@ module.exports = {
 	
 	"detecting timed out peers" : testCase({
 		setUp : function(done) {
-			this.overlayCallback = {on : function() {}};
-			leafsetmgr.clear();			
+			this.overlayCallback = {on : function() {}};			
 			heartbeater.heartbeatCheckIntervalMsec = 5000;
 			done();
 		},
 		
 		tearDown : function(done) {
 			heartbeater.stop();
+			leafsetmgr.reset();
 			sinon.collection.restore();
 			done();
 		},
@@ -219,6 +229,7 @@ module.exports = {
 		},
 		
 		tearDown : function(done) {
+			leafsetmgr.reset();
 			sinon.collection.restore();
 			done();
 		},
@@ -248,6 +259,7 @@ module.exports = {
 		},
 		
 		tearDown : function(done) {
+			leafsetmgr.reset();
 			sinon.collection.restore();
 			done();
 		},

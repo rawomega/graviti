@@ -22,7 +22,7 @@ module.exports = {
 				var overlay = require('core/overlay');
 				
 				heartbeater.heartbeatIntervalMsec = 1000;
-				heartbeater.stop();
+				heartbeater.stop(false);
 				heartbeater.start(overlay);
 			};
 
