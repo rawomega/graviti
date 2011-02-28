@@ -153,6 +153,20 @@ module.exports = {
 			test.strictEqual(0, Object.keys(leafsetmgr._leafset).length);
 			test.strictEqual(0, Object.keys(leafsetmgr._deadset).length);
 			test.done();
+		},
+		
+		"should be able to clear all timed out dead peers" : function(test) {
+			leafsetmgr.updateLeafset(lowerId,"1.2.3.4:1234");
+			leafsetmgr.updateLeafset(higherId, "1.2.3.4:5678");			
+			leafsetmgr.remove(lowerId);
+			leafsetmgr.remove(higherId);
+			leafsetmgr._deadset[lowerId].deadAt = (new Date().getTime() - 100000);
+			
+			leafsetmgr.clearExpiredDeadPeers();
+			
+			test.strictEqual(1, Object.keys(leafsetmgr._deadset).length);
+			test.ok(leafsetmgr._deadset[lowerId] === undefined);
+			test.done();
 		}
 	}), 
 	

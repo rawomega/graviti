@@ -203,6 +203,18 @@ module.exports = {
 				test.ok(callback.calledWith('1234567890123456789012345678901234567890'));
 				test.done();
 			}, 200);
+		},
+		
+		"should remove timed out dead peers regularly" : function(test) {
+			var clear = sinon.collection.stub(leafsetmgr, 'clearExpiredDeadPeers');			
+			heartbeater.timedOutPeerCheckIntervalMsec = 50;
+			
+			heartbeater.start(this.overlayCallback);
+			
+			setTimeout(function() {
+				test.ok(clear.called);
+				test.done();
+			}, 200);
 		}
 	}),
 	
