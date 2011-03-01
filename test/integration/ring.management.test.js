@@ -25,12 +25,25 @@ module.exports = {
 				heartbeater.stop(false);
 				heartbeater.start(overlay);
 			};
+			this.trackReceivedMessages = function() {
+				var app = require('core/appmgr').apps[0];				
+				require('core/overlay').on(app.name + '-app-message-received', function(msg, msginfo) {						
+					if (!app.receivedMessages)
+						app.receivedMessages = [];
+					if (msg.content.subject === 'test')
+						app.receivedMessages.push(msg);
+				});
+			};
+			this.countMessages = function() {
+				var app = require('core/appmgr').apps[0];
+				return app.receivedMessages === undefined ? 0 : app.receivedMessages.length;
+			};
 
 			done();
 		},
 		
 		tearDown : function(done) {
-			multinode.stop(this.nodes);
+			this.nodes.stopNow();
 			setTimeout(function() {
 				util.log('\n\n========\n\n');
 				done();
@@ -70,32 +83,16 @@ module.exports = {
 
 		"should send and receive a bundle of messages" : function(test) {
 			var _this = this;
-			
-			var trackReceivedMessages = function() {
-				var app = require('core/appmgr').apps[0];				
-				require('core/overlay').on(app.name + '-app-message-received', function(msg, msginfo) {						
-					if (!app.receivedMessages)
-						app.receivedMessages = [];
-					if (msg.content.testecho === 'ping')
-						app.receivedMessages.push(msg);
-				});
-			};
-			
 			var sendMessage = function() {
 				require('core/appmgr').apps[0].send(
-						'p2p:echoapp/somewhere', {testecho : 'ping'}, {method : 'POST'});
-			};
-			
-			var countMessages = function() {
-				var app = require('core/appmgr').apps[0];
-				return app.receivedMessages === undefined ? 0 : app.receivedMessages.length;
+						'p2p:echoapp/somewhere', {subject : 'test'}, {method : 'POST'});
 			};			
-			
+
 			// wait till leafset is sorted
 			this.nodes.select(0).waitUntilEqual(3, this.getLeafsetSize, test);				
-			this.nodes.selectAll().eval(trackReceivedMessages, test);
+			this.nodes.selectAll().eval(this.trackReceivedMessages, test);
 			this.nodes.selectAll().eval(sendMessage, test);
-			this.nodes.select(1).waitUntilAtLeast(4, countMessages, test, function() {
+			this.nodes.select(1).waitUntilAtLeast(4, this.countMessages, test, function() {
 				_this.nodes.done(test);
 			});
 		},
@@ -157,6 +154,44 @@ module.exports = {
 				test.ok(res[_this.nodeIds[1]] > 1);
 				test.ok(res[_this.nodeIds[3]] > 1);
 				_this.nodes.done(test);
+			});
+		},
+		
+		"should be able to deal with departed nodes" : function(test) {
+			var _this = this;
+			
+			var sendMessageToId = function() {
+				require('core/overlay').sendToId('p2p:echoapp/departednodetest',
+						{subject : 'test'}, {method : 'POST'}, 'B111111111111111111111111111111111111111');
+			};
+
+			this.nodes.select(3).waitUntilEqual(3, this.getLeafsetSize, test);
+			this.nodes.selectAll().eval(this.trackReceivedMessages, test);
+
+			// send message to id closest to node 3 and make sure it is received
+			this.nodes.select(1).eval(sendMessageToId, test);
+			this.nodes.select(3).waitUntilEqual(1, this.countMessages, test, function() {
+				_this.nodes.done(test);
+			});
+			
+			// stop node 3, and make sure it is take out of 1's leafset
+			this.nodes.select(3).stop();
+			this.nodes.select(1).waitUntilEqual(2, this.getLeafsetSize, test);
+			
+			// send same message to same id, make sure it is now received on node 2
+			this.nodes.select(1).eval(sendMessageToId, test);
+			this.nodes.select(2).waitUntilEqual(1, this.countMessages, test);
+			
+			// now bring node 3 back
+			this.nodes.select(3).start();			
+			this.nodes.select(0).waitUntilEqual(3, this.getLeafsetSize, test);
+			
+			// ... and make sure that same message now goes there and not elsewhere
+			this.nodes.select(0).eval(sendMessageToId, test);
+			this.nodes.select(3).waitUntilEqual(2, this.countMessages, test);
+			this.nodes.select(0).waitUntilEqual(0, this.countMessages, test);
+			this.nodes.select(2).waitUntilEqual(1, this.countMessages, test, function() {
+				_this.nodes.done(test);				
 			});
 		}
 	})
