@@ -32,7 +32,7 @@ module.exports = {
 		},
 		
 		"should return self as next routing hop when leafset contains higher id node" : function(test) {
-			leafsetmgr.updateLeafset(higherId, "1.2.3.4:1234");
+			leafsetmgr._put(higherId, "1.2.3.4:1234");
 			
 			var res = leafsetmgr.getRoutingHop(anId);
 			
@@ -43,7 +43,7 @@ module.exports = {
 		},
 		
 		"should return self as next routing hop when leafset contains lower id node" : function(test) {
-			leafsetmgr.updateLeafset(lowerId, "1.2.3.4:1234");
+			leafsetmgr._put(lowerId, "1.2.3.4:1234");
 			
 			var res = leafsetmgr.getRoutingHop(anId);
 			
@@ -54,8 +54,8 @@ module.exports = {
 		},
 		
 		"should return self as next routing hop whne leafset contains higher and lower id node" : function(test) {
-			leafsetmgr.updateLeafset(higherId, "1.2.3.4:1234");
-			leafsetmgr.updateLeafset(lowerId, "1.2.3.4:1234");
+			leafsetmgr._put(higherId, "1.2.3.4:1234");
+			leafsetmgr._put(lowerId, "1.2.3.4:1234");
 			
 			var res = leafsetmgr.getRoutingHop(anId);
 			
@@ -66,9 +66,9 @@ module.exports = {
 		},
 		
 		"should return nearest node as next routing hop when within leafset range" : function(test) {
-			leafsetmgr.updateLeafset(wrappedId, "1.2.3.4:1234");
-			leafsetmgr.updateLeafset(higherId, "6.7.8.9:6789");
-			leafsetmgr.updateLeafset(oneLessId, "3.4.5.6:3456");
+			leafsetmgr._put(wrappedId, "1.2.3.4:1234");
+			leafsetmgr._put(higherId, "6.7.8.9:6789");
+			leafsetmgr._put(oneLessId, "3.4.5.6:3456");
 			
 			var res = leafsetmgr.getRoutingHop(lowerId);
 			
@@ -79,9 +79,9 @@ module.exports = {
 		},
 		
 		"should return blank next routing hop when below leafset range" : function(test) {
-			leafsetmgr.updateLeafset(lowerId,"1.2.3.4:1234");
-			leafsetmgr.updateLeafset(higherId, "1.2.3.4:5678");
-			leafsetmgr.updateLeafset(oneLessId, "1.2.3.4:9012");
+			leafsetmgr._put(lowerId,"1.2.3.4:1234");
+			leafsetmgr._put(higherId, "1.2.3.4:5678");
+			leafsetmgr._put(oneLessId, "1.2.3.4:9012");
 			
 			var res = leafsetmgr.getRoutingHop(wrappedId);
 			
@@ -90,9 +90,9 @@ module.exports = {
 		},
 		
 		"should return blank next routing hop when above leafset range" : function(test) {
-			leafsetmgr.updateLeafset(lowerId, "1.2.3.4:1234");
-			leafsetmgr.updateLeafset(oneLessId, "1.2.3.4:5678");
-			leafsetmgr.updateLeafset(wrappedId, "1.2.3.4:9012");
+			leafsetmgr._put(lowerId, "1.2.3.4:1234");
+			leafsetmgr._put(oneLessId, "1.2.3.4:5678");
+			leafsetmgr._put(wrappedId, "1.2.3.4:9012");
 			
 			var res = leafsetmgr.getRoutingHop(higherId);
 			
@@ -110,8 +110,8 @@ module.exports = {
 		"should be able to invoke given anonymous function for each leafset member" : function(test) {
 			var callbacks = {};
 			leafsetmgr._deadset = {};
-			leafsetmgr.updateLeafset(lowerId,"1.2.3.4:1234");
-			leafsetmgr.updateLeafset(higherId, "1.2.3.4:5678");
+			leafsetmgr._put(lowerId,"1.2.3.4:1234");
+			leafsetmgr._put(higherId, "1.2.3.4:5678");
 			
 			leafsetmgr.each(function(id, item) {
 				callbacks[id] = item;
@@ -131,8 +131,8 @@ module.exports = {
 		},
 		
 		"should be able to remove a single element from the leafset, adding it to 'deadset'" : function(test) {
-			leafsetmgr.updateLeafset(lowerId,"1.2.3.4:1234");
-			leafsetmgr.updateLeafset(higherId, "1.2.3.4:5678");
+			leafsetmgr._put(lowerId,"1.2.3.4:1234");
+			leafsetmgr._put(higherId, "1.2.3.4:5678");
 			
 			leafsetmgr.remove(lowerId);
 			
@@ -144,20 +144,33 @@ module.exports = {
 			test.done();
 		},
 		
-		"should be able to remove all peers from the leafset and deadset" : function(test) {
-			leafsetmgr.updateLeafset(lowerId,"1.2.3.4:1234");
-			leafsetmgr.updateLeafset(higherId, "1.2.3.4:5678");
+		"should be able to remove all peers" : function(test) {
+			leafsetmgr._put(lowerId,"1.2.3.4:1234");
+			leafsetmgr._put(higherId, "1.2.3.4:5678");
 			
 			leafsetmgr.reset();
 			
 			test.strictEqual(0, Object.keys(leafsetmgr._leafset).length);
 			test.strictEqual(0, Object.keys(leafsetmgr._deadset).length);
+			test.strictEqual(0, Object.keys(leafsetmgr._candidateset).length);
+			test.done();
+		},
+		
+		"should be able to remove a peer in candidate set" : function(test) {
+			leafsetmgr._put(lowerId,"1.2.3.4:1234");
+			leafsetmgr.updateWithProvisional(higherId, "1.2.3.4:5678");
+			
+			leafsetmgr.reset();
+			
+			test.strictEqual(0, Object.keys(leafsetmgr._leafset).length);
+			test.strictEqual(0, Object.keys(leafsetmgr._deadset).length);
+			test.strictEqual(0, Object.keys(leafsetmgr._candidateset).length);
 			test.done();
 		},
 		
 		"should be able to clear all timed out dead peers" : function(test) {
-			leafsetmgr.updateLeafset(lowerId,"1.2.3.4:1234");
-			leafsetmgr.updateLeafset(higherId, "1.2.3.4:5678");			
+			leafsetmgr._put(lowerId,"1.2.3.4:1234");
+			leafsetmgr._put(higherId, "1.2.3.4:5678");			
 			leafsetmgr.remove(lowerId);
 			leafsetmgr.remove(higherId);
 			leafsetmgr._deadset[lowerId].deadAt = (new Date().getTime() - 100000);
@@ -170,7 +183,7 @@ module.exports = {
 		}
 	}), 
 	
-	"updating the leafset" : testCase ({
+	"updating leafset with known good peers" : testCase ({
 		setUp : function(done) {
 			node.nodeId = myId;
 			leafsetmgr.leafsetSize = 3;
@@ -178,20 +191,21 @@ module.exports = {
 		},
 		
 		tearDown : function(done) {
-			leafsetmgr.leafsetSize = 20;
 			leafsetmgr.reset();
+			leafsetmgr.leafsetSize = 20;
 			done();
 		},
 		
 		"should do nothing to leafset when updating with undefined" : function(test) {			
-			leafsetmgr.updateLeafset(undefined);
+			leafsetmgr.updateWithKnownGood(undefined);
 			
 			test.equal(0, Object.keys(leafsetmgr._leafset).length);
+			test.equal(0, Object.keys(leafsetmgr._candidateset).length);
 			test.done();
 		},
 		
-		"should update empty leafset from string" : function(test) {
-			leafsetmgr.updateLeafset(anId, '1.2.3.4');
+		"should update empty leafset with known good peer by adding directly" : function(test) {
+			leafsetmgr.updateWithKnownGood(anId, '1.2.3.4');
 			
 			test.equal(1, Object.keys(leafsetmgr._leafset).length);
 			test.equal('1.2.3.4', leafsetmgr._leafset[anId].ap);
@@ -199,11 +213,11 @@ module.exports = {
 			test.done();
 		},
 		
-		"should update empty leafset from object" : function(test) {
+		"should update empty leafset with known good peer from object" : function(test) {
 			var upd = {};
 			upd[anId] = '1.2.3.4';
 			
-			leafsetmgr.updateLeafset(upd);
+			leafsetmgr.updateWithKnownGood(upd);
 			
 			test.equal(1, Object.keys(leafsetmgr._leafset).length);
 			test.equal('1.2.3.4', leafsetmgr._leafset[anId].ap);
@@ -211,12 +225,12 @@ module.exports = {
 			test.done();
 		},
 		
-		"should update empty leafset from object with two nodes at once" : function(test) {
+		"should update empty leafset from object with two known good peers at once" : function(test) {
 			var upd = {};
 			upd[anId] = '1.2.3.4';
 			upd[higherId] = '2.4.6.8';
 			
-			leafsetmgr.updateLeafset(upd);
+			leafsetmgr.updateWithKnownGood(upd);
 			
 			test.equal(2, Object.keys(leafsetmgr._leafset).length);
 			test.equal('1.2.3.4', leafsetmgr._leafset[anId].ap);
@@ -230,7 +244,7 @@ module.exports = {
 			leafsetmgr._leafset[lowerId] = { ap : "1.2.3.4", lastHeartbeatReceived : 1};
 			leafsetmgr._leafset[anId] = { ap : "2.3.4.5", lastHeartbeatReceived : 2};
 			
-			leafsetmgr.updateLeafset(myId, '3.4.5.6');
+			leafsetmgr.updateWithKnownGood(myId, '3.4.5.6');
 			
 			test.equal(2, Object.keys(leafsetmgr._leafset).length);
 			test.equal('1.2.3.4', leafsetmgr._leafset[lowerId].ap);
@@ -240,11 +254,11 @@ module.exports = {
 			test.done();
 		},
 		
-		"should update existing leafset from strings by replacing" : function(test) {
+		"should update existing leafset with known good peer by replacing" : function(test) {
 			leafsetmgr._leafset[lowerId] = { ap : "1.2.3.4", lastHeartbeatReceived : 1};
 			leafsetmgr._leafset[anId] = { ap : "2.3.4.5", lastHeartbeatReceived : 2};
 			
-			leafsetmgr.updateLeafset(anId, '3.4.5.6');
+			leafsetmgr.updateWithKnownGood(anId, '3.4.5.6');
 			
 			test.equal(2, Object.keys(leafsetmgr._leafset).length);
 			test.equal('1.2.3.4', leafsetmgr._leafset[lowerId].ap);
@@ -254,11 +268,11 @@ module.exports = {
 			test.done();
 		},
 		
-		"should update existing leafset from strings by adding" : function(test) {
+		"should update existing leafset with known good peer by adding" : function(test) {
 			leafsetmgr._leafset[lowerId] = { ap : "1.2.3.4", lastHeartbeatReceived : 1};
 			leafsetmgr._leafset[anId] = { ap : "2.3.4.5", lastHeartbeatReceived : 2};
 				
-			leafsetmgr.updateLeafset(higherId, '6.7.8.9');
+			leafsetmgr.updateWithKnownGood(higherId, '6.7.8.9');
 			
 			test.equal(3, Object.keys(leafsetmgr._leafset).length);
 			test.equal('1.2.3.4', leafsetmgr._leafset[lowerId].ap);
@@ -270,7 +284,7 @@ module.exports = {
 			test.done();
 		},
 		
-		"should update existing leafset from object by replacing and adding" : function(test) {
+		"should update existing leafset with known good peers by replacing and adding" : function(test) {
 			leafsetmgr._leafset[lowerId] = { ap : "1.2.3.4", lastHeartbeatReceived : 1};
 			leafsetmgr._leafset[anId] = { ap : "2.3.4.5", lastHeartbeatReceived : 2};
 			
@@ -278,7 +292,7 @@ module.exports = {
 			upd[anId] = '3.4.5.6';
 			upd[higherId] = '6.7.8.9';
 			
-			leafsetmgr.updateLeafset(upd);
+			leafsetmgr.updateWithKnownGood(upd);
 			
 			test.equal(3, Object.keys(leafsetmgr._leafset).length);
 			test.equal('1.2.3.4', leafsetmgr._leafset[lowerId].ap);
@@ -290,42 +304,271 @@ module.exports = {
 			test.done();
 		},
 		
-		"should ignore any peers in the deadset" : function(test) {
+		"should resurrect peer in the deadset if it is known good" : function(test) {
 			leafsetmgr._deadset[anId] = {ap : "1.2.3.4", deadAt : new Date().getTime()};
 			leafsetmgr._leafset[lowerId] = { ap : "1.2.3.4", lastHeartbeatReceived : 1};
 			
-			leafsetmgr.updateLeafset(anId, '2.3.4.5');
+			leafsetmgr.updateWithKnownGood(anId, '2.3.4.5');
 			
-			test.equal(1, Object.keys(leafsetmgr._leafset).length);
+			test.equal(0, Object.keys(leafsetmgr._deadset).length);
+			test.equal(2, Object.keys(leafsetmgr._leafset).length);
 			test.equal('1.2.3.4', leafsetmgr._leafset[lowerId].ap);
+			test.equal('2.3.4.5', leafsetmgr._leafset[anId].ap);
 			test.done();
 		},
 		
-		"should enforce max leafset size" : function(test) {
+		"should promote peer in the candidateset if it is known good" : function(test) {
+			leafsetmgr._candidateset[anId] = {ap : "1.2.3.4"};
 			leafsetmgr._leafset[lowerId] = { ap : "1.2.3.4", lastHeartbeatReceived : 1};
-			leafsetmgr._leafset[anId] = { ap : "2.3.4.5", lastHeartbeatReceived : 2};
+			
+			leafsetmgr.updateWithKnownGood(anId, '2.3.4.5');
+			
+			test.equal(0, Object.keys(leafsetmgr._candidateset).length);
+			test.equal(2, Object.keys(leafsetmgr._leafset).length);
+			test.equal('1.2.3.4', leafsetmgr._leafset[lowerId].ap);
+			test.equal('2.3.4.5', leafsetmgr._leafset[anId].ap);
+			test.done();
+		},
+		
+		"should enforce max leafset size when adding known good peer " : function(test) {
+			node.nodeId = anId;
+			leafsetmgr._leafset[lowerId] = { ap : "1.2.3.4", lastHeartbeatReceived : 1};
+			leafsetmgr._leafset[oneLessId] = { ap : "2.3.4.5", lastHeartbeatReceived : 2};
 			leafsetmgr._leafset[higherId] = { ap : "3.4.5.6", lastHeartbeatReceived : 3};
 			
 			var upd = {};
 			upd[oneMoreId] = '4.5.6.7';
 			
-			leafsetmgr.updateLeafset(upd);
+			leafsetmgr.updateWithKnownGood(upd);
 			
 			test.equal(3, Object.keys(leafsetmgr._leafset).length);
 			test.equal('3.4.5.6', leafsetmgr._leafset[higherId].ap);
-			test.equal('2.3.4.5', leafsetmgr._leafset[anId].ap);
+			test.equal('2.3.4.5', leafsetmgr._leafset[oneLessId].ap);
 			test.equal('4.5.6.7', leafsetmgr._leafset[oneMoreId].ap);
 			test.equal(3, leafsetmgr._leafset[higherId].lastHeartbeatReceived);
-			test.equal(2, leafsetmgr._leafset[anId].lastHeartbeatReceived);
+			test.equal(2, leafsetmgr._leafset[oneLessId].lastHeartbeatReceived);
 			test.ok(leafsetmgr._leafset[oneMoreId].lastHeartbeatReceived > 2);
+			test.done();			
+		},
+		
+		"should do nothing when leafset size already max and new known good peer isn't within" : function(test) {
+			node.nodeId = anId;
+			leafsetmgr._leafset[higherId] = { ap : "1.2.3.4", lastHeartbeatReceived : 1};
+			leafsetmgr._leafset[oneLessId] = { ap : "2.3.4.5", lastHeartbeatReceived : 2};
+			leafsetmgr._leafset[oneMoreId] = { ap : "3.4.5.6", lastHeartbeatReceived : 3};
+			
+			var upd = {};
+			upd[lowerId] = '4.5.6.7';
+			
+			leafsetmgr.updateWithKnownGood(upd);
+			
+			test.equal(3, Object.keys(leafsetmgr._leafset).length);
+			test.equal('1.2.3.4', leafsetmgr._leafset[higherId].ap);
+			test.equal('2.3.4.5', leafsetmgr._leafset[oneLessId].ap);
+			test.equal('3.4.5.6', leafsetmgr._leafset[oneMoreId].ap);
+			test.equal(1, leafsetmgr._leafset[higherId].lastHeartbeatReceived);
+			test.equal(2, leafsetmgr._leafset[oneLessId].lastHeartbeatReceived);
+			test.equal(3, leafsetmgr._leafset[oneMoreId].lastHeartbeatReceived);
+			test.done();			
+		}
+	}),
+
+	"updating the leafset with provisional peers" : testCase ({
+		setUp : function(done) {
+			node.nodeId = myId;
+			leafsetmgr.leafsetSize = 3;
+			done();
+		},
+		
+		tearDown : function(done) {
+			leafsetmgr.leafsetSize = 20;
+			leafsetmgr.reset();
+			done();
+		},
+		
+		"should do nothing to leafset when updating with undefined" : function(test) {			
+			leafsetmgr.updateWithProvisional(undefined);
+			
+			test.equal(0, Object.keys(leafsetmgr._leafset).length);
+			test.equal(0, Object.keys(leafsetmgr._candidateset).length);
+			test.equal(0, Object.keys(leafsetmgr._deadset).length);
+			test.done();
+		},
+		
+		"should update empty leafset with provisional peer by adding to candidateset" : function(test) {
+			leafsetmgr.updateWithProvisional(anId, '1.2.3.4');
+			
+			test.equal(0, Object.keys(leafsetmgr._leafset).length);
+			test.equal(1, Object.keys(leafsetmgr._candidateset).length);
+			test.equal('1.2.3.4', leafsetmgr._candidateset[anId].ap);
+			test.ok(leafsetmgr._candidateset[anId].foundAt > 0);
+			test.done();
+		},
+		
+		"should update empty leafset with provisional peer as object" : function(test) {
+			var upd = {};
+			upd[anId] = '1.2.3.4';
+			
+			leafsetmgr.updateWithProvisional(upd);
+			
+			test.equal(0, Object.keys(leafsetmgr._leafset).length);
+			test.equal(1, Object.keys(leafsetmgr._candidateset).length);
+			test.equal('1.2.3.4', leafsetmgr._candidateset[anId].ap);
+			test.ok(leafsetmgr._candidateset[anId].foundAt > 0);
+			test.done();
+		},
+		
+		"should update empty leafset with two provisional peers at once" : function(test) {
+			var upd = {};
+			upd[anId] = '1.2.3.4';
+			upd[higherId] = '2.4.6.8';
+			
+			leafsetmgr.updateWithProvisional(upd);
+			
+			test.equal(0, Object.keys(leafsetmgr._leafset).length);
+			test.equal(2, Object.keys(leafsetmgr._candidateset).length);
+			test.equal('1.2.3.4', leafsetmgr._candidateset[anId].ap);
+			test.equal('2.4.6.8', leafsetmgr._candidateset[higherId].ap);
+			test.ok(leafsetmgr._candidateset[anId].foundAt > 0);
+			test.ok(leafsetmgr._candidateset[higherId].foundAt > 0);
+			test.done();
+		},
+		
+		"should disregard own node id when updating existing candidateset with provisional peers" : function(test) {
+			leafsetmgr._candidateset[lowerId] = { ap : "1.2.3.4", foundAt : 1};
+			leafsetmgr._candidateset[anId] = { ap : "2.3.4.5", foundAt : 2};
+			
+			leafsetmgr.updateWithProvisional(myId, '3.4.5.6');
+			
+			test.equal(2, Object.keys(leafsetmgr._candidateset).length);
+			test.equal('1.2.3.4', leafsetmgr._candidateset[lowerId].ap);
+			test.equal('2.3.4.5', leafsetmgr._candidateset[anId].ap);
+			test.equal(1, leafsetmgr._candidateset[lowerId].foundAt);
+			test.equal(2, leafsetmgr._candidateset[anId].foundAt);
+			test.done();
+		},
+		
+		"should disregard provisional peer when already in leafset" : function(test) {
+			leafsetmgr._leafset[anId] = { ap : "2.3.4.5", lastHeartbeatAt : 2};
+			
+			leafsetmgr.updateWithProvisional(anId, '3.4.5.6');
+			
+			test.equal(0, Object.keys(leafsetmgr._candidateset).length);
+			test.equal(1, Object.keys(leafsetmgr._leafset).length);
+			test.equal('2.3.4.5', leafsetmgr._leafset[anId].ap);
+			test.equal(2, leafsetmgr._leafset[anId].lastHeartbeatAt);
+			test.done();
+		},
+		
+		"should not update existing candidate set when provisional peer already in candidateset" : function(test) {
+			leafsetmgr._candidateset[lowerId] = { ap : "1.2.3.4", foundAt : 1};
+			leafsetmgr._candidateset[anId] = { ap : "2.3.4.5", foundAt : 2};
+			
+			leafsetmgr.updateWithProvisional(anId, '3.4.5.6');
+			
+			test.equal(2, Object.keys(leafsetmgr._candidateset).length);
+			test.equal('1.2.3.4', leafsetmgr._candidateset[lowerId].ap);
+			test.equal('2.3.4.5', leafsetmgr._candidateset[anId].ap);
+			test.equal(1, leafsetmgr._candidateset[lowerId].foundAt);
+			test.equal(2, leafsetmgr._candidateset[anId].foundAt);
+			test.done();
+		},
+		
+		"should update existing candidateset with provisional peer by adding" : function(test) {
+			leafsetmgr._candidateset[lowerId] = { ap : "1.2.3.4", foundAt : 1};
+			leafsetmgr._candidateset[anId] = { ap : "2.3.4.5", foundAt : 2};
+				
+			leafsetmgr.updateWithProvisional(higherId, '6.7.8.9');
+			
+			test.equal(3, Object.keys(leafsetmgr._candidateset).length);
+			test.equal('1.2.3.4', leafsetmgr._candidateset[lowerId].ap);
+			test.equal('2.3.4.5', leafsetmgr._candidateset[anId].ap);
+			test.equal('6.7.8.9', leafsetmgr._candidateset[higherId].ap);
+			test.equal(1, leafsetmgr._candidateset[lowerId].foundAt);
+			test.equal(2, leafsetmgr._candidateset[anId].foundAt);
+			test.ok(leafsetmgr._candidateset[higherId].foundAt > 2);
+			test.done();
+		},
+		
+		"should update existing candidateset with two provisional peers, one new one already known" : function(test) {
+			leafsetmgr._candidateset[lowerId] = { ap : "1.2.3.4", foundAt : 1};
+			leafsetmgr._candidateset[anId] = { ap : "2.3.4.5", foundAt : 2};
+			
+			var upd = {};
+			upd[anId] = '3.4.5.6';
+			upd[higherId] = '6.7.8.9';
+			
+			leafsetmgr.updateWithProvisional(upd);
+			
+			test.equal(3, Object.keys(leafsetmgr._candidateset).length);
+			test.equal('1.2.3.4', leafsetmgr._candidateset[lowerId].ap);
+			test.equal('2.3.4.5', leafsetmgr._candidateset[anId].ap);
+			test.equal('6.7.8.9', leafsetmgr._candidateset[higherId].ap);
+			test.equal(1, leafsetmgr._candidateset[lowerId].foundAt);
+			test.equal(2, leafsetmgr._candidateset[anId].foundAt);
+			test.ok(leafsetmgr._candidateset[higherId].foundAt > 2);
+			test.done();
+		},
+		
+		"should ignore any provisional peers in the deadset" : function(test) {
+			leafsetmgr._deadset[anId] = {ap : "1.2.3.4", deadAt : new Date().getTime()};
+			leafsetmgr._leafset[lowerId] = { ap : "1.2.3.4", foundAt : 1};
+			
+			leafsetmgr.updateWithProvisional(anId, '2.3.4.5');
+			
+			test.equal(0, Object.keys(leafsetmgr._candidateset).length);
+			test.equal(1, Object.keys(leafsetmgr._leafset).length);
+			test.equal('1.2.3.4', leafsetmgr._leafset[lowerId].ap);
+			test.done();
+		},
+		
+		"should ignore any provisional peers outside leafset range where max leafset size already met" : function(test) {
+			node.nodeId = anId;
+			leafsetmgr._leafset[higherId] = { ap : "1.2.3.4", lastHeartbeatReceived : 1};
+			leafsetmgr._leafset[oneLessId] = { ap : "2.3.4.5", lastHeartbeatReceived : 2};
+			leafsetmgr._leafset[oneMoreId] = { ap : "3.4.5.6", lastHeartbeatReceived : 3};
+			
+			var upd = {};
+			upd[lowerId] = '4.5.6.7';
+			
+			leafsetmgr.updateWithProvisional(upd);
+
+			test.equal(0, Object.keys(leafsetmgr._candidateset).length);
+			test.equal(3, Object.keys(leafsetmgr._leafset).length);
+			test.equal('3.4.5.6', leafsetmgr._leafset[oneMoreId].ap);
+			test.equal('2.3.4.5', leafsetmgr._leafset[oneLessId].ap);
+			test.equal('1.2.3.4', leafsetmgr._leafset[higherId].ap);
+			test.done();			
+		},
+		
+		"should add any provisional peers within leafset range to candidateset even when max leafset size already met" : function(test) {
+			node.nodeId = anId;
+			leafsetmgr._leafset[higherId] = { ap : "1.2.3.4", lastHeartbeatReceived : 1};
+			leafsetmgr._leafset[lowerId] = { ap : "2.3.4.5", lastHeartbeatReceived : 2};
+			leafsetmgr._leafset[oneMoreId] = { ap : "3.4.5.6", lastHeartbeatReceived : 3};
+			
+			var upd = {};
+			upd[oneLessId] = '4.5.6.7';
+			
+			leafsetmgr.updateWithProvisional(upd);
+
+			test.equal(1, Object.keys(leafsetmgr._candidateset).length);
+			test.equal('4.5.6.7', leafsetmgr._candidateset[oneLessId].ap);
+			test.equal(3, Object.keys(leafsetmgr._leafset).length);
+			test.equal('3.4.5.6', leafsetmgr._leafset[oneMoreId].ap);
+			test.equal('2.3.4.5', leafsetmgr._leafset[lowerId].ap);
+			test.equal('1.2.3.4', leafsetmgr._leafset[higherId].ap);
 			test.done();			
 		}
 	}),
 	
 	"getting a compressed version of the leafset" : testCase({
+		tearDown : function(done) {
+			leafsetmgr.reset();
+			done();
+		},
+		
 		"should get empty compressed version of empty leafset" : function(test) {
-			leafsetmgr._leafset = {};
-			
 			var res = leafsetmgr.compressedLeafset();
 			
 			test.deepEqual({}, res);
@@ -333,9 +576,8 @@ module.exports = {
 		},
 		
 		"should get compressed version of non-empty leafset" : function(test) {
-			leafsetmgr._leafset = {};
-			leafsetmgr.updateLeafset(anId, '1.2.3.4');
-			leafsetmgr.updateLeafset(higherId, '2.2.2.2');			
+			leafsetmgr._put(anId, '1.2.3.4');
+			leafsetmgr._put(higherId, '2.2.2.2');			
 			
 			var res = leafsetmgr.compressedLeafset();
 			
@@ -358,8 +600,8 @@ module.exports = {
 		},
 		
 		"should be able to determine that current node is nearest to given id" : function(test) {
-			leafsetmgr.updateLeafset(lowerId,"1.2.3.4:1234");
-			leafsetmgr.updateLeafset(higherId, "1.2.3.4:1234");
+			leafsetmgr._put(lowerId,"1.2.3.4:1234");
+			leafsetmgr._put(higherId, "1.2.3.4:1234");
 			
 			var res = leafsetmgr.isThisNodeNearestTo(oneLessId);
 			
@@ -368,8 +610,8 @@ module.exports = {
 		},
 		
 		"should be able to determine that current node not is nearest to given id" : function(test) {
-			leafsetmgr.updateLeafset(lowerId,"1.2.3.4:1234");
-			leafsetmgr.updateLeafset(higherId, "1.2.3.4:1234");
+			leafsetmgr._put(lowerId,"1.2.3.4:1234");
+			leafsetmgr._put(higherId, "1.2.3.4:1234");
 			
 			var res = leafsetmgr.isThisNodeNearestTo(wrappedId);
 			
