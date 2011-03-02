@@ -460,7 +460,21 @@ module.exports = {
 			test.done();
 		},
 		
-		"should not update existing candidate set when provisional peer already in candidateset" : function(test) {
+		"should not update existing candidate set when provisional peer already in candidateset with same ip" : function(test) {
+			leafsetmgr._candidateset[lowerId] = { ap : "1.2.3.4", foundAt : 1};
+			leafsetmgr._candidateset[anId] = { ap : "2.3.4.5", foundAt : 2};
+			
+			leafsetmgr.updateWithProvisional(anId, '2.3.4.5');
+			
+			test.equal(2, Object.keys(leafsetmgr._candidateset).length);
+			test.equal('1.2.3.4', leafsetmgr._candidateset[lowerId].ap);
+			test.equal('2.3.4.5', leafsetmgr._candidateset[anId].ap);
+			test.equal(1, leafsetmgr._candidateset[lowerId].foundAt);
+			test.equal(2, leafsetmgr._candidateset[anId].foundAt);
+			test.done();
+		},
+		
+		"should update existing candidate set when provisional peer already in candidateset with different ip" : function(test) {
 			leafsetmgr._candidateset[lowerId] = { ap : "1.2.3.4", foundAt : 1};
 			leafsetmgr._candidateset[anId] = { ap : "2.3.4.5", foundAt : 2};
 			
@@ -468,9 +482,9 @@ module.exports = {
 			
 			test.equal(2, Object.keys(leafsetmgr._candidateset).length);
 			test.equal('1.2.3.4', leafsetmgr._candidateset[lowerId].ap);
-			test.equal('2.3.4.5', leafsetmgr._candidateset[anId].ap);
+			test.equal('3.4.5.6', leafsetmgr._candidateset[anId].ap);
 			test.equal(1, leafsetmgr._candidateset[lowerId].foundAt);
-			test.equal(2, leafsetmgr._candidateset[anId].foundAt);
+			test.ok(leafsetmgr._candidateset[anId].foundAt > 2);
 			test.done();
 		},
 		
@@ -490,7 +504,7 @@ module.exports = {
 			test.done();
 		},
 		
-		"should update existing candidateset with two provisional peers, one new one already known" : function(test) {
+		"should update existing candidateset with three provisional peers, one new one already known but with different ip" : function(test) {
 			leafsetmgr._candidateset[lowerId] = { ap : "1.2.3.4", foundAt : 1};
 			leafsetmgr._candidateset[anId] = { ap : "2.3.4.5", foundAt : 2};
 			
@@ -502,10 +516,10 @@ module.exports = {
 			
 			test.equal(3, Object.keys(leafsetmgr._candidateset).length);
 			test.equal('1.2.3.4', leafsetmgr._candidateset[lowerId].ap);
-			test.equal('2.3.4.5', leafsetmgr._candidateset[anId].ap);
+			test.equal('3.4.5.6', leafsetmgr._candidateset[anId].ap);
 			test.equal('6.7.8.9', leafsetmgr._candidateset[higherId].ap);
 			test.equal(1, leafsetmgr._candidateset[lowerId].foundAt);
-			test.equal(2, leafsetmgr._candidateset[anId].foundAt);
+			test.ok(leafsetmgr._candidateset[anId].foundAt > 2);
 			test.ok(leafsetmgr._candidateset[higherId].foundAt > 2);
 			test.done();
 		},
