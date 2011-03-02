@@ -49,7 +49,7 @@ module.exports = {
 		
 		"should not invoke message sender after stopping" : function(test) {
 			var _this = this;
-			leafsetmgr.updateLeafset('ABCDEF0123ABCDEF0123ABCDEF0123ABCDEF0123','127.0.0.1:8888');
+			leafsetmgr._put('ABCDEF0123ABCDEF0123ABCDEF0123ABCDEF0123','127.0.0.1:8888');
 			heartbeater.heartbeatIntervalMsec = 50;
 			heartbeater.heartbeatCheckIntervalMsec = 50;
 			heartbeater.start(this.overlayCallback);
@@ -63,8 +63,8 @@ module.exports = {
 		},
 		
 		"should send parting messages to leafset peers on stopping" : function(test) {
-			leafsetmgr.updateLeafset('ABCDEF0123ABCDEF0123ABCDEF0123ABCDEF0123','127.0.0.1:8888');
-			leafsetmgr.updateLeafset('1234567890123456789012345678901234567890','127.0.0.1:9999');
+			leafsetmgr._put('ABCDEF0123ABCDEF0123ABCDEF0123ABCDEF0123','127.0.0.1:8888');
+			leafsetmgr._put('1234567890123456789012345678901234567890','127.0.0.1:9999');
 			heartbeater.start(this.overlayCallback);
 			
 			heartbeater.stop();
@@ -75,8 +75,8 @@ module.exports = {
 		},
 		
 		"should not send parting messages to leafset peers on stopping if notify peers flag disabled" : function(test) {
-			leafsetmgr.updateLeafset('ABCDEF0123ABCDEF0123ABCDEF0123ABCDEF0123','127.0.0.1:8888');
-			leafsetmgr.updateLeafset('1234567890123456789012345678901234567890','127.0.0.1:9999');
+			leafsetmgr._put('ABCDEF0123ABCDEF0123ABCDEF0123ABCDEF0123','127.0.0.1:8888');
+			leafsetmgr._put('1234567890123456789012345678901234567890','127.0.0.1:9999');
 			heartbeater.start(this.overlayCallback);
 			
 			heartbeater.stop(false);
@@ -105,8 +105,8 @@ module.exports = {
 		
 		"should send heartbeat to leafset nodes shortly after startup" : function(test) {
 			var _this = this;
-			leafsetmgr.updateLeafset('ABCDEF0123ABCDEF0123ABCDEF0123ABCDEF0123','127.0.0.1:8888');
-			leafsetmgr.updateLeafset('1234567890123456789012345678901234567890','127.0.0.1:9999');
+			leafsetmgr._put('ABCDEF0123ABCDEF0123ABCDEF0123ABCDEF0123','127.0.0.1:8888');
+			leafsetmgr._put('1234567890123456789012345678901234567890','127.0.0.1:9999');
 			heartbeater.heartbeatIntervalMsec = 50;
 			heartbeater.heartbeatCheckIntervalMsec = 50;
 			
@@ -136,8 +136,8 @@ module.exports = {
 		
 		"should update last heartbeat sent time after sending" : function(test) {
 			var _this = this;
-			leafsetmgr.updateLeafset('ABCDEF0123ABCDEF0123ABCDEF0123ABCDEF0123','127.0.0.1:8888');
-			leafsetmgr.updateLeafset('1234567890123456789012345678901234567890','127.0.0.1:9999');
+			leafsetmgr._put('ABCDEF0123ABCDEF0123ABCDEF0123ABCDEF0123','127.0.0.1:8888');
+			leafsetmgr._put('1234567890123456789012345678901234567890','127.0.0.1:9999');
 			
 			heartbeater.heartbeatIntervalMsec = 1000;
 			heartbeater.heartbeatCheckIntervalMsec = 50;
@@ -154,8 +154,8 @@ module.exports = {
 		
 		"should not send heartbeats when interval since last heartbeat not reached" : function(test) {
 			var _this = this;
-			leafsetmgr.updateLeafset('ABCDEF0123ABCDEF0123ABCDEF0123ABCDEF0123','127.0.0.1:8888');
-			leafsetmgr.updateLeafset('1234567890123456789012345678901234567890','127.0.0.1:9999');
+			leafsetmgr._put('ABCDEF0123ABCDEF0123ABCDEF0123ABCDEF0123','127.0.0.1:8888');
+			leafsetmgr._put('1234567890123456789012345678901234567890','127.0.0.1:9999');
 			leafsetmgr._leafset['ABCDEF0123ABCDEF0123ABCDEF0123ABCDEF0123'].lastHeartbeatSent = new Date().getTime();
 			leafsetmgr._leafset['1234567890123456789012345678901234567890'].lastHeartbeatSent = new Date().getTime();
 			
@@ -187,8 +187,8 @@ module.exports = {
 		
 		"should detect timed out peer in leafset, purge and raise event" : function(test) {
 			var callback = sinon.stub();			
-			leafsetmgr.updateLeafset('ABCDEF0123ABCDEF0123ABCDEF0123ABCDEF0123','127.0.0.1:8888');
-			leafsetmgr.updateLeafset('1234567890123456789012345678901234567890','127.0.0.1:9999');
+			leafsetmgr._put('ABCDEF0123ABCDEF0123ABCDEF0123ABCDEF0123','127.0.0.1:8888');
+			leafsetmgr._put('1234567890123456789012345678901234567890','127.0.0.1:9999');
 			leafsetmgr._leafset['ABCDEF0123ABCDEF0123ABCDEF0123ABCDEF0123'].lastHeartbeatReceived = (new Date().getTime() - 1000000);
 			leafsetmgr._leafset['1234567890123456789012345678901234567890'].lastHeartbeatReceived = (new Date().getTime() - 1000000);			
 			heartbeater.on('peer-departed', callback);
@@ -234,7 +234,8 @@ module.exports = {
 					sender_port : 1234
 			};
 		
-			this.updateLeafset = sinon.collection.stub(leafsetmgr, 'updateLeafset');
+			this.updateWithProvisional = sinon.collection.stub(leafsetmgr, 'updateWithProvisional');
+			this.updateWithKnownGood = sinon.collection.stub(leafsetmgr, 'updateWithKnownGood');
 			this.mergeRoutingTable = sinon.collection.stub(routingmgr, 'mergeRoutingTable');
 			
 			done();
@@ -249,8 +250,8 @@ module.exports = {
 		"update leafset and routing table on receipt" : function(test) {
 			heartbeater._handleReceivedGravitiMessage(this.msg, this.msginfo);
 			
-			test.ok(this.updateLeafset.calledWith({a:'b'}));
-			test.ok(this.updateLeafset.calledWith('ABCDEF0123ABCDEF0123ABCDEF0123ABCDEF0123', '127.0.0.1:1234'));
+			test.ok(this.updateWithProvisional.calledWith({a:'b'}));
+			test.ok(this.updateWithKnownGood.calledWith('ABCDEF0123ABCDEF0123ABCDEF0123ABCDEF0123', '127.0.0.1:1234'));
 			test.ok(this.mergeRoutingTable.calledWith({c:'d'}));
 			test.done();
 		}
@@ -276,9 +277,9 @@ module.exports = {
 			done();
 		},
 
-		"update leafset and routing table on receipt" : function(test) {
+		"update leafset and routing table on receipt of peer departure" : function(test) {
 			var callback = sinon.stub();			
-			leafsetmgr.updateLeafset('ABCDEF0123ABCDEF0123ABCDEF0123ABCDEF0123','127.0.0.1:8888');
+			leafsetmgr._put('ABCDEF0123ABCDEF0123ABCDEF0123ABCDEF0123','127.0.0.1:8888');
 			heartbeater.on('peer-departed', callback);
 			
 			heartbeater._handleReceivedGravitiMessage(this.msg, this.msginfo);

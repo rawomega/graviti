@@ -70,7 +70,7 @@ module.exports = {
 			};
 			
 			leafsetmgr.reset();
-			this.updateLeafset = sinon.collection.stub(leafsetmgr, 'updateLeafset');
+			this.updateWithProvisional = sinon.collection.stub(leafsetmgr, 'updateWithProvisional');
 			
 			routingmgr.routingTable = {};
 			this.updateRoutingTable = sinon.collection.stub(routingmgr, 'updateRoutingTable');
@@ -122,7 +122,7 @@ module.exports = {
 			test.strictEqual(this.sendToAddr.args[0][4], 	2222);
 			
 			// assert on state table updates
-			test.ok(this.updateLeafset.calledWith('ABCDEF', '2.2.2.2:2222'));
+			test.ok(this.updateWithProvisional.calledWith('ABCDEF', '2.2.2.2:2222'));
 			test.ok(this.updateRoutingTable.calledWith('ABCDEF', '2.2.2.2:2222'));
 			test.done();
 		},
@@ -170,7 +170,7 @@ module.exports = {
 			test.strictEqual(this.sendToAddr.args[0][4], 3333);
 			
 			// assert on state table updates
-			test.ok(this.updateLeafset.calledWith('ABCDEF', '3.3.3.3:3333'));
+			test.ok(this.updateWithProvisional.calledWith('ABCDEF', '3.3.3.3:3333'));
 			test.ok(this.updateRoutingTable.calledWith('ABCDEF', '3.3.3.3:3333'));
 			test.done();
 		},
@@ -209,7 +209,7 @@ module.exports = {
 			test.strictEqual(this.sendToAddr.args[0][4], 3333);
 			
 			// assert on state table updates
-			test.ok(this.updateLeafset.calledWith('ABCDEF', '3.3.3.3:3333'));
+			test.ok(this.updateWithProvisional.calledWith('ABCDEF', '3.3.3.3:3333'));
 			test.ok(this.updateRoutingTable.calledWith('ABCDEF', '3.3.3.3:3333'));
 			test.done();
 		}
@@ -225,7 +225,8 @@ module.exports = {
 				sender_port : 2222
 			};
 	
-			this.updateLeafset = sinon.collection.stub(leafsetmgr, 'updateLeafset');		
+			this.updateWithProvisional = sinon.collection.stub(leafsetmgr, 'updateWithProvisional');
+			this.updateWithKnownGood = sinon.collection.stub(leafsetmgr, 'updateWithKnownGood');
 			this.updateRoutingTable = sinon.collection.stub(routingmgr, 'updateRoutingTable');
 			this.mergeRoutingTable = sinon.collection.stub(routingmgr, 'mergeRoutingTable');
 	
@@ -255,9 +256,9 @@ module.exports = {
 			bootstrapmgr.start(this.overlayCallback);
 			this.overlayCallback.emit("graviti-message-received", msg, this.msginfo);
 			
-			test.ok(this.updateLeafset.calledWith(this.leafset));
+			test.ok(this.updateWithProvisional.calledWith(this.leafset));
 			test.ok(this.mergeRoutingTable.calledWith(this.routingTable));
-			test.ok(this.updateLeafset.calledWith('ABCDEF', '2.2.2.2:2222'));
+			test.ok(this.updateWithKnownGood.calledWith('ABCDEF', '2.2.2.2:2222'));
 			test.ok(this.updateRoutingTable.calledWith('ABCDEF', '2.2.2.2:2222'));
 			test.done();
 		},
