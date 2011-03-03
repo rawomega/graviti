@@ -208,39 +208,39 @@ module.exports = {
 			});
 		},
 		
-		"should be able to deal with sudden departure of a node" : function(test) {
-			var _this = this;
-			
-			var clearOutLeafset = function() {
-				require('core/leafsetmgr').reset();
-				require('core/connmgr').stopListening();				
-			};
-			
-			var setShortHeartbeatTimeout = function() {
-				var heartbeater = require('core/heartbeater');
-				heartbeater.timedOutPeerCheckIntervalMsec = 500;
-				heartbeater.timedOutPeerIntervalMsec = 3000;
-				heartbeater.stop(false);
-				heartbeater.start(require('core/overlay'));
-			};
-			
-			// initialisation stuff
-			this.nodes.select(3).waitUntilEqual(3, this.getLeafsetSize, test);
-			this.nodes.selectAll().eval(this.heartbeatFrequently, test);
-			this.nodes.selectAll().eval(this.trackReceivedMessages, test);
-			this.nodes.selectAll().eval(this.trackReceivedPeerDepartedEvents, test);
-			
-			// clear out leafset on 3 so it doesnt send out messages when departing
-			this.nodes.select(3).eval(clearOutLeafset, test);
-			
-			// stop node 3, make sure it is take out of 1's leafset, and that 2 receives a peer departed event
-			this.nodes.select(3).stop();
-			this.nodes.select(1).waitUntilEqual(2, this.getLeafsetSize, test);
-			this.nodes.select(2).waitUntilEqual([this.nodeIds[3]], this.getPeerDepartedEvents, test);
-			
-			this.nodes.select(2).waitUntilEqual(0, this.countMessages, test, function() {
-				_this.nodes.done(test);		
-			});
-		}
+//		"should be able to deal with sudden departure of a node" : function(test) {
+//			var _this = this;
+//			
+//			var clearOutLeafset = function() {
+//				require('core/leafsetmgr').reset();
+//				require('core/connmgr').stopListening();				
+//			};
+//			
+//			var setShortHeartbeatTimeout = function() {
+//				var heartbeater = require('core/heartbeater');
+//				heartbeater.timedOutPeerCheckIntervalMsec = 500;
+//				heartbeater.timedOutPeerIntervalMsec = 3000;
+//				heartbeater.stop(false);
+//				heartbeater.start(require('core/overlay'));
+//			};
+//			
+//			// initialisation stuff
+//			this.nodes.select(3).waitUntilEqual(3, this.getLeafsetSize, test);
+//			this.nodes.selectAll().eval(this.heartbeatFrequently, test);
+//			this.nodes.selectAll().eval(this.trackReceivedMessages, test);
+//			this.nodes.selectAll().eval(this.trackReceivedPeerDepartedEvents, test);
+//			
+//			// clear out leafset on 3 so it doesnt send out messages when departing
+//			this.nodes.select(3).eval(clearOutLeafset, test);
+//			
+//			// stop node 3, make sure it is take out of 1's leafset, and that 2 receives a peer departed event
+//			this.nodes.select(3).stop();
+//			this.nodes.select(1).waitUntilEqual(2, this.getLeafsetSize, test);
+//			this.nodes.select(2).waitUntilEqual([this.nodeIds[3]], this.getPeerDepartedEvents, test);
+//			
+//			this.nodes.select(2).waitUntilEqual(0, this.countMessages, test, function() {
+//				_this.nodes.done(test);		
+//			});
+//		}
 	})
 };

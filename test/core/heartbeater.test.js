@@ -168,7 +168,42 @@ module.exports = {
 				test.ok(!_this.sendToAddr.called);
 				test.done();
 			}, 200);
-		}
+		},
+		
+		"should send heartbeat to candidateset peers and update last sent time" : function(test) {
+			var _this = this;
+			leafsetmgr.updateWithProvisional('ABCDEF0123ABCDEF0123ABCDEF0123ABCDEF0123','127.0.0.1:8888');
+			leafsetmgr.updateWithProvisional('1234567890123456789012345678901234567890','127.0.0.1:9999');
+			heartbeater.heartbeatIntervalMsec = 50;
+			heartbeater.heartbeatCheckIntervalMsec = 50;
+			
+			heartbeater.start(this.overlayCallback);
+			
+			test.equal(2, Object.keys(leafsetmgr._candidateset).length);
+			setTimeout(function() {
+				test.strictEqual(_this.sendToAddr.args[0][0], 'p2p:graviti/heartbeat');
+				test.deepEqual(_this.sendToAddr.args[0][1], {
+					leafset : leafsetmgr.compressedLeafset(),
+					routing_table : routingmgr.routingTable
+				});
+				test.deepEqual(_this.sendToAddr.args[0][2], {method : 'POST'});
+				test.strictEqual(_this.sendToAddr.args[0][3], '127.0.0.1');
+				test.strictEqual(_this.sendToAddr.args[0][4], '8888');
+				
+				test.strictEqual(_this.sendToAddr.args[1][0], 'p2p:graviti/heartbeat');
+				test.deepEqual(_this.sendToAddr.args[1][1], {
+						leafset : leafsetmgr.compressedLeafset(),
+						routing_table : routingmgr.routingTable
+					});
+				test.deepEqual(_this.sendToAddr.args[1][2], {method : 'POST'});
+				test.strictEqual(_this.sendToAddr.args[1][3], '127.0.0.1');
+				test.strictEqual(_this.sendToAddr.args[1][4], '9999');
+				
+				test.ok(leafsetmgr._candidateset['ABCDEF0123ABCDEF0123ABCDEF0123ABCDEF0123'].lastHeartbeatSent > (new Date().getTime() - 1000));
+				test.ok(leafsetmgr._candidateset['1234567890123456789012345678901234567890'].lastHeartbeatSent > (new Date().getTime() - 1000));
+				test.done();
+			}, 200);
+		},
 	}),
 	
 	"detecting timed out peers" : testCase({
@@ -206,7 +241,7 @@ module.exports = {
 		},
 		
 		"should remove timed out dead peers regularly" : function(test) {
-			var clear = sinon.collection.stub(leafsetmgr, 'clearExpiredDeadPeers');			
+			var clear = sinon.collection.stub(leafsetmgr, 'clearExpiredDeadAndCandidatePeers');			
 			heartbeater.timedOutPeerCheckIntervalMsec = 50;
 			
 			heartbeater.start(this.overlayCallback);

@@ -121,6 +121,21 @@ module.exports = {
 			test.equal('1.2.3.4:1234', callbacks[lowerId].ap);
 			test.equal('1.2.3.4:5678', callbacks[higherId].ap);
 			test.done();
+		},
+		
+		"should be able to invoke given anonymous function for each candidateset member" : function(test) {
+			var callbacks = {};
+			leafsetmgr._candidateset[lowerId] = {ap : "1.2.3.4:1234"};
+			leafsetmgr._candidateset[higherId] = {ap : "5.6.7.8:1234"};
+			
+			leafsetmgr.eachCandidate(function(id, item) {
+				callbacks[id] = item;
+			});
+			
+			test.equal(2, Object.keys(callbacks).length);
+			test.equal('1.2.3.4:1234', callbacks[lowerId].ap);
+			test.equal('5.6.7.8:1234', callbacks[higherId].ap);
+			test.done();
 		}
 	}),
 	
@@ -175,10 +190,21 @@ module.exports = {
 			leafsetmgr.remove(higherId);
 			leafsetmgr._deadset[lowerId].deadAt = (new Date().getTime() - 100000);
 			
-			leafsetmgr.clearExpiredDeadPeers();
+			leafsetmgr.clearExpiredDeadAndCandidatePeers();
 			
 			test.strictEqual(1, Object.keys(leafsetmgr._deadset).length);
 			test.ok(leafsetmgr._deadset[lowerId] === undefined);
+			test.done();
+		},
+		
+		"should be able to clear all expired candidate peers" : function(test) {
+			leafsetmgr._candidateset[lowerId] = {foundAt : new Date().getTime() - 100000};
+			leafsetmgr._candidateset[higherId] = {foundAt : new Date().getTime()};
+			
+			leafsetmgr.clearExpiredDeadAndCandidatePeers();
+			
+			test.strictEqual(1, Object.keys(leafsetmgr._candidateset).length);
+			test.ok(leafsetmgr._candidateset[lowerId] === undefined);
 			test.done();
 		}
 	}), 
