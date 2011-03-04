@@ -1,6 +1,7 @@
 var assert = require('assert');
 var leafsetmgr = require('core/leafsetmgr');
 var node = require('core/node');
+var sinon = require('sinon');
 var testCase = require('nodeunit').testCase;
 
 var myId = '3909DB380AF909E320329511CC932099BAD10094';
@@ -145,17 +146,20 @@ module.exports = {
 			done();
 		},
 		
-		"should be able to remove a single element from the leafset, adding it to 'deadset'" : function(test) {
+		"should be able to remove a single element from the leafset, adding it to 'deadset' and raising event" : function(test) {
+			var callback = sinon.stub();
+			leafsetmgr.on('peer-departed', callback);
 			leafsetmgr._put(lowerId,"1.2.3.4:1234");
-			leafsetmgr._put(higherId, "1.2.3.4:5678");
+			leafsetmgr._put(higherId, "1.2.3.4:5678");			
 			
-			leafsetmgr.remove(lowerId);
+			leafsetmgr.removePeer(lowerId);
 			
 			test.strictEqual(1, Object.keys(leafsetmgr._leafset).length);
 			test.ok(leafsetmgr._leafset[higherId] !== undefined);
 			test.ok(leafsetmgr._leafset[higherId].deadAt === undefined);
 			test.strictEqual(1, Object.keys(leafsetmgr._deadset).length);
 			test.ok(leafsetmgr._deadset[lowerId].deadAt > (new Date().getTime() - 10000));
+			test.ok(callback.calledWith(lowerId));
 			test.done();
 		},
 		
@@ -186,8 +190,8 @@ module.exports = {
 		"should be able to clear all timed out dead peers" : function(test) {
 			leafsetmgr._put(lowerId,"1.2.3.4:1234");
 			leafsetmgr._put(higherId, "1.2.3.4:5678");			
-			leafsetmgr.remove(lowerId);
-			leafsetmgr.remove(higherId);
+			leafsetmgr.removePeer(lowerId);
+			leafsetmgr.removePeer(higherId);
 			leafsetmgr._deadset[lowerId].deadAt = (new Date().getTime() - 100000);
 			
 			leafsetmgr.clearExpiredDeadAndCandidatePeers();

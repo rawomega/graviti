@@ -27,9 +27,7 @@ module.exports = {
 			};
 			this.trackReceivedMessages = function() {
 				var app = require('core/appmgr').apps[0];
-				require('util').log('\n\n------------- ADDING ' + app.name + ' ' + require('core/appmgr').apps.length + ' \n\n');
 				require('core/overlay').on(app.name + '-app-message-received', function(msg, msginfo) {
-					require('util').log('\n\n------------- ' + JSON.stringify(msg) + '\n\n');
 					if (!app.receivedMessages)
 						app.receivedMessages = [];
 					if (msg.content.subject === 'test')
@@ -65,7 +63,7 @@ module.exports = {
 		tearDown : function(done) {
 			this.nodes.stopNow();			
 			setTimeout(function() {
-				util.log('\n\n========\n\n');				
+				util.log('\n\n========\n\n');	
 				done();
 			}, 2000);
 		},

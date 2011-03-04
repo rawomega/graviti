@@ -220,13 +220,11 @@ module.exports = {
 			done();
 		},
 		
-		"should detect timed out peer in leafset, purge and raise event" : function(test) {
-			var callback = sinon.stub();			
+		"should detect timed out peer in leafset and purge" : function(test) {
 			leafsetmgr._put('ABCDEF0123ABCDEF0123ABCDEF0123ABCDEF0123','127.0.0.1:8888');
 			leafsetmgr._put('1234567890123456789012345678901234567890','127.0.0.1:9999');
 			leafsetmgr._leafset['ABCDEF0123ABCDEF0123ABCDEF0123ABCDEF0123'].lastHeartbeatReceived = (new Date().getTime() - 1000000);
 			leafsetmgr._leafset['1234567890123456789012345678901234567890'].lastHeartbeatReceived = (new Date().getTime() - 1000000);			
-			heartbeater.on('peer-departed', callback);
 			heartbeater.timedOutPeerCheckIntervalMsec = 50;
 			
 			heartbeater.start(this.overlayCallback);
@@ -234,8 +232,6 @@ module.exports = {
 			setTimeout(function() {
 				test.ok(leafsetmgr._leafset['ABCDEF0123ABCDEF0123ABCDEF0123ABCDEF0123'] === undefined);
 				test.ok(leafsetmgr._leafset['1234567890123456789012345678901234567890'] === undefined);
-				test.ok(callback.calledWith('ABCDEF0123ABCDEF0123ABCDEF0123ABCDEF0123'));
-				test.ok(callback.calledWith('1234567890123456789012345678901234567890'));
 				test.done();
 			}, 200);
 		},
@@ -313,14 +309,11 @@ module.exports = {
 		},
 
 		"update leafset and routing table on receipt of peer departure" : function(test) {
-			var callback = sinon.stub();			
-			leafsetmgr._put('ABCDEF0123ABCDEF0123ABCDEF0123ABCDEF0123','127.0.0.1:8888');
-			heartbeater.on('peer-departed', callback);
+			var removePeer = sinon.collection.stub(leafsetmgr, "removePeer");
 			
 			heartbeater._handleReceivedGravitiMessage(this.msg, this.msginfo);
 			
-			test.ok(leafsetmgr._leafset['ABCDEF0123ABCDEF0123ABCDEF0123ABCDEF0123'] === undefined);
-			test.ok(callback.calledWith('ABCDEF0123ABCDEF0123ABCDEF0123ABCDEF0123'));
+			test.ok(removePeer.calledWith('ABCDEF0123ABCDEF0123ABCDEF0123ABCDEF0123'));
 			test.done();
 		}
 	})
