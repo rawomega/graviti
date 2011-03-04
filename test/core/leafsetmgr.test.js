@@ -215,7 +215,9 @@ module.exports = {
 	
 	"updating leafset with known good peers" : testCase ({
 		setUp : function(done) {
-			node.nodeId = myId;
+		node.nodeId = myId;
+			this.arrivedCallback = sinon.stub();
+			leafsetmgr.on('peer-arrived', this.arrivedCallback);
 			leafsetmgr.leafsetSize = 3;
 			done();
 		},
@@ -234,16 +236,17 @@ module.exports = {
 			test.done();
 		},
 		
-		"should update empty leafset with known good peer by adding directly" : function(test) {
+		"should update empty leafset with known good peer by adding directly and raising event" : function(test) {
 			leafsetmgr.updateWithKnownGood(anId, '1.2.3.4');
 			
 			test.equal(1, Object.keys(leafsetmgr._leafset).length);
 			test.equal('1.2.3.4', leafsetmgr._leafset[anId].ap);
 			test.ok(leafsetmgr._leafset[anId].lastHeartbeatReceived > 0);
+			test.ok(this.arrivedCallback.calledWith(anId));
 			test.done();
 		},
 		
-		"should update empty leafset with known good peer from object" : function(test) {
+		"should update empty leafset with known good peer from object and raise event" : function(test) {
 			var upd = {};
 			upd[anId] = '1.2.3.4';
 			
@@ -252,10 +255,11 @@ module.exports = {
 			test.equal(1, Object.keys(leafsetmgr._leafset).length);
 			test.equal('1.2.3.4', leafsetmgr._leafset[anId].ap);
 			test.ok(leafsetmgr._leafset[anId].lastHeartbeatReceived > 0);
+			test.ok(this.arrivedCallback.calledWith(anId));
 			test.done();
 		},
 		
-		"should update empty leafset from object with two known good peers at once" : function(test) {
+		"should update empty leafset from object with two known good peers at once and raise events" : function(test) {
 			var upd = {};
 			upd[anId] = '1.2.3.4';
 			upd[higherId] = '2.4.6.8';
@@ -267,6 +271,8 @@ module.exports = {
 			test.equal('2.4.6.8', leafsetmgr._leafset[higherId].ap);
 			test.ok(leafsetmgr._leafset[anId].lastHeartbeatReceived > 0);
 			test.ok(leafsetmgr._leafset[higherId].lastHeartbeatReceived > 0);
+			test.ok(this.arrivedCallback.calledWith(anId));
+			test.ok(this.arrivedCallback.calledWith(higherId));
 			test.done();
 		},
 		
@@ -281,10 +287,11 @@ module.exports = {
 			test.equal('2.3.4.5', leafsetmgr._leafset[anId].ap);
 			test.equal(1, leafsetmgr._leafset[lowerId].lastHeartbeatReceived);
 			test.equal(2, leafsetmgr._leafset[anId].lastHeartbeatReceived);
+			test.ok(!this.arrivedCallback.called);
 			test.done();
 		},
 		
-		"should update existing leafset with known good peer by replacing" : function(test) {
+		"should update existing leafset with known good peer by replacing, without raising new peer event" : function(test) {
 			leafsetmgr._leafset[lowerId] = { ap : "1.2.3.4", lastHeartbeatReceived : 1};
 			leafsetmgr._leafset[anId] = { ap : "2.3.4.5", lastHeartbeatReceived : 2};
 			
@@ -295,10 +302,11 @@ module.exports = {
 			test.equal('3.4.5.6', leafsetmgr._leafset[anId].ap);
 			test.equal(1, leafsetmgr._leafset[lowerId].lastHeartbeatReceived);
 			test.ok(leafsetmgr._leafset[anId].lastHeartbeatReceived > 2);
+			test.ok(!this.arrivedCallback.called);
 			test.done();
 		},
 		
-		"should update existing leafset with known good peer by adding" : function(test) {
+		"should update existing leafset with known good peer by adding and raising event" : function(test) {
 			leafsetmgr._leafset[lowerId] = { ap : "1.2.3.4", lastHeartbeatReceived : 1};
 			leafsetmgr._leafset[anId] = { ap : "2.3.4.5", lastHeartbeatReceived : 2};
 				
@@ -311,6 +319,7 @@ module.exports = {
 			test.equal(1, leafsetmgr._leafset[lowerId].lastHeartbeatReceived);
 			test.equal(2, leafsetmgr._leafset[anId].lastHeartbeatReceived);
 			test.ok(leafsetmgr._leafset[higherId].lastHeartbeatReceived > 2);
+			test.ok(this.arrivedCallback.calledWith(higherId));
 			test.done();
 		},
 		
@@ -331,6 +340,8 @@ module.exports = {
 			test.equal(1, leafsetmgr._leafset[lowerId].lastHeartbeatReceived);
 			test.ok(leafsetmgr._leafset[anId].lastHeartbeatReceived > 2);
 			test.ok(leafsetmgr._leafset[higherId].lastHeartbeatReceived > 2);
+			test.ok(this.arrivedCallback.calledWith(higherId));
+			test.ok(this.arrivedCallback.calledOnce);
 			test.done();
 		},
 		
@@ -344,6 +355,7 @@ module.exports = {
 			test.equal(2, Object.keys(leafsetmgr._leafset).length);
 			test.equal('1.2.3.4', leafsetmgr._leafset[lowerId].ap);
 			test.equal('2.3.4.5', leafsetmgr._leafset[anId].ap);
+			test.ok(this.arrivedCallback.calledWith(anId));
 			test.done();
 		},
 		
@@ -357,6 +369,7 @@ module.exports = {
 			test.equal(2, Object.keys(leafsetmgr._leafset).length);
 			test.equal('1.2.3.4', leafsetmgr._leafset[lowerId].ap);
 			test.equal('2.3.4.5', leafsetmgr._leafset[anId].ap);
+			test.ok(this.arrivedCallback.calledWith(anId));
 			test.done();
 		},
 		
@@ -378,6 +391,7 @@ module.exports = {
 			test.equal(3, leafsetmgr._leafset[higherId].lastHeartbeatReceived);
 			test.equal(2, leafsetmgr._leafset[oneLessId].lastHeartbeatReceived);
 			test.ok(leafsetmgr._leafset[oneMoreId].lastHeartbeatReceived > 2);
+			test.ok(this.arrivedCallback.calledWith(oneMoreId));
 			test.done();			
 		},
 		
@@ -399,6 +413,7 @@ module.exports = {
 			test.equal(1, leafsetmgr._leafset[higherId].lastHeartbeatReceived);
 			test.equal(2, leafsetmgr._leafset[oneLessId].lastHeartbeatReceived);
 			test.equal(3, leafsetmgr._leafset[oneMoreId].lastHeartbeatReceived);
+			test.ok(!this.arrivedCallback.called);
 			test.done();			
 		}
 	}),
