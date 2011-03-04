@@ -42,13 +42,21 @@ module.exports = {
 				require('core/overlay').sendToId('p2p:echoapp/departednodetest',
 						{subject : 'test'}, {method : 'POST'}, 'B111111111111111111111111111111111111111');
 			};
-			this.trackReceivedPeerDepartedEvents = function() {
-				var app = require('core/appmgr').apps[0];				
+			this.trackReceivedPeerArrivedAndDepartedEvents = function() {
+				var app = require('core/appmgr').apps[0];
+				app.peerArrived = function(id) {						
+					if (!app.arrivedPeers)
+						app.arrivedPeers = [];
+					app.arrivedPeers.push(id);
+				};
 				app.peerDeparted = function(id) {						
 					if (!app.departedPeers)
 						app.departedPeers = [];
 					app.departedPeers.push(id);
 				};
+			};
+			this.getPeerArrivedEvents = function() {
+				return require('core/appmgr').apps[0].arrivedPeers;
 			};
 			this.getPeerDepartedEvents = function() {
 				return require('core/appmgr').apps[0].departedPeers;
@@ -175,13 +183,13 @@ module.exports = {
 			});
 		},
 		
-		"should be able to deal with orderly departure of a node" : function(test) {
+		"should be able to deal with orderly departure and return of a node" : function(test) {
 			var _this = this;
 
 			// initialisation stuff
 			this.nodes.select(3).waitUntilEqual(3, this.getLeafsetSize, test);
 			this.nodes.selectAll().eval(this.trackReceivedMessages, test);
-			this.nodes.selectAll().eval(this.trackReceivedPeerDepartedEvents, test);
+			this.nodes.selectAll().eval(this.trackReceivedPeerArrivedAndDepartedEvents, test);
 
 			// stop node 3, make sure it is take out of 1's leafset, and that 2 receives a peer departed event
 			this.nodes.select(3).stop();
@@ -193,10 +201,11 @@ module.exports = {
 // Re-enable this line after we're able to handle routing table failures / retries 			
 //			this.nodes.select(2).waitUntilEqual(1, this.countMessages, test);
 			
-			// now bring node 3 back, after clearing departed node from dead peer set 
+			// now bring node 3 back and wait for arrived event, after clearing departed node from dead peer set 
 			this.nodes.select([0,1,2]).eval(this.clearDeadPeersListInLeafset, test);
 			this.nodes.select(3).start();
 			this.nodes.select(0).waitUntilEqual(3, this.getLeafsetSize, test);
+			this.nodes.select(2).waitUntilEqual([this.nodeIds[3]], this.getPeerArrivedEvents, test);
 			this.nodes.select(3).eval(this.trackReceivedMessages, test);
 			
 			// ... and make sure that same message now goes there and not elsewhere
@@ -228,7 +237,7 @@ module.exports = {
 			this.nodes.select(3).waitUntilEqual(3, this.getLeafsetSize, test);
 			this.nodes.selectAll().eval(this.heartbeatFrequently, test);
 			this.nodes.selectAll().eval(setShortHeartbeatTimeout, test);
-			this.nodes.selectAll().eval(this.trackReceivedPeerDepartedEvents, test);
+			this.nodes.selectAll().eval(this.trackReceivedPeerArrivedAndDepartedEvents, test);
 			
 			// clear out leafset on 3 so it doesnt send out messages when departing
 			this.nodes.select(3).eval(clearOutLeafset, test);
@@ -243,10 +252,11 @@ module.exports = {
 // Re-enable this line after we're able to handle routing table failures / retries 			
 //			this.nodes.select(2).waitUntilEqual(1, this.countMessages, test);
 			
-			// now bring node 3 back, after clearing departed node from dead peer set 
+			// now bring node 3 back and wait for arrived event, after clearing departed node from dead peer set 
 			this.nodes.select([0,1,2]).eval(this.clearDeadPeersListInLeafset, test);
 			this.nodes.select(3).start();
 			this.nodes.select(0).waitUntilEqual(3, this.getLeafsetSize, test);
+			this.nodes.select(2).waitUntilEqual([this.nodeIds[3]], this.getPeerArrivedEvents, test);
 			this.nodes.select(3).eval(this.trackReceivedMessages, test);
 			
 			// ... and make sure that same message now goes there and not elsewhere
