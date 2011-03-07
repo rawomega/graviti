@@ -102,6 +102,23 @@ module.exports = {
 		}
 	}),
 	
+	"getting individual peer metadata" : testCase ({
+		tearDown : function(done) {
+			leafsetmgr.reset();
+			done();
+		},
+		
+		"should be able to get leafset metadata for given peer" : function(test) {
+			leafsetmgr._put(anId, "1.2.3.4:9012");
+			
+			var res = leafsetmgr.peer(anId);
+			
+			test.strictEqual("1.2.3.4:9012", res.ap);
+			test.ok(res.lastHeartbeatReceived > 0);
+			test.done();
+		}
+	}),
+	
 	"iterating over leafset" : testCase ({
 		tearDown : function(done) {
 			leafsetmgr.reset();

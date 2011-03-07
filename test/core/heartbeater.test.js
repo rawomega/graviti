@@ -116,7 +116,8 @@ module.exports = {
 				test.strictEqual(_this.sendToAddr.args[0][0], 'p2p:graviti/heartbeat');
 				test.deepEqual(_this.sendToAddr.args[0][1], {
 						leafset : leafsetmgr.compressedLeafset(),
-						routing_table : routingmgr.routingTable
+						routing_table : routingmgr.routingTable,
+						rsvp : true
 					});
 				test.deepEqual(_this.sendToAddr.args[0][2], {method : 'POST'});
 				test.strictEqual(_this.sendToAddr.args[0][3], '127.0.0.1');
@@ -125,7 +126,8 @@ module.exports = {
 				test.strictEqual(_this.sendToAddr.args[1][0], 'p2p:graviti/heartbeat');
 				test.deepEqual(_this.sendToAddr.args[1][1], {
 						leafset : leafsetmgr.compressedLeafset(),
-						routing_table : routingmgr.routingTable
+						routing_table : routingmgr.routingTable,
+						rsvp : true
 					});
 				test.deepEqual(_this.sendToAddr.args[1][2], {method : 'POST'});
 				test.strictEqual(_this.sendToAddr.args[1][3], '127.0.0.1');
@@ -184,7 +186,8 @@ module.exports = {
 				test.strictEqual(_this.sendToAddr.args[0][0], 'p2p:graviti/heartbeat');
 				test.deepEqual(_this.sendToAddr.args[0][1], {
 					leafset : leafsetmgr.compressedLeafset(),
-					routing_table : routingmgr.routingTable
+					routing_table : routingmgr.routingTable,
+					rsvp : true
 				});
 				test.deepEqual(_this.sendToAddr.args[0][2], {method : 'POST'});
 				test.strictEqual(_this.sendToAddr.args[0][3], '127.0.0.1');
@@ -193,7 +196,8 @@ module.exports = {
 				test.strictEqual(_this.sendToAddr.args[1][0], 'p2p:graviti/heartbeat');
 				test.deepEqual(_this.sendToAddr.args[1][1], {
 						leafset : leafsetmgr.compressedLeafset(),
-						routing_table : routingmgr.routingTable
+						routing_table : routingmgr.routingTable,
+						rsvp : true
 					});
 				test.deepEqual(_this.sendToAddr.args[1][2], {method : 'POST'});
 				test.strictEqual(_this.sendToAddr.args[1][3], '127.0.0.1');
@@ -268,7 +272,10 @@ module.exports = {
 			this.updateWithProvisional = sinon.collection.stub(leafsetmgr, 'updateWithProvisional');
 			this.updateWithKnownGood = sinon.collection.stub(leafsetmgr, 'updateWithKnownGood');
 			this.mergeRoutingTable = sinon.collection.stub(routingmgr, 'mergeRoutingTable');
+			this.overlayCallback = { sendToAddr : function() {}, on : function() {} };
+			this.sendToAddr = sinon.collection.stub(this.overlayCallback, 'sendToAddr');
 			
+			heartbeater.start(this.overlayCallback);			
 			done();
 		},
 		
@@ -278,14 +285,56 @@ module.exports = {
 			done();
 		},
 
-		"update leafset and routing table on receipt" : function(test) {
+		"update leafset and routing table on receipt of heartbeat" : function(test) {
 			heartbeater._handleReceivedGravitiMessage(this.msg, this.msginfo);
 			
 			test.ok(this.updateWithProvisional.calledWith({a:'b'}));
 			test.ok(this.updateWithKnownGood.calledWith('ABCDEF0123ABCDEF0123ABCDEF0123ABCDEF0123', '127.0.0.1:1234'));
 			test.ok(this.mergeRoutingTable.calledWith({c:'d'}));
 			test.done();
-		}
+		},
+		
+		"respond to received heartbeat immediately for unknown peer if requested" : function(test) {
+			leafsetmgr._put('ABCDEF0123ABCDEF0123ABCDEF0123ABCDEF0123','127.0.0.1:8888');
+			leafsetmgr._put('1234567890123456789012345678901234567890','127.0.0.1:9999');
+			this.msg.content.rsvp = true;
+			this.msg.source_id = '0000000000000000000000000000000000000000';
+			
+			heartbeater._handleReceivedGravitiMessage(this.msg, this.msginfo);
+			
+			test.ok(this.sendToAddr.calledOnce);
+			test.strictEqual(this.sendToAddr.args[0][0], 'p2p:graviti/heartbeat');
+			test.deepEqual(this.sendToAddr.args[0][1], {
+					leafset : leafsetmgr.compressedLeafset(),
+					routing_table : routingmgr.routingTable
+				});
+			test.deepEqual(this.sendToAddr.args[0][2], {method : 'POST'});
+			test.strictEqual(this.sendToAddr.args[0][3], '127.0.0.1');
+			test.strictEqual(this.sendToAddr.args[0][4], 1234);
+				
+			test.done();
+		},
+		
+		"respond to received heartbeat immediately for unknown peer if requested" : function(test) {
+			leafsetmgr._put('ABCDEF0123ABCDEF0123ABCDEF0123ABCDEF0123','127.0.0.1:8888');
+			leafsetmgr._put('1234567890123456789012345678901234567890','127.0.0.1:9999');
+			this.msg.content.rsvp = true;
+			this.msg.source_id = 'ABCDEF0123ABCDEF0123ABCDEF0123ABCDEF0123';
+			
+			heartbeater._handleReceivedGravitiMessage(this.msg, this.msginfo);
+			
+			test.ok(this.sendToAddr.calledOnce);
+			test.strictEqual(this.sendToAddr.args[0][0], 'p2p:graviti/heartbeat');
+			test.deepEqual(this.sendToAddr.args[0][1], {
+					leafset : leafsetmgr.compressedLeafset(),
+					routing_table : routingmgr.routingTable
+				});
+			test.deepEqual(this.sendToAddr.args[0][2], {method : 'POST'});
+			test.strictEqual(this.sendToAddr.args[0][3], '127.0.0.1');
+			test.strictEqual(this.sendToAddr.args[0][4], 1234);
+			test.ok(leafsetmgr._leafset['ABCDEF0123ABCDEF0123ABCDEF0123ABCDEF0123'].lastHeartbeatSent === undefined);
+			test.done();
+		},
 	}),
 	
 	"handling departing peer messages" : testCase({
