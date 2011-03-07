@@ -107,7 +107,7 @@ module.exports = {
 		}
 	}),
 
-	"merging another routing table into our one" : sinon.testCase({
+	"merging another routing table into our one" : testCase({
 		setUp : function(done) {
 			routingmgr.routingTable = {};
 			node.nodeId = anId;
@@ -160,10 +160,59 @@ module.exports = {
 		}
 	}),
 	
-	"getting the next routing hop" : sinon.testCase({
+	"iterating over peers in the routing table" : testCase({
 		setUp : function(done) {
 			routingmgr.routingTable = {};
-			leafsetmgr.clear();
+			node.nodeId = anId;
+			var _this = this;
+			this.callback = sinon.stub();
+			done();
+		},
+		
+		"should do nothing when iterating over empty routing table" : function(test) {
+			routingmgr.each(this.callback);
+			
+			test.ok(!this.callback.called);
+			test.done();
+		},
+		
+		"should iterate over a two-peer table with same common prefix" : function(test) {
+			routingmgr.updateRoutingTable('F700000015254C87B81D05DA8FA49588540B1950','9.0.1.2:9012');
+			routingmgr.updateRoutingTable('F8D147A002B4482EB6D912E3E6518F5CC80EBEE6','3.4.5.6:3456');
+			
+			routingmgr.each(this.callback);
+			
+			test.ok(this.callback.calledTwice);
+			test.deepEqual(this.callback.args[0][0], {id:"F700000015254C87B81D05DA8FA49588540B1950",ap:'9.0.1.2:9012'});
+			test.equal(this.callback.args[0][1], '1');
+			test.equal(this.callback.args[0][2], '7');
+			test.deepEqual(this.callback.args[1][0], {id:"F8D147A002B4482EB6D912E3E6518F5CC80EBEE6",ap:'3.4.5.6:3456'});
+			test.equal(this.callback.args[1][1], '1');
+			test.equal(this.callback.args[1][2], '8');
+			test.done();
+		},
+		
+		"should iterate over a two-peer table with different common prefixes" : function(test) {
+			routingmgr.updateRoutingTable('F700000015254C87B81D05DA8FA49588540B1950','9.0.1.2:9012');
+			routingmgr.updateRoutingTable('C695A1A002B4482EB6D912E3E6518F5CC80EBEE6','3.4.5.6:3456');
+			
+			routingmgr.each(this.callback);
+			
+			test.ok(this.callback.calledTwice);
+			test.deepEqual(this.callback.args[0][0], {id:"C695A1A002B4482EB6D912E3E6518F5CC80EBEE6",ap:'3.4.5.6:3456'});
+			test.equal(this.callback.args[0][1], '0');
+			test.equal(this.callback.args[0][2], 'C');
+			test.deepEqual(this.callback.args[1][0], {id:"F700000015254C87B81D05DA8FA49588540B1950",ap:'9.0.1.2:9012'});
+			test.equal(this.callback.args[1][1], '1');
+			test.equal(this.callback.args[1][2], '7');
+			test.done();
+		}
+	}),
+	
+	"getting the next routing hop" : testCase({
+		setUp : function(done) {
+			routingmgr.routingTable = {};
+			leafsetmgr.reset();
 			node.nodeId = anId;
 			done();
 		},
@@ -290,8 +339,8 @@ module.exports = {
 		
 		"routing via routing table w/o relevant next hop entry returns closest entry from [leafset, routingtable] when closest entry is in leafset" : function(test) {
 			sinon.collection.stub(leafsetmgr, 'getRoutingHop').returns(undefined);
-			leafsetmgr.updateLeafset('EFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF', '1.2.3.4:1234');
-			leafsetmgr.updateLeafset('FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF', '5.6.7.8:5678');
+			leafsetmgr._put('EFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF', '1.2.3.4:1234');
+			leafsetmgr._put('FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF', '5.6.7.8:5678');
 			routingmgr.updateRoutingTable(  'EFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF', '1.2.3.4:1234');
 
 			var res = routingmgr.getNextHop('008607ACE1254C87B81D05DA8FA49588540B1950');
@@ -305,8 +354,8 @@ module.exports = {
 		"routing via routing table  and leafset with multiple 'contrived' entries should route correctly" : function(test) {
 			node.nodeId = '1111111111111111111111111111111111111111';
 			sinon.collection.stub(leafsetmgr, 'getRoutingHop').returns(undefined);
-			leafsetmgr.updateLeafset('EFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF', '1.2.3.4:1234');
-			leafsetmgr.updateLeafset('FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF','5.6.7.8:5678');
+			leafsetmgr._put('EFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF', '1.2.3.4:1234');
+			leafsetmgr._put('FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF','5.6.7.8:5678');
 			routingmgr.updateRoutingTable(  'EFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF', '1.2.3.4:1234');
 			routingmgr.updateRoutingTable(  '1000000000000000000000000000000000000000', '1.1.1.1:1111');
 			routingmgr.updateRoutingTable(  '1100000000000000000000000000000000000000', '2.2.2.2:2222');

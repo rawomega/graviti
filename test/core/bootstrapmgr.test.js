@@ -217,6 +217,7 @@ module.exports = {
 
 	"handling bootstrap responses" : testCase ({
 		setUp : function(done) {
+			var _this = this;
 			node.nodeId = '1234';
 			this.leafset = {'LS' : '5.5.5.5:5555'};
 			this.routingTable = {'RT' : '5.5.5.5:5555'};
@@ -229,8 +230,20 @@ module.exports = {
 			this.updateWithKnownGood = sinon.collection.stub(leafsetmgr, 'updateWithKnownGood');
 			this.updateRoutingTable = sinon.collection.stub(routingmgr, 'updateRoutingTable');
 			this.mergeRoutingTable = sinon.collection.stub(routingmgr, 'mergeRoutingTable');
+			
+			this.leafsetPeers = [{ap:"1.1.1.1:1111"}, {ap:"2.2.2.2:2222"}];
+			this.routingTablePeers = [{ap:"5.5.5.5:5555"}, {ap:"6.6.6.6:6666"}];
+			this.leafsetEach = sinon.collection.stub(leafsetmgr, 'each', function(cbk) {
+				while(_this.leafsetPeers.length > 0)
+					cbk('someid', _this.leafsetPeers.shift());
+			});
+			this.routingTableEach = sinon.collection.stub(routingmgr, 'each', function(cbk) {
+				while(_this.routingTablePeers.length > 0)
+					cbk(_this.routingTablePeers.shift());
+			});
 	
-			this.overlayCallback = new events.EventEmitter();
+			this.overlayCallback = langutil.extend(new events.EventEmitter(), { sendToAddr : function() {}, send : function() {} });
+			this.sendToAddr = sinon.collection.stub(this.overlayCallback, 'sendToAddr');
 			bootstrapmgr.overlayCallback = this.overlayCallback;
 			
 			done();
@@ -283,6 +296,46 @@ module.exports = {
 			
 			test.ok(!bootstrapmgr.bootstrapping);
 			test.ok(bootstrapCompletedCalled);
+			test.done();
+		},		
+		
+		"should notify peers in state tables when last bootstrap response received" : function(test) {
+			var _this = this;
+			var msg = {
+				uri : 'p2p:graviti/peers',
+				method : 'POST',
+				content : {
+					id : 'ABCDEF',
+					leafset : _this.leafset,
+					routing_table : _this.routingTable,
+					last_bootstrap_hop : true
+				}
+			};
+					
+			bootstrapmgr.start(this.overlayCallback);
+			this.overlayCallback.emit("graviti-message-received", msg, this.msginfo);
+	
+			test.ok(this.sendToAddr.callCount === 4);
+			test.ok(this.sendToAddr.calledWith ('p2p:graviti/peers', {
+						leafset : leafsetmgr.compressedLeafset(),
+						routing_table : routingmgr.routingTable,
+						id : node.nodeId
+					}, { method : 'POST' }, '1.1.1.1', '1111'));
+			test.ok(this.sendToAddr.calledWith ('p2p:graviti/peers', {
+				leafset : leafsetmgr.compressedLeafset(),
+				routing_table : routingmgr.routingTable,
+				id : node.nodeId
+			}, { method : 'POST' }, '2.2.2.2', '2222'));
+			test.ok(this.sendToAddr.calledWith ('p2p:graviti/peers', {
+				leafset : leafsetmgr.compressedLeafset(),
+				routing_table : routingmgr.routingTable,
+				id : node.nodeId
+			}, { method : 'POST' }, '5.5.5.5', '5555'));
+			test.ok(this.sendToAddr.calledWith ('p2p:graviti/peers', {
+				leafset : leafsetmgr.compressedLeafset(),
+				routing_table : routingmgr.routingTable,
+				id : node.nodeId
+			}, { method : 'POST' }, '6.6.6.6', '6666'));
 			test.done();
 		}
 	})
