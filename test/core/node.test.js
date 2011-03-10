@@ -3,6 +3,7 @@ var assert = require('assert');
 var node = require('core/node');
 var connmgr = require('core/connmgr');
 var testCase = require('nodeunit').testCase;
+var messenger = require('core/messenger');
 
 module.exports = {		
 	"starting a node" : testCase({
@@ -67,10 +68,11 @@ module.exports = {
 		
 		"should send with hop zero" : function(test) {
 			// setup
-			var msg = {"key" : "val"};
+			var msg = new messenger.Message('p2p:myapp/myuri', {"key" : "val"});
+			sinon.stub(msg, 'stringify').returns('stringified');
 			connmgr.send = function() {};
 			var send = sinon.collection.stub(connmgr, 'send', function(port, host, data) {
-				test.deepEqual(JSON.stringify(msg), data);
+				test.strictEqual('stringified', data);
 				test.strictEqual(2222, port);
 				test.strictEqual('1.1.1.1', host);
 			});
@@ -85,10 +87,11 @@ module.exports = {
 		
 		"should increment hop count when sending" : function(test) {
 			// setup
-			var msg = {key : "val", hops : 11};
+			var msg = new messenger.Message('p2p:myapp/myuri', {"key" : "val"}, {"hops" : 11});
 			connmgr.send = function() {};
 			var send = sinon.collection.stub(connmgr, 'send', function(port, host, data) {
-				test.strictEqual(12, JSON.parse(data).hops);				
+				console.log(data);
+				test.ok(data.indexOf('hops: 12') > -1);				
 			});
 	
 			// act

@@ -3,6 +3,7 @@ var assert = require('assert');
 var events = require('events');
 var net = require('net');
 var langutil = require('common/langutil');
+var util = require('util');
 var connmgr = require('core/connmgr');
 var testCase = require('nodeunit').testCase;
 
@@ -17,7 +18,7 @@ module.exports = {
 			this.socket = langutil.extend(new events.EventEmitter(), {remoteAddress : '6.6.6.6'});
 						
 			sinon.collection.stub(net, 'createServer').returns(this.server);
-			
+			this.utilLog = sinon.collection.spy(util, 'log');
 			done();
 		},
 		
@@ -92,16 +93,16 @@ module.exports = {
 			test.done();
 		},
 
-		"should throw if no uri in message" : function(test) {
+		"should not process if no uri in message" : function(test) {
 			var _this = this;
 			connmgr.on('message', function() {test.fail('unexpected message');});
 			
 			connmgr.listen(1234, "127.0.0.1");
 			this.server.emit('connection', this.socket);
 			
-			assert.throws(function() {
-				_this.socket.emit('data', '{"key" : "val"}');
-			}, /no uri/i);
+			_this.socket.emit('data', 'GET\n\n{"key" : "val"}');
+			
+			test.ok(/destination uri/i.test(this.utilLog.args[0][0]));
 			test.done();
 		},
 		
@@ -114,7 +115,9 @@ module.exports = {
 			this.server.emit('connection', this.socket);
 			
 			assert.throws(function() {
-				_this.socket.emit('data', '{"uri" : "p2p:graviti/something", "hops" : 101}');
+				_this.socket.emit('data',
+						'GET p2p:graviti/something\n' +
+						'hops : 101\n\n');
 			}, /too many hops/i);			
 			test.done();
 		},
@@ -128,7 +131,7 @@ module.exports = {
 			this.server.emit('connection', this.socket);
 			
 			assert.throws(function() {
-				_this.socket.emit('data', '{"uri" : "p2p:graviti/something"}');
+				_this.socket.emit('data', 'GET p2p:graviti/something\n\n');
 			}, /source port/i);
 			test.done();
 		},
@@ -145,16 +148,20 @@ module.exports = {
 			// act
 			connmgr.listen(1234, "127.0.0.1");
 			this.server.emit('connection', this.socket);
-			this.socket.emit('data', '{"uri" : "p2p:myapp/something", "source_port" : 1111, "key" : "val"}');
+			this.socket.emit('data', 'GET p2p:myapp/something\n' +
+					'source_port : 1111\n' +
+					'key: val\n\n'
+			);
 			
 			// assert
 			test.strictEqual('val', rcvdmsg.key);
 			test.strictEqual('6.6.6.6', rcvdmsginfo.sender_addr);
-			test.strictEqual(1111, rcvdmsginfo.sender_port);
+			test.strictEqual('1111', rcvdmsginfo.sender_port);
 			test.strictEqual('myapp', rcvdmsginfo.app_name);
 			test.done();
 		}
 	}),
+	
 	"message sending" : testCase({
 		setUp : function(done) {
 			this.rawmsg = '{"key" : "val"}';

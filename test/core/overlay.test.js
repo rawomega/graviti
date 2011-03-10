@@ -110,15 +110,6 @@ module.exports = {
 			this.send = sinon.collection.stub(node, 'send')
 			this.appForwarding = sinon.stub();
 			this.appReceived = sinon.stub();
-			this.msg = {
-					msg_id : '1234',
-					source_id : 'ABCD',
-					dest_id : 'replace_me_in_test',
-					created : 12345678,
-					uri : this.uri,
-					method : 'POST',
-					content : this.content
-			};
 			this.msginfo = {
 					app_name : 'myapp',
 					next_hop_id : 'CDEF',
@@ -137,70 +128,83 @@ module.exports = {
 		},
 		
 		"be able to send a message to a uri mapping to a remote node" : function(test) {
-			this.msg.dest_id = uri.parse(this.uri).hash;
+			var destId = uri.parse(this.uri).hash;
 			sinon.collection.stub(leafsetmgr, 'isThisNodeNearestTo').returns(false);
 			
 			overlay.send(this.uri, this.content, {method : 'POST'});
 			
 			test.strictEqual(this.send.args[0][0], '5.5.5.5');
 			test.strictEqual(this.send.args[0][1], 5555);			
-			test.deepEqual(this.send.args[0][2], this.msg);
-			test.deepEqual(this.appForwarding.args[0][0], this.msg);
+			test.strictEqual(this.send.args[0][2].uri, this.uri);
+			test.strictEqual(this.send.args[0][2].dest_id, destId);
+			test.strictEqual(this.send.args[0][2].method, 'POST');
+			test.deepEqual(this.send.args[0][2].content, this.content);
+			test.deepEqual(this.appForwarding.args[0][0], this.send.args[0][2]);
 			test.deepEqual(this.appForwarding.args[0][1], this.msginfo);
 			test.ok(!this.appReceived.called);
 			test.done();
 		},
 		
 		"be able to send a message to a uri mapping to the current node" : function(test) {
-			this.msg.dest_id =  uri.parse(this.uri).hash;
+			var destId =  uri.parse(this.uri).hash;
 			sinon.collection.stub(leafsetmgr, 'isThisNodeNearestTo').returns(true);
 			
 			overlay.send(this.uri, this.content, {method : 'POST'});
 						
 			test.ok(!this.send.called);
 			test.ok(!this.appForwarding.called);
-			test.deepEqual(this.appReceived.args[0][0], this.msg);
+			test.strictEqual(this.appReceived.args[0][0].uri, this.uri);
+			test.strictEqual(this.appReceived.args[0][0].dest_id, destId);
+			test.strictEqual(this.appReceived.args[0][0].method, 'POST');
+			test.deepEqual(this.appReceived.args[0][0].content, this.content);
 			test.deepEqual(this.appReceived.args[0][1], { app_name : 'myapp' });
 			test.done();
 		},
 		
 		"be able to send a message directly to an address" : function(test) {
-			this.msg.dest_id = '';
-						
 			overlay.sendToAddr(this.uri, this.content, {method : 'POST'}, '3.3.3.3', 3333);
 
 			test.ok(!this.appForwarding.called);
 			test.ok(!this.appReceived.called);
 			test.strictEqual(this.send.args[0][0], '3.3.3.3');
 			test.strictEqual(this.send.args[0][1], 3333);			
-			test.deepEqual(this.send.args[0][2], this.msg);
+			test.strictEqual(this.send.args[0][2].uri, this.uri);
+			test.strictEqual(this.send.args[0][2].dest_id, undefined);
+			test.strictEqual(this.send.args[0][2].method, 'POST');
+			test.deepEqual(this.send.args[0][2].content, this.content);
 			test.done();
 		},
 		
 		"be able to send a message directly to an id when remote node is nearest" : function(test) {
-			this.msg.dest_id = 'AAAA';
+			var destId = 'AAAA';
 			sinon.collection.stub(leafsetmgr, 'isThisNodeNearestTo').returns(false);
 						
 			overlay.sendToId(this.uri, this.content, {method : 'POST'}, 'AAAA');
 
 			test.strictEqual(this.send.args[0][0], '5.5.5.5');
 			test.strictEqual(this.send.args[0][1], 5555);			
-			test.deepEqual(this.send.args[0][2], this.msg);
-			test.deepEqual(this.appForwarding.args[0][0], this.msg);
+			test.strictEqual(this.send.args[0][2].uri, this.uri);
+			test.strictEqual(this.send.args[0][2].dest_id, destId);
+			test.strictEqual(this.send.args[0][2].method, 'POST');
+			test.deepEqual(this.send.args[0][2].content, this.content);
+			test.deepEqual(this.appForwarding.args[0][0], this.send.args[0][2]);
 			test.deepEqual(this.appForwarding.args[0][1], this.msginfo);
 			test.ok(!this.appReceived.called);
 			test.done();
 		},
 		
 		"be able to send a message directly to an id when current node is nearest" : function(test) {
-			this.msg.dest_id = 'AAAA';
+			var destId = 'AAAA';
 			sinon.collection.stub(leafsetmgr, 'isThisNodeNearestTo').returns(true);
 						
 			overlay.sendToId(this.uri, this.content, {method : 'POST'}, 'AAAA');
 
 			test.ok(!this.send.called);
 			test.ok(!this.appForwarding.called);
-			test.deepEqual(this.appReceived.args[0][0], this.msg);
+			test.strictEqual(this.appReceived.args[0][0].uri, this.uri);
+			test.strictEqual(this.appReceived.args[0][0].dest_id, destId);
+			test.strictEqual(this.appReceived.args[0][0].method, 'POST');
+			test.deepEqual(this.appReceived.args[0][0].content, this.content);
 			test.deepEqual(this.appReceived.args[0][1], { app_name : 'myapp' });
 			test.done();
 		}
