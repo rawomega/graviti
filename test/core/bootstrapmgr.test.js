@@ -75,9 +75,10 @@ module.exports = {
 			routingmgr.routingTable = {};
 			this.updateRoutingTable = sinon.collection.stub(routingmgr, 'updateRoutingTable');
 			
-			this.overlayCallback = langutil.extend(new events.EventEmitter(), { sendToAddr : function() {}, send : function() {} });
+			this.overlayCallback = langutil.extend(new events.EventEmitter(), { sendToAddr : function() {}, send : function() {}, sendToId : function() {} });
 			this.sendToAddr = sinon.collection.stub(this.overlayCallback, 'sendToAddr');
 			this.send = sinon.collection.stub(this.overlayCallback, 'send');
+			this.sendToId = sinon.collection.stub(this.overlayCallback, 'sendToId');
 			bootstrapmgr.overlayCallback = this.overlayCallback;
 		
 			done();
@@ -143,16 +144,14 @@ module.exports = {
 			this.overlayCallback.emit("graviti-message-received", msg, this.msginfo);
 
 			// assert on rebroadcast
-			test.strictEqual(this.send.args[0][0], 'p2p:graviti/peers');
-			test.deepEqual(this.send.args[0][1], {
+			test.strictEqual(this.sendToId.args[0][0], 'p2p:graviti/peers');
+			test.deepEqual(this.sendToId.args[0][1], {
 					id : 'ABCDEF',
 					bootstrap_source_addr : '3.3.3.3',
 					bootstrap_source_port : 3333
 			});
-			test.deepEqual(this.send.args[0][2], {
-					method : 'GET',
-					dest_id : 'ABCDEF'
-			});
+			test.deepEqual(this.sendToId.args[0][2], {method : 'GET'});
+			test.strictEqual(this.sendToId.args[0][3], 'ABCDEF');
 			
 			// assert on response
 			test.strictEqual(this.sendToAddr.args[0][0], 'p2p:graviti/peers');

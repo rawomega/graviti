@@ -23,7 +23,7 @@ module.exports = {
 			test.strictEqual('p2p:myuri/myres', msg.uri);
 			test.strictEqual(myId, msg.source_id);
 			test.strictEqual('GET', msg.method);
-			test.strictEqual('31ED6B82A0A15D8A150CFDFAA5E1A4351995C4E1', msg.dest_id);
+			test.strictEqual(undefined, msg.dest_id);
 			test.strictEqual(undefined, msg.content);
 			test.ok(msg.msg_id.length > 0);
 			test.ok(msg.created > 0);			
@@ -49,7 +49,7 @@ module.exports = {
 			test.strictEqual('p2p:myuri/myres', msg.uri);
 			test.strictEqual(myId, msg.source_id);
 			test.strictEqual('GET', msg.method);
-			test.strictEqual('31ED6B82A0A15D8A150CFDFAA5E1A4351995C4E1', msg.dest_id);
+			test.strictEqual(undefined, msg.dest_id);
 			test.deepEqual({a : 'ay', b : 'bee'}, msg.content);
 			test.ok(msg.msg_id.length > 0);
 			test.ok(msg.created > 0);			
@@ -63,7 +63,7 @@ module.exports = {
 			test.strictEqual(myId, msg.source_id);
 			test.strictEqual('POST', msg.method);
 			test.strictEqual('moo', msg.myheader);
-			test.strictEqual('31ED6B82A0A15D8A150CFDFAA5E1A4351995C4E1', msg.dest_id);			
+			test.strictEqual(undefined, msg.dest_id);			
 			test.ok(msg.msg_id.length > 0);
 			test.ok(msg.created > 0);			
 			test.done();
@@ -76,7 +76,7 @@ module.exports = {
 			test.strictEqual(myId, msg.source_id);
 			test.strictEqual('POST', msg.method);
 			test.strictEqual('baa', msg.myheader);
-			test.strictEqual('31ED6B82A0A15D8A150CFDFAA5E1A4351995C4E1', msg.dest_id);
+			test.strictEqual(undefined, msg.dest_id);
 			test.deepEqual({a : 'ay', b : 'bee'}, msg.content);
 			test.ok(msg.msg_id.length > 0);
 			test.ok(msg.created > 0);			
@@ -109,14 +109,14 @@ module.exports = {
 			var str = new messenger.Message('p2p:myuri/myres').stringify();
 			var lines = str.split('\n');
 
-			test.equal(7, lines.length);
+			test.equal(6, lines.length);
 			test.ok(lines.indexOf('GET p2p:myuri/myres') === 0);
 			test.ok(lines.indexOf('source_id: ' + myId) > 0);
-			test.ok(lines.indexOf('dest_id: ' + '31ED6B82A0A15D8A150CFDFAA5E1A4351995C4E1') > 0);
+			test.ok(!/dest_id:/.test(str));
 			test.ok(/msg_id: [0-9A-F\-]{36}\n/.test(str));
 			test.ok(/created: \d+\n/.test(str));
-			test.equal(5, lines.indexOf(''));
-			test.equal(6, lines.lastIndexOf(''));
+			test.equal(4, lines.indexOf(''));
+			test.equal(5, lines.lastIndexOf(''));
 			test.done();
 		},
 		
@@ -124,32 +124,31 @@ module.exports = {
 			var str = new messenger.Message('p2p:myuri/myres', this.content).stringify();
 			var lines = str.split('\n');
 
+			test.equal(7, lines.length);
+			test.ok(lines.indexOf('GET p2p:myuri/myres') === 0);
+			test.ok(lines.indexOf('source_id: ' + myId) > 0);
+			test.ok(!/dest_id:/.test(str));
+			test.ok(/msg_id: [0-9A-F\-]{36}\n/.test(str));
+			test.ok(/created: \d+\n/.test(str));
+			test.equal(5, lines.indexOf(''));
+			test.equal(JSON.stringify(this.content), lines[6]);
+			test.done();
+		},
+		
+		"stringify a message with dest uri, content and custom headers" : function(test) {
+			var str = new messenger.Message('p2p:myuri/myres', this.content, {custom: 'header'}).stringify();
+			var lines = str.split('\n');
+
 			test.equal(8, lines.length);
 			test.ok(lines.indexOf('GET p2p:myuri/myres') === 0);
 			test.ok(lines.indexOf('source_id: ' + myId) > 0);
-			test.ok(lines.indexOf('dest_id: ' + '31ED6B82A0A15D8A150CFDFAA5E1A4351995C4E1') > 0);
+			test.ok(lines.indexOf('custom: header') > 0);
 			test.ok(lines.indexOf('content_length: 20') > 0);
+			test.ok(!/dest_id:/.test(str));
 			test.ok(/msg_id: [0-9A-F\-]{36}\n/.test(str));
 			test.ok(/created: \d+\n/.test(str));
 			test.equal(6, lines.indexOf(''));
 			test.equal(JSON.stringify(this.content), lines[7]);
-			test.done();
-		},
-		
-		"stringify a message with dest uri, content and custome headers" : function(test) {
-			var str = new messenger.Message('p2p:myuri/myres', this.content, {custom: 'header'}).stringify();
-			var lines = str.split('\n');
-
-			test.equal(9, lines.length);
-			test.ok(lines.indexOf('GET p2p:myuri/myres') === 0);
-			test.ok(lines.indexOf('source_id: ' + myId) > 0);
-			test.ok(lines.indexOf('custom: header') > 0);
-			test.ok(lines.indexOf('dest_id: ' + '31ED6B82A0A15D8A150CFDFAA5E1A4351995C4E1') > 0);
-			test.ok(lines.indexOf('content_length: 20') > 0);
-			test.ok(/msg_id: [0-9A-F\-]{36}\n/.test(str));
-			test.ok(/created: \d+\n/.test(str));
-			test.equal(7, lines.indexOf(''));
-			test.equal(JSON.stringify(this.content), lines[8]);
 			test.done();
 		},
 		
@@ -185,7 +184,6 @@ module.exports = {
 			
 			test.strictEqual('GET', msg.method);
 			test.strictEqual('p2p:myapp/myres', msg.uri);
-			test.strictEqual('31ED6B82A0A15D8A150CFDFAA5E1A4351995C4E1', msg.dest_id);
 			test.done();
 		},
 		
@@ -213,7 +211,6 @@ module.exports = {
 			
 			test.strictEqual('GET', msg.method);
 			test.strictEqual('p2p:myapp/myres', msg.uri);
-			test.strictEqual('10', msg.content_length);
 			test.strictEqual('0123456789', msg.content.a);
 			test.strictEqual('AAAAABBBBBAAAAABBBBBAAAAABBBBBAAAAABBBBB', msg.dest_id);
 			test.done();
@@ -244,9 +241,20 @@ module.exports = {
 			
 			var msg = messenger.parse(str);
 			
-			test.strictEqual('10', msg.content_length);
 			test.strictEqual('AAAAABBBBBAAAAABBBBBAAAAABBBBBAAAAABBBBB', msg.dest_id);
 			test.strictEqual('my header value', msg['my header name']);
+			test.done();
+		},
+		
+		"should parse out content_length field" : function(test) {
+			var str = 'GET p2p:myapp/myres\n'
+				+ 'content_length: 123\n\n';
+			
+			var msg = messenger.parse(str);
+			
+			test.strictEqual('GET', msg.method);
+			test.strictEqual('p2p:myapp/myres', msg.uri);
+			test.ok(undefined === msg.content_length);
 			test.done();
 		},
 		
