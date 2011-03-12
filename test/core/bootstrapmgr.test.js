@@ -231,7 +231,7 @@ module.exports = {
 			this.mergeRoutingTable = sinon.collection.stub(routingmgr, 'mergeRoutingTable');
 			
 			this.leafsetPeers = [{ap:"1.1.1.1:1111"}, {ap:"2.2.2.2:2222"}];
-			this.routingTablePeers = [{ap:"5.5.5.5:5555"}, {ap:"6.6.6.6:6666"}];
+			this.routingTablePeers = [{ap:"2.2.2.2:2222"}, {ap:"5.5.5.5:5555"}, {ap:"6.6.6.6:6666"}];
 			this.leafsetEach = sinon.collection.stub(leafsetmgr, 'each', function(cbk) {
 				while(_this.leafsetPeers.length > 0)
 					cbk('someid', _this.leafsetPeers.shift());
