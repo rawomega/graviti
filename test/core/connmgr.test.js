@@ -159,6 +159,31 @@ module.exports = {
 			test.strictEqual('1111', rcvdmsginfo.sender_port);
 			test.strictEqual('myapp', rcvdmsginfo.app_name);
 			test.done();
+		},
+		
+		"should handle parseable message in two parts" : function(test) {
+			// setup
+			var rcvdmsg = undefined;
+			var rcvdmsginfo = undefined;
+			connmgr.on("message", function(msg, msginfo) {
+				rcvdmsg = msg;
+				rcvdmsginfo = msginfo
+			});
+	
+			// act
+			connmgr.listen(1234, "127.0.0.1");
+			this.server.emit('connection', this.socket);
+			this.socket.emit('data', 'GET p2p:myapp/something\n');
+			this.socket.emit('data', 'source_port : 1111\n' +
+					'key: val\n\n'
+			);
+			
+			// assert
+			test.strictEqual('val', rcvdmsg.key);
+			test.strictEqual('6.6.6.6', rcvdmsginfo.sender_addr);
+			test.strictEqual('1111', rcvdmsginfo.sender_port);
+			test.strictEqual('myapp', rcvdmsginfo.app_name);
+			test.done();
 		}
 	}),
 	

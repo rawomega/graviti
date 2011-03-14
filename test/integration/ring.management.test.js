@@ -30,7 +30,7 @@ module.exports = {
 				require('core/overlay').on(app.name + '-app-message-received', function(msg, msginfo) {
 					if (!app.receivedMessages)
 						app.receivedMessages = [];
-					if (msg.content.subject === 'test')
+					if (msg.content.subject === 'test' || msg.content_type === 'text/plain')
 						app.receivedMessages.push(msg);
 				});
 			};
@@ -109,16 +109,25 @@ module.exports = {
 
 		"should send and receive a bundle of messages" : function(test) {
 			var _this = this;
-			var sendMessage = function() {
+			var sendSmallMessage = function() {
 				require('core/appmgr').apps[0].send(
 						'p2p:echoapp/somewhere', {subject : 'test'}, {method : 'POST'});
-			};			
+			};
+			var sendLargeMessage = function() {
+				var content = '';
+				for (var i = 0; i < 40000; i++)
+					content += Math.round(9 * Math.random());
+				require('core/appmgr').apps[0].send(
+						'p2p:echoapp/somewhere', content, {method : 'POST', content_type : 'text/plain'});
+			};
 
 			// wait till leafset is sorted
 			this.nodes.select(0).waitUntilEqual(3, this.getLeafsetSize, test);				
 			this.nodes.selectAll().eval(this.trackReceivedMessages, test);
-			this.nodes.selectAll().eval(sendMessage, test);
-			this.nodes.select(1).waitUntilAtLeast(4, this.countMessages, test, function() {
+			this.nodes.selectAll().eval(sendSmallMessage, test);
+			this.nodes.select(1).waitUntilAtLeast(4, this.countMessages, test);
+			this.nodes.selectAll().eval(sendLargeMessage, test);
+			this.nodes.select(1).waitUntilAtLeast(8, this.countMessages, test, function() {
 				_this.nodes.done(test);
 			});
 		},
