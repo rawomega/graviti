@@ -103,7 +103,12 @@ module.exports = {
 			node.nodeId = myId;
 			this.content = {a : 'ay', b : 'bee'}; 
 			done();
-		}, 
+		},
+		
+		tearDown : function(done) {
+			messenger.maxMessageSize = 65535;
+			done();
+		},
 
 		"stringify a message with only dest uri" : function(test) {
 			var str = new messenger.Message('p2p:myuri/myres').stringify();
@@ -182,7 +187,17 @@ module.exports = {
 			test.equal(6, lines.indexOf(''));
 			test.equal('{not-json}', lines[7]);
 			test.done();
-		}
+		},
+		
+		"fail to stringify a message that is too big" : function(test) {
+			messenger.maxMessageSize = 5;
+			var str = 'POST p2p:myapp/myres\n'
+				+ 'name : value\n'
+				+ '\n';
+			
+			assert.throws(function() { messenger.parse(str); }, /size too big/i);
+			test.done();
+		},
 	}),
 	
 	"parsing a message" : testCase({
