@@ -369,5 +369,45 @@ module.exports = {
 			test.strictEqual('1111', res.port);
 			test.done();
 		}
+	}),
+	
+	"getting the routing table row shared with another peer's routing table" : testCase({
+		setUp : function(done) {
+			routingmgr.routingTable = {};
+			leafset.reset();
+			node.nodeId = anId;
+			done();
+		},
+		
+		tearDown : function(done) {
+			sinon.collection.restore();
+			routingmgr.routingTable = {};
+			done();
+		},
+		
+		"should return empty shared row for empty routing table" : function(test) {			
+			var res = routingmgr.getSharedRow(higherId);
+
+			test.deepEqual({'1' : {}}, res);
+			test.done();
+		},
+		
+		"should return first row as shared row when no digits in common" : function(test) {			
+			routingmgr.updateRoutingTable(wrappedId, '1.1.1.1:1111');
+			
+			var res = routingmgr.getSharedRow(lowerId);
+			
+			test.strictEqual(wrappedId, res['0']['0'].id);
+			test.done();
+		},
+		
+		"should return second row as shared row when one digit in common" : function(test) {			
+			routingmgr.updateRoutingTable(higherId, '1.1.1.1:1111');
+			
+			var res = routingmgr.getSharedRow(higherId);
+			
+			test.strictEqual(higherId, res['1']['7'].id);
+			test.done();
+		}
 	})
 };
