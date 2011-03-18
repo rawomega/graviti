@@ -15,7 +15,7 @@ module.exports = {
 				node_ids : this.nodeIds
 			});
 			this.getLeafsetSize = function() {
-				return Object.keys(require('core/leafsetmgr').compressedLeafset()).length;
+				return Object.keys(require('core/leafset').compressedLeafset()).length;
 			};
 			this.heartbeatFrequently = function() {
 				var heartbeater = require('core/heartbeater');
@@ -62,7 +62,7 @@ module.exports = {
 				return require('core/appmgr').apps[0].departedPeers;
 			};
 			this.clearDeadPeersListInLeafset = function() {
-				require('core/leafsetmgr')._deadset = {};
+				require('core/leafset')._deadset = {};
 			};
 
 			done();
@@ -79,7 +79,7 @@ module.exports = {
 		"should populate leafsets after bootstrapping" : function(test) {
 			var _this = this;
 			var getLeafset = function() {
-				return require('core/leafsetmgr').compressedLeafset();
+				return require('core/leafset').compressedLeafset();
 			};
 			var getRoutingTable = function() {
 				return require('core/routingmgr').routingTable;
@@ -230,7 +230,7 @@ module.exports = {
 			var _this = this;
 			
 			var clearOutLeafset = function() {
-				require('core/leafsetmgr').reset();
+				require('core/leafset').reset();
 				require('core/connmgr').stopListening();				
 			};
 			

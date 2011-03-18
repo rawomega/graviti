@@ -2,7 +2,7 @@ var sinon = require('sinon');
 var bootstrapmgr = require('core/bootstrapmgr');
 var langutil = require('common/langutil');
 var node = require('core/node');
-var leafsetmgr = require('core/leafsetmgr');
+var leafset = require('core/leafset');
 var routingmgr = require('core/routingmgr');
 var testCase = require('nodeunit').testCase;
 
@@ -69,8 +69,8 @@ module.exports = {
 				sender_port : 2222
 			};
 			
-			leafsetmgr.reset();
-			this.updateWithProvisional = sinon.collection.stub(leafsetmgr, 'updateWithProvisional');
+			leafset.reset();
+			this.updateWithProvisional = sinon.collection.stub(leafset, 'updateWithProvisional');
 			
 			routingmgr.routingTable = {};
 			this.updateRoutingTable = sinon.collection.stub(routingmgr, 'updateRoutingTable');
@@ -86,7 +86,7 @@ module.exports = {
 		
 		tearDown : function(done) {
 			sinon.collection.restore();
-			leafsetmgr.reset();
+			leafset.reset();
 			routingmgr.routingTable = {};
 			done();
 		},
@@ -109,7 +109,7 @@ module.exports = {
 			// assert on response
 			test.strictEqual(this.sendToAddr.args[0][0], 'p2p:graviti/peers');
 			test.deepEqual(this.sendToAddr.args[0][1], 	{
-					leafset : leafsetmgr.compressedLeafset(),
+					leafset : leafset.compressedLeafset(),
 					routing_table : routingmgr.routingTable,
 					id : node.nodeId,
 					bootstrap_source_addr : '2.2.2.2',
@@ -129,7 +129,7 @@ module.exports = {
 		},
 		
 		"when we are not nearest to joining node's node id, should respond with state tables, rebroadcast request into ring, and update our own state tables" : function(test) {			
-			sinon.collection.stub(leafsetmgr, 'isThisNodeNearestTo').returns(false);
+			sinon.collection.stub(leafset, 'isThisNodeNearestTo').returns(false);
 			var msg = {
 				uri : 'p2p:graviti/peers',
 				method : 'GET',
@@ -156,7 +156,7 @@ module.exports = {
 			// assert on response
 			test.strictEqual(this.sendToAddr.args[0][0], 'p2p:graviti/peers');
 			test.deepEqual(this.sendToAddr.args[0][1], 	{
-				leafset : leafsetmgr.compressedLeafset(),
+				leafset : leafset.compressedLeafset(),
 				routing_table : routingmgr.routingTable,
 				id : node.nodeId,
 				bootstrap_source_addr : '3.3.3.3',
@@ -194,7 +194,7 @@ module.exports = {
 			// assert on response
 			test.strictEqual(this.sendToAddr.args[0][0], 'p2p:graviti/peers');
 			test.deepEqual(this.sendToAddr.args[0][1], 	{
-					leafset : leafsetmgr.compressedLeafset(),
+					leafset : leafset.compressedLeafset(),
 					routing_table : routingmgr.routingTable,
 					id : node.nodeId,
 					bootstrap_source_addr : '3.3.3.3',
@@ -225,14 +225,14 @@ module.exports = {
 				sender_port : 2222
 			};
 	
-			this.updateWithProvisional = sinon.collection.stub(leafsetmgr, 'updateWithProvisional');
-			this.updateWithKnownGood = sinon.collection.stub(leafsetmgr, 'updateWithKnownGood');
+			this.updateWithProvisional = sinon.collection.stub(leafset, 'updateWithProvisional');
+			this.updateWithKnownGood = sinon.collection.stub(leafset, 'updateWithKnownGood');
 			this.updateRoutingTable = sinon.collection.stub(routingmgr, 'updateRoutingTable');
 			this.mergeRoutingTable = sinon.collection.stub(routingmgr, 'mergeRoutingTable');
 			
 			this.leafsetPeers = [{ap:"1.1.1.1:1111"}, {ap:"2.2.2.2:2222"}];
 			this.routingTablePeers = [{ap:"2.2.2.2:2222"}, {ap:"5.5.5.5:5555"}, {ap:"6.6.6.6:6666"}];
-			this.leafsetEach = sinon.collection.stub(leafsetmgr, 'each', function(cbk) {
+			this.leafsetEach = sinon.collection.stub(leafset, 'each', function(cbk) {
 				while(_this.leafsetPeers.length > 0)
 					cbk('someid', _this.leafsetPeers.shift());
 			});
@@ -316,22 +316,22 @@ module.exports = {
 	
 			test.ok(this.sendToAddr.callCount === 4);
 			test.ok(this.sendToAddr.calledWith ('p2p:graviti/peers', {
-						leafset : leafsetmgr.compressedLeafset(),
+						leafset : leafset.compressedLeafset(),
 						routing_table : routingmgr.routingTable,
 						id : node.nodeId
 					}, { method : 'POST' }, '1.1.1.1', '1111'));
 			test.ok(this.sendToAddr.calledWith ('p2p:graviti/peers', {
-				leafset : leafsetmgr.compressedLeafset(),
+				leafset : leafset.compressedLeafset(),
 				routing_table : routingmgr.routingTable,
 				id : node.nodeId
 			}, { method : 'POST' }, '2.2.2.2', '2222'));
 			test.ok(this.sendToAddr.calledWith ('p2p:graviti/peers', {
-				leafset : leafsetmgr.compressedLeafset(),
+				leafset : leafset.compressedLeafset(),
 				routing_table : routingmgr.routingTable,
 				id : node.nodeId
 			}, { method : 'POST' }, '5.5.5.5', '5555'));
 			test.ok(this.sendToAddr.calledWith ('p2p:graviti/peers', {
-				leafset : leafsetmgr.compressedLeafset(),
+				leafset : leafset.compressedLeafset(),
 				routing_table : routingmgr.routingTable,
 				id : node.nodeId
 			}, { method : 'POST' }, '6.6.6.6', '6666'));

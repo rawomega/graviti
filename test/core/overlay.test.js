@@ -2,7 +2,7 @@ var assert = require('assert');
 var sinon = require('sinon');
 var testCase = require('nodeunit').testCase;
 var node = require('core/node');
-var leafsetmgr = require('core/leafsetmgr');
+var leafset = require('core/leafset');
 var routingmgr = require('core/routingmgr');
 var id = require('common/id');
 var uri = require('common/uri');
@@ -53,9 +53,9 @@ module.exports = {
 		
 		"should re-emit peer arrived event for node joining the ring, when this node has started a new ring" : function(test) {
 			overlay.init(1234, "127.0.0.1");
-			leafsetmgr.on('peer-arrived', this.callback);
+			leafset.on('peer-arrived', this.callback);
 			
-			leafsetmgr.emit('peer-arrived', 'ABCDEF');
+			leafset.emit('peer-arrived', 'ABCDEF');
 			
 			test.ok(this.callback.calledWith('ABCDEF'));
 			test.done();
@@ -63,9 +63,9 @@ module.exports = {
 		
 		"should re-emit peer departed event for node leaving the ring, when this node has started a new ring" : function(test) {
 			overlay.init(1234, "127.0.0.1");
-			leafsetmgr.on('peer-departed', this.callback);
+			leafset.on('peer-departed', this.callback);
 			
-			leafsetmgr.emit('peer-departed', 'ABCDEF');
+			leafset.emit('peer-departed', 'ABCDEF');
 			
 			test.ok(this.callback.calledWith('ABCDEF'));
 			test.done();
@@ -74,9 +74,9 @@ module.exports = {
 		"should re-emit peer arrived event for node joining the ring, when this node has joined an existing ring" : function(test) {
 			var callback = sinon.stub();
 			overlay.join(1234, "127.0.0.1");
-			leafsetmgr.on('peer-arrived', this.callback);
+			leafset.on('peer-arrived', this.callback);
 			
-			leafsetmgr.emit('peer-arrived', 'ABCDEF');
+			leafset.emit('peer-arrived', 'ABCDEF');
 			
 			test.ok(this.callback.calledWith('ABCDEF'));
 			test.done();
@@ -85,9 +85,9 @@ module.exports = {
 		"should re-emit peer departed event for node leaving the ring, when this node has joined an existing ring" : function(test) {
 			var callback = sinon.stub();
 			overlay.join(1234, "127.0.0.1");
-			leafsetmgr.on('peer-departed', this.callback);
+			leafset.on('peer-departed', this.callback);
 			
-			leafsetmgr.emit('peer-departed', 'ABCDEF');
+			leafset.emit('peer-departed', 'ABCDEF');
 			
 			test.ok(this.callback.calledWith('ABCDEF'));
 			test.done();
@@ -129,7 +129,7 @@ module.exports = {
 		
 		"be able to send a message to a uri mapping to a remote node" : function(test) {
 			var destId = uri.parse(this.uri).hash;
-			sinon.collection.stub(leafsetmgr, 'isThisNodeNearestTo').returns(false);
+			sinon.collection.stub(leafset, 'isThisNodeNearestTo').returns(false);
 			
 			overlay.send(this.uri, this.content, {method : 'POST'});
 			
@@ -147,7 +147,7 @@ module.exports = {
 		
 		"be able to send a message to a uri mapping to the current node" : function(test) {
 			var destId =  uri.parse(this.uri).hash;
-			sinon.collection.stub(leafsetmgr, 'isThisNodeNearestTo').returns(true);
+			sinon.collection.stub(leafset, 'isThisNodeNearestTo').returns(true);
 			
 			overlay.send(this.uri, this.content, {method : 'POST'});
 						
@@ -177,7 +177,7 @@ module.exports = {
 		
 		"be able to send a message directly to an id when remote node is nearest" : function(test) {
 			var destId = 'AAAA';
-			sinon.collection.stub(leafsetmgr, 'isThisNodeNearestTo').returns(false);
+			sinon.collection.stub(leafset, 'isThisNodeNearestTo').returns(false);
 						
 			overlay.sendToId(this.uri, this.content, {method : 'POST'}, 'AAAA');
 
@@ -195,7 +195,7 @@ module.exports = {
 		
 		"be able to send a message directly to an id when current node is nearest" : function(test) {
 			var destId = 'AAAA';
-			sinon.collection.stub(leafsetmgr, 'isThisNodeNearestTo').returns(true);
+			sinon.collection.stub(leafset, 'isThisNodeNearestTo').returns(true);
 						
 			overlay.sendToId(this.uri, this.content, {method : 'POST'}, 'AAAA');
 
@@ -243,7 +243,7 @@ module.exports = {
 		},
 		
 		"handle message destined for an app on this node" : function(test) {
-			sinon.collection.stub(leafsetmgr, 'isThisNodeNearestTo').returns(true);
+			sinon.collection.stub(leafset, 'isThisNodeNearestTo').returns(true);
 			
 			overlay._processMessage(this.msg, this.msginfo);
 			
@@ -256,7 +256,7 @@ module.exports = {
 		},
 		
 		"handle message destined for graviti on this node" : function(test) {
-			sinon.collection.stub(leafsetmgr, 'isThisNodeNearestTo').returns(true);
+			sinon.collection.stub(leafset, 'isThisNodeNearestTo').returns(true);
 			this.msginfo.app_name = 'graviti';
 			
 			overlay._processMessage(this.msg, this.msginfo);
@@ -270,7 +270,7 @@ module.exports = {
 		},
 		
 		"handle message destined for an app on another node" : function(test) {
-			sinon.collection.stub(leafsetmgr, 'isThisNodeNearestTo').returns(false);
+			sinon.collection.stub(leafset, 'isThisNodeNearestTo').returns(false);
 			
 			overlay._processMessage(this.msg, this.msginfo);
 			
@@ -286,7 +286,7 @@ module.exports = {
 		},
 		
 		"handle message destined for graviti on another node" : function(test) {
-			sinon.collection.stub(leafsetmgr, 'isThisNodeNearestTo').returns(false);
+			sinon.collection.stub(leafset, 'isThisNodeNearestTo').returns(false);
 			this.msginfo.app_name = 'graviti';
 			
 			overlay._processMessage(this.msg, this.msginfo);
