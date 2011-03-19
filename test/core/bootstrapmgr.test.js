@@ -37,9 +37,9 @@ module.exports = {
 			test.ok(this.on.calledWith('graviti-message-received', bootstrapmgr._handleReceivedGravitiMessage));
 			test.ok(this.on.calledWith('graviti-message-forwarding', bootstrapmgr._handleForwardingGravitiMessage));
 			setTimeout(function() {
-				test.ok(sendToAddr.calledWith('p2p:graviti/peers', {id : node.nodeId}, {method : 'GET'}, '1.2.3.4', '1234'));
-				test.ok(sendToAddr.calledWith('p2p:graviti/peers', {id : node.nodeId}, {method : 'GET'}, '5.6.7.8', '5678'));
-				test.ok(sendToAddr.calledWith('p2p:graviti/peers', {id : node.nodeId}, {method : 'GET'}, 'myhost', '8888'));
+				test.ok(sendToAddr.calledWith('p2p:graviti/peers', {joining_node_id : node.nodeId}, {method : 'GET'}, '1.2.3.4', '1234'));
+				test.ok(sendToAddr.calledWith('p2p:graviti/peers', {joining_node_id : node.nodeId}, {method : 'GET'}, '5.6.7.8', '5678'));
+				test.ok(sendToAddr.calledWith('p2p:graviti/peers', {joining_node_id : node.nodeId}, {method : 'GET'}, 'myhost', '8888'));
 				test.done();
 			}, 200);
 		},
@@ -68,12 +68,14 @@ module.exports = {
 				sender_addr : '2.2.2.2',
 				sender_port : 2222
 			};
+			this.sharedRow = {'2' : {'A' : {id :'00A'}}};
 			
 			leafset.reset();
 			this.updateWithProvisional = sinon.collection.stub(leafset, 'updateWithProvisional');
 			
 			routingmgr.routingTable = {};
 			this.updateRoutingTable = sinon.collection.stub(routingmgr, 'updateRoutingTable');
+			this.getSharedRow = sinon.collection.stub(routingmgr, 'getSharedRow').returns(this.sharedRow);
 			
 			this.overlayCallback = langutil.extend(new events.EventEmitter(), { sendToAddr : function() {}, send : function() {}, sendToId : function() {} });
 			this.sendToAddr = sinon.collection.stub(this.overlayCallback, 'sendToAddr');
@@ -91,29 +93,25 @@ module.exports = {
 			done();
 		},
 		
-		"when we are nearest to joining node's node id, should respond with state tables directly and update our own state tables" : function(test) {			
+		"when we are nearest to joining node's node id, should respond with final response" : function(test) {			
 			var msg = {
 				uri : 'p2p:graviti/peers',
 				method : 'GET',
 				content : {
-					id : 'ABCDEF'					
+					joining_node_id : 'ABCDEF'					
 				}
-			};
+			};			
 			
 			bootstrapmgr.start(this.overlayCallback);
 			this.overlayCallback.emit("graviti-message-received", msg, this.msginfo);
 
-			// assert no call to send
 			test.ok(!this.send.called);
-			
-			// assert on response
+			test.ok(!this.sendToId.called);
+			test.ok(this.sendToAddr.calledOnce);
 			test.strictEqual(this.sendToAddr.args[0][0], 'p2p:graviti/peers');
 			test.deepEqual(this.sendToAddr.args[0][1], 	{
 					leafset : leafset.compressedLeafset(),
-					routing_table : routingmgr.routingTable,
-					id : node.nodeId,
-					bootstrap_source_addr : '2.2.2.2',
-					bootstrap_source_port : 2222,
+					routing_table : this.sharedRow,
 					last_bootstrap_hop : true
 			});
 			test.deepEqual(this.sendToAddr.args[0][2], {
@@ -121,20 +119,16 @@ module.exports = {
 			});
 			test.strictEqual(this.sendToAddr.args[0][3], '2.2.2.2');
 			test.strictEqual(this.sendToAddr.args[0][4], 	2222);
-			
-			// assert on state table updates
-			test.ok(this.updateWithProvisional.calledWith('ABCDEF', '2.2.2.2:2222'));
-			test.ok(this.updateRoutingTable.calledWith('ABCDEF', '2.2.2.2:2222'));
 			test.done();
 		},
 		
-		"when we are not nearest to joining node's node id, should respond with state tables, rebroadcast request into ring, and update our own state tables" : function(test) {			
+		"when we are not nearest to joining node's node id, should rebroadcast request into ring" : function(test) {			
 			sinon.collection.stub(leafset, 'isThisNodeNearestTo').returns(false);
 			var msg = {
 				uri : 'p2p:graviti/peers',
 				method : 'GET',
 				content : {
-					id : 'ABCDEF',
+					joining_node_id : 'ABCDEF',
 					bootstrap_source_addr : '3.3.3.3',
 					bootstrap_source_port : 3333
 				}
@@ -143,43 +137,28 @@ module.exports = {
 			bootstrapmgr.start(this.overlayCallback);
 			this.overlayCallback.emit("graviti-message-received", msg, this.msginfo);
 
-			// assert on rebroadcast
+			test.ok(!this.send.called);
+			test.ok(!this.sendToAddr.called);
+			test.ok(this.sendToId.calledOnce);
 			test.strictEqual(this.sendToId.args[0][0], 'p2p:graviti/peers');
 			test.deepEqual(this.sendToId.args[0][1], {
-					id : 'ABCDEF',
+					joining_node_id : 'ABCDEF',
+					routing_table : this.sharedRow,
 					bootstrap_source_addr : '3.3.3.3',
 					bootstrap_source_port : 3333
 			});
 			test.deepEqual(this.sendToId.args[0][2], {method : 'GET'});
 			test.strictEqual(this.sendToId.args[0][3], 'ABCDEF');
-			
-			// assert on response
-			test.strictEqual(this.sendToAddr.args[0][0], 'p2p:graviti/peers');
-			test.deepEqual(this.sendToAddr.args[0][1], 	{
-				leafset : leafset.compressedLeafset(),
-				routing_table : routingmgr.routingTable,
-				id : node.nodeId,
-				bootstrap_source_addr : '3.3.3.3',
-				bootstrap_source_port : 3333
-			});
-			test.deepEqual(this.sendToAddr.args[0][2], {
-					method : 'POST'
-			});
-			test.strictEqual(this.sendToAddr.args[0][3], '3.3.3.3');
-			test.strictEqual(this.sendToAddr.args[0][4], 3333);
-			
-			// assert on state table updates
-			test.ok(this.updateWithProvisional.calledWith('ABCDEF', '3.3.3.3:3333'));
-			test.ok(this.updateRoutingTable.calledWith('ABCDEF', '3.3.3.3:3333'));
 			test.done();
 		},
 		
-		"when forwardig a bootstrap request, we should send our state tables to joining node" : function(test) {
+		"when forwardig a bootstrap request, we should update partial routing table with our own" : function(test) {
 			var msg = {
 				uri : 'p2p:graviti/peers',
 				method : 'GET',
 				content : {
-					id : 'ABCDEF',
+					joining_node_id : 'ABCDEF',
+					routing_table : {'1' : {'4' : {id :'040'}}},
 					bootstrap_source_addr : '3.3.3.3',
 					bootstrap_source_port : 3333
 				}
@@ -188,28 +167,13 @@ module.exports = {
 			bootstrapmgr.start(this.overlayCallback);
 			this.overlayCallback.emit("graviti-message-forwarding", msg, this.msginfo);
 			
-			// assert no call to send
 			test.ok(!this.send.called);
-			
-			// assert on response
-			test.strictEqual(this.sendToAddr.args[0][0], 'p2p:graviti/peers');
-			test.deepEqual(this.sendToAddr.args[0][1], 	{
-					leafset : leafset.compressedLeafset(),
-					routing_table : routingmgr.routingTable,
-					id : node.nodeId,
-					bootstrap_source_addr : '3.3.3.3',
-					bootstrap_source_port : 3333,
-					last_bootstrap_hop : true
+			test.ok(!this.sendToId.called);
+			test.ok(!this.sendToAddr.called);
+			test.deepEqual(msg.content.routing_table, {
+				'1' : {'4' : {id :'040'}},
+				'2' : {'A' : {id :'00A'}}
 			});
-			test.deepEqual(this.sendToAddr.args[0][2], {
-					method : 'POST'
-			});
-			test.strictEqual(this.sendToAddr.args[0][3], '3.3.3.3');
-			test.strictEqual(this.sendToAddr.args[0][4], 3333);
-			
-			// assert on state table updates
-			test.ok(this.updateWithProvisional.calledWith('ABCDEF', '3.3.3.3:3333'));
-			test.ok(this.updateRoutingTable.calledWith('ABCDEF', '3.3.3.3:3333'));
 			test.done();
 		}
 	}),
@@ -253,28 +217,6 @@ module.exports = {
 			done();
 		},
 		
-		"should update state tables on receiving a bootstrap response" : function(test) {
-			var _this = this;
-			var msg = {
-				uri : 'p2p:graviti/peers',
-				method : 'POST',
-				content : {
-					id : 'ABCDEF',
-					leafset : _this.leafset,
-					routing_table : _this.routingTable
-				}
-			};
-					
-			bootstrapmgr.start(this.overlayCallback);
-			this.overlayCallback.emit("graviti-message-received", msg, this.msginfo);
-			
-			test.ok(this.updateWithProvisional.calledWith(this.leafset));
-			test.ok(this.mergeRoutingTable.calledWith(this.routingTable));
-			test.ok(this.updateWithKnownGood.calledWith('ABCDEF', '2.2.2.2:2222'));
-			test.ok(this.updateRoutingTable.calledWith('ABCDEF', '2.2.2.2:2222'));
-			test.done();
-		},
-		
 		"should emit bootstrap complete event when last bootstrap response received" : function(test) {
 			var bootstrapCompletedCalled = false;
 			this.overlayCallback.on('bootstrap-completed', function() {bootstrapCompletedCalled = true;});
@@ -282,8 +224,8 @@ module.exports = {
 			var msg = {
 				uri : 'p2p:graviti/peers',
 				method : 'POST',
+				source_id : 'ABCDEF',
 				content : {
-					id : 'ABCDEF',
 					leafset : _this.leafset,
 					routing_table : _this.routingTable,
 					last_bootstrap_hop : true

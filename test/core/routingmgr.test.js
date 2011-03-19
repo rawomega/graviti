@@ -392,6 +392,16 @@ module.exports = {
 			test.done();
 		},
 		
+		"should return empty shared row for routing with irrelevant entries" : function(test) {
+			routingmgr.updateRoutingTable(oneMoreId, '1.1.1.1:1111');
+			routingmgr.updateRoutingTable(oneLessId, '1.1.1.1:1111');
+			
+			var res = routingmgr.getSharedRow(higherId);
+
+			test.deepEqual({'1' : {}}, res);
+			test.done();
+		},
+		
 		"should return first row as shared row when no digits in common" : function(test) {			
 			routingmgr.updateRoutingTable(wrappedId, '1.1.1.1:1111');
 			
@@ -401,12 +411,18 @@ module.exports = {
 			test.done();
 		},
 		
-		"should return second row as shared row when one digit in common" : function(test) {			
-			routingmgr.updateRoutingTable(higherId, '1.1.1.1:1111');
+		"should return second row as shared row when one digit in common" : function(test) {
+			routingmgr.updateRoutingTable('E999999999999999999999999999999999999999', '0.0.0.0:0000');
+			routingmgr.updateRoutingTable('F711111111111111111111111111111111111111', '1.1.1.1:1111');
+			routingmgr.updateRoutingTable('F822222222222222222222222222222222222222', '2.2.2.2:2222');
+			routingmgr.updateRoutingTable('F433333333333333333333333333333333333333', '3.3.3.3:3333');
 			
 			var res = routingmgr.getSharedRow(higherId);
 			
-			test.strictEqual(higherId, res['1']['7'].id);
+			test.equal(1, Object.keys(res).length);
+			test.equal(2, Object.keys(res['1']).length);
+			test.strictEqual('F711111111111111111111111111111111111111', res['1']['7'].id);
+			test.strictEqual('F822222222222222222222222222222222222222', res['1']['8'].id);
 			test.done();
 		}
 	})
