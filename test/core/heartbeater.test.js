@@ -1,7 +1,7 @@
 var sinon = require('sinon');
 var heartbeater = require('core/heartbeater');
 var leafset = require('core/leafset');
-var routingmgr = require('core/routingmgr');
+var routingtable = require('core/routingtable');
 var node = require('core/node');
 var testCase = require('nodeunit').testCase;
 
@@ -11,7 +11,7 @@ module.exports = {
 			this.overlayCallback = { on : function() {} };
 			this.on = sinon.collection.stub(this.overlayCallback, 'on');
 			
-			routingmgr.routingTable = {};
+			routingtable.routingTable = {};
 			
 			done();
 		},
@@ -91,7 +91,7 @@ module.exports = {
 			this.overlayCallback = { on : function() {}, sendToAddr : function() {} };
 			this.sendToAddr = sinon.collection.stub(this.overlayCallback, 'sendToAddr');
 			
-			routingmgr.routingTable = {};
+			routingtable.routingTable = {};
 			
 			done();
 		},
@@ -116,7 +116,7 @@ module.exports = {
 				test.strictEqual(_this.sendToAddr.args[0][0], 'p2p:graviti/heartbeat');
 				test.deepEqual(_this.sendToAddr.args[0][1], {
 						leafset : leafset.compressedLeafset(),
-						routing_table : routingmgr.routingTable,
+						routing_table : routingtable.routingTable,
 						rsvp : true
 					});
 				test.deepEqual(_this.sendToAddr.args[0][2], {method : 'POST'});
@@ -126,7 +126,7 @@ module.exports = {
 				test.strictEqual(_this.sendToAddr.args[1][0], 'p2p:graviti/heartbeat');
 				test.deepEqual(_this.sendToAddr.args[1][1], {
 						leafset : leafset.compressedLeafset(),
-						routing_table : routingmgr.routingTable,
+						routing_table : routingtable.routingTable,
 						rsvp : true
 					});
 				test.deepEqual(_this.sendToAddr.args[1][2], {method : 'POST'});
@@ -186,7 +186,7 @@ module.exports = {
 				test.strictEqual(_this.sendToAddr.args[0][0], 'p2p:graviti/heartbeat');
 				test.deepEqual(_this.sendToAddr.args[0][1], {
 					leafset : leafset.compressedLeafset(),
-					routing_table : routingmgr.routingTable,
+					routing_table : routingtable.routingTable,
 					rsvp : true
 				});
 				test.deepEqual(_this.sendToAddr.args[0][2], {method : 'POST'});
@@ -196,7 +196,7 @@ module.exports = {
 				test.strictEqual(_this.sendToAddr.args[1][0], 'p2p:graviti/heartbeat');
 				test.deepEqual(_this.sendToAddr.args[1][1], {
 						leafset : leafset.compressedLeafset(),
-						routing_table : routingmgr.routingTable,
+						routing_table : routingtable.routingTable,
 						rsvp : true
 					});
 				test.deepEqual(_this.sendToAddr.args[1][2], {method : 'POST'});
@@ -271,7 +271,7 @@ module.exports = {
 		
 			this.updateWithProvisional = sinon.collection.stub(leafset, 'updateWithProvisional');
 			this.updateWithKnownGood = sinon.collection.stub(leafset, 'updateWithKnownGood');
-			this.mergeRoutingTable = sinon.collection.stub(routingmgr, 'mergeRoutingTable');
+			this.mergeRoutingTable = sinon.collection.stub(routingtable, 'mergeRoutingTable');
 			this.overlayCallback = { sendToAddr : function() {}, on : function() {} };
 			this.sendToAddr = sinon.collection.stub(this.overlayCallback, 'sendToAddr');
 			
@@ -306,7 +306,7 @@ module.exports = {
 			test.strictEqual(this.sendToAddr.args[0][0], 'p2p:graviti/heartbeat');
 			test.deepEqual(this.sendToAddr.args[0][1], {
 					leafset : leafset.compressedLeafset(),
-					routing_table : routingmgr.routingTable
+					routing_table : routingtable.routingTable
 				});
 			test.deepEqual(this.sendToAddr.args[0][2], {method : 'POST'});
 			test.strictEqual(this.sendToAddr.args[0][3], '127.0.0.1');
@@ -327,7 +327,7 @@ module.exports = {
 			test.strictEqual(this.sendToAddr.args[0][0], 'p2p:graviti/heartbeat');
 			test.deepEqual(this.sendToAddr.args[0][1], {
 					leafset : leafset.compressedLeafset(),
-					routing_table : routingmgr.routingTable
+					routing_table : routingtable.routingTable
 				});
 			test.deepEqual(this.sendToAddr.args[0][2], {method : 'POST'});
 			test.strictEqual(this.sendToAddr.args[0][3], '127.0.0.1');

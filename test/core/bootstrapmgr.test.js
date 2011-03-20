@@ -3,7 +3,7 @@ var bootstrapmgr = require('core/bootstrapmgr');
 var langutil = require('common/langutil');
 var node = require('core/node');
 var leafset = require('core/leafset');
-var routingmgr = require('core/routingmgr');
+var routingtable = require('core/routingtable');
 var testCase = require('nodeunit').testCase;
 
 module.exports = {
@@ -73,9 +73,9 @@ module.exports = {
 			leafset.reset();
 			this.updateWithProvisional = sinon.collection.stub(leafset, 'updateWithProvisional');
 			
-			routingmgr.routingTable = {};
-			this.updateRoutingTable = sinon.collection.stub(routingmgr, 'updateRoutingTable');
-			this.getSharedRow = sinon.collection.stub(routingmgr, 'getSharedRow').returns(this.sharedRow);
+			routingtable.routingTable = {};
+			this.updateRoutingTable = sinon.collection.stub(routingtable, 'updateRoutingTable');
+			this.getSharedRow = sinon.collection.stub(routingtable, 'getSharedRow').returns(this.sharedRow);
 			
 			this.overlayCallback = langutil.extend(new events.EventEmitter(), { sendToAddr : function() {}, send : function() {}, sendToId : function() {} });
 			this.sendToAddr = sinon.collection.stub(this.overlayCallback, 'sendToAddr');
@@ -89,7 +89,7 @@ module.exports = {
 		tearDown : function(done) {
 			sinon.collection.restore();
 			leafset.reset();
-			routingmgr.routingTable = {};
+			routingtable.routingTable = {};
 			done();
 		},
 		
@@ -200,8 +200,8 @@ module.exports = {
 	
 			this.updateWithProvisional = sinon.collection.stub(leafset, 'updateWithProvisional');
 			this.updateWithKnownGood = sinon.collection.stub(leafset, 'updateWithKnownGood');
-			this.updateRoutingTable = sinon.collection.stub(routingmgr, 'updateRoutingTable');
-			this.mergeRoutingTable = sinon.collection.stub(routingmgr, 'mergeRoutingTable');
+			this.updateRoutingTable = sinon.collection.stub(routingtable, 'updateRoutingTable');
+			this.mergeRoutingTable = sinon.collection.stub(routingtable, 'mergeRoutingTable');
 			
 			this.leafsetPeers = [{ap:"1.1.1.1:1111"}, {ap:"2.2.2.2:2222"}];
 			this.routingTableRows = {
@@ -218,7 +218,7 @@ module.exports = {
 					cbk('someid', _this.leafsetPeers[i]);
 				}
 			});
-			this.routingTableEachRow = sinon.collection.stub(routingmgr, 'eachRow', function(cbk) {
+			this.routingTableEachRow = sinon.collection.stub(routingtable, 'eachRow', function(cbk) {
 				Object.keys(_this.routingTableRows).forEach(function(row) {					
 					cbk(row, _this.routingTableRows[row]);					
 				});
