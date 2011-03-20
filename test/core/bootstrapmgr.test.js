@@ -112,6 +112,7 @@ module.exports = {
 			test.deepEqual(this.sendToAddr.args[0][1], 	{
 					leafset : leafset.compressedLeafset(),
 					routing_table : this.sharedRow,
+					bootstrap_request_hops : ['1234'],
 					last_bootstrap_hop : true
 			});
 			test.deepEqual(this.sendToAddr.args[0][2], {
@@ -144,6 +145,7 @@ module.exports = {
 			test.deepEqual(this.sendToId.args[0][1], {
 					joining_node_id : 'ABCDEF',
 					routing_table : this.sharedRow,
+					bootstrap_request_hops : ['1234'],
 					bootstrap_source_addr : '3.3.3.3',
 					bootstrap_source_port : 3333
 			});
@@ -159,6 +161,7 @@ module.exports = {
 				content : {
 					joining_node_id : 'ABCDEF',
 					routing_table : {'1' : {'4' : {id :'040'}}},
+					bootstrap_request_hops : ['BAAD'],
 					bootstrap_source_addr : '3.3.3.3',
 					bootstrap_source_port : 3333
 				}
@@ -170,9 +173,15 @@ module.exports = {
 			test.ok(!this.send.called);
 			test.ok(!this.sendToId.called);
 			test.ok(!this.sendToAddr.called);
-			test.deepEqual(msg.content.routing_table, {
-				'1' : {'4' : {id :'040'}},
-				'2' : {'A' : {id :'00A'}}
+			test.deepEqual(msg.content, {
+				joining_node_id : 'ABCDEF',
+				routing_table : {
+					'1' : {'4' : {id :'040'}},
+					'2' : {'A' : {id :'00A'}}
+				},
+				bootstrap_request_hops : ['BAAD', '1234'],
+				bootstrap_source_addr : '3.3.3.3',
+				bootstrap_source_port : 3333
 			});
 			test.done();
 		}
@@ -195,14 +204,24 @@ module.exports = {
 			this.mergeRoutingTable = sinon.collection.stub(routingmgr, 'mergeRoutingTable');
 			
 			this.leafsetPeers = [{ap:"1.1.1.1:1111"}, {ap:"2.2.2.2:2222"}];
-			this.routingTablePeers = [{ap:"2.2.2.2:2222"}, {ap:"5.5.5.5:5555"}, {ap:"6.6.6.6:6666"}];
+			this.routingTableRows = {
+				'0' : { 
+			    	'2' : {id : '2345', ap:"2.2.2.2:2222"},
+			    	'5' : {id : '5678', ap:"5.5.5.5:5555"}
+			    },
+			    '1' : {
+			    	'6' : {id : '6789', ap:"6.6.6.6:6666"}
+			    }
+			};
 			this.leafsetEach = sinon.collection.stub(leafset, 'each', function(cbk) {
-				while(_this.leafsetPeers.length > 0)
-					cbk('someid', _this.leafsetPeers.shift());
+				for (var i = 0; i < _this.leafsetPeers.length; i++) {
+					cbk('someid', _this.leafsetPeers[i]);
+				}
 			});
-			this.routingTableEach = sinon.collection.stub(routingmgr, 'each', function(cbk) {
-				while(_this.routingTablePeers.length > 0)
-					cbk(_this.routingTablePeers.shift());
+			this.routingTableEachRow = sinon.collection.stub(routingmgr, 'eachRow', function(cbk) {
+				Object.keys(_this.routingTableRows).forEach(function(row) {					
+					cbk(row, _this.routingTableRows[row]);					
+				});
 			});
 	
 			this.overlayCallback = langutil.extend(new events.EventEmitter(), { sendToAddr : function() {}, send : function() {} });
@@ -256,26 +275,21 @@ module.exports = {
 			bootstrapmgr.start(this.overlayCallback);
 			this.overlayCallback.emit("graviti-message-received", msg, this.msginfo);
 	
-			test.ok(this.sendToAddr.callCount === 4);
+			test.ok(this.sendToAddr.callCount === 5);
 			test.ok(this.sendToAddr.calledWith ('p2p:graviti/peers', {
-						leafset : leafset.compressedLeafset(),
-						routing_table : routingmgr.routingTable,
-						id : node.nodeId
+						leafset : leafset.compressedLeafset()
 					}, { method : 'POST' }, '1.1.1.1', '1111'));
 			test.ok(this.sendToAddr.calledWith ('p2p:graviti/peers', {
-				leafset : leafset.compressedLeafset(),
-				routing_table : routingmgr.routingTable,
-				id : node.nodeId
+				leafset : leafset.compressedLeafset()
 			}, { method : 'POST' }, '2.2.2.2', '2222'));
 			test.ok(this.sendToAddr.calledWith ('p2p:graviti/peers', {
-				leafset : leafset.compressedLeafset(),
-				routing_table : routingmgr.routingTable,
-				id : node.nodeId
+				routing_table : { '0' : this.routingTableRows['0']}
+			}, { method : 'POST' }, '2.2.2.2', '2222'));
+			test.ok(this.sendToAddr.calledWith ('p2p:graviti/peers', {
+				routing_table : { '0' : this.routingTableRows['0']}
 			}, { method : 'POST' }, '5.5.5.5', '5555'));
 			test.ok(this.sendToAddr.calledWith ('p2p:graviti/peers', {
-				leafset : leafset.compressedLeafset(),
-				routing_table : routingmgr.routingTable,
-				id : node.nodeId
+				routing_table : { '1' : this.routingTableRows['1']}
 			}, { method : 'POST' }, '6.6.6.6', '6666'));
 			test.done();
 		}

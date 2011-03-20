@@ -169,14 +169,14 @@ module.exports = {
 			done();
 		},
 		
-		"should do nothing when iterating over empty routing table" : function(test) {
+		"should do nothing when iterating over peers empty routing table" : function(test) {
 			routingmgr.each(this.callback);
 			
 			test.ok(!this.callback.called);
 			test.done();
 		},
 		
-		"should iterate over a two-peer table with same common prefix" : function(test) {
+		"should iterate over peers in a two-peer table with same common prefix" : function(test) {
 			routingmgr.updateRoutingTable('F700000015254C87B81D05DA8FA49588540B1950','9.0.1.2:9012');
 			routingmgr.updateRoutingTable('F8D147A002B4482EB6D912E3E6518F5CC80EBEE6','3.4.5.6:3456');
 			
@@ -192,7 +192,7 @@ module.exports = {
 			test.done();
 		},
 		
-		"should iterate over a two-peer table with different common prefixes" : function(test) {
+		"should iterate over peers in a two-peer table with different common prefixes" : function(test) {
 			routingmgr.updateRoutingTable('F700000015254C87B81D05DA8FA49588540B1950','9.0.1.2:9012');
 			routingmgr.updateRoutingTable('C695A1A002B4482EB6D912E3E6518F5CC80EBEE6','3.4.5.6:3456');
 			
@@ -205,6 +205,42 @@ module.exports = {
 			test.deepEqual(this.callback.args[1][0], {id:"F700000015254C87B81D05DA8FA49588540B1950",ap:'9.0.1.2:9012'});
 			test.equal(this.callback.args[1][1], '1');
 			test.equal(this.callback.args[1][2], '7');
+			test.done();
+		},
+		
+		"should do nothing when iterating over rows in empty routing table" : function(test) {
+			routingmgr.eachRow(this.callback);
+			
+			test.ok(!this.callback.called);
+			test.done();
+		},
+		
+		"should iterate over rows in a two-peer table with same common prefix" : function(test) {
+			routingmgr.updateRoutingTable('F700000015254C87B81D05DA8FA49588540B1950','9.0.1.2:9012');
+			routingmgr.updateRoutingTable('F8D147A002B4482EB6D912E3E6518F5CC80EBEE6','3.4.5.6:3456');
+			
+			routingmgr.eachRow(this.callback);
+			
+			test.ok(this.callback.calledOnce);
+			test.equal(this.callback.args[0][0], 1);
+			test.deepEqual(this.callback.args[0][1], {
+				'7' : {id:"F700000015254C87B81D05DA8FA49588540B1950",ap:'9.0.1.2:9012'},
+				'8' : {id:"F8D147A002B4482EB6D912E3E6518F5CC80EBEE6",ap:'3.4.5.6:3456'}
+				});
+			test.done();
+		},
+		
+		"should iterate over rows in a two-peer table with different common prefixes" : function(test) {
+			routingmgr.updateRoutingTable('F700000015254C87B81D05DA8FA49588540B1950','9.0.1.2:9012');
+			routingmgr.updateRoutingTable('C695A1A002B4482EB6D912E3E6518F5CC80EBEE6','3.4.5.6:3456');
+			
+			routingmgr.eachRow(this.callback);
+			
+			test.ok(this.callback.calledTwice);
+			test.equal(this.callback.args[0][0], 0);
+			test.deepEqual(this.callback.args[0][1], {'C' : {id:"C695A1A002B4482EB6D912E3E6518F5CC80EBEE6",ap:'3.4.5.6:3456'}});
+			test.equal(this.callback.args[1][0], 1);
+			test.deepEqual(this.callback.args[1][1], {'7' : {id:"F700000015254C87B81D05DA8FA49588540B1950",ap:'9.0.1.2:9012'}});
 			test.done();
 		}
 	}),
