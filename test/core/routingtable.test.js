@@ -371,7 +371,21 @@ module.exports = {
 			test.equal(this.callback.args[1][0], 1);
 			test.deepEqual(this.callback.args[1][1], {'7' : {id:"F700000015254C87B81D05DA8FA49588540B1950",ap:'9.0.1.2:9012', rtt:1}});
 			test.done();
-		}
+		},
+		
+		"should iterate over candidate peers" : function(test) {
+			routingtable.updateWithProvisional('C695A1A002B4482EB6D912E3E6518F5CC80EBEE6','1.2.3.4:1234');			
+			routingtable.updateWithProvisional('F700000015254C87B81D05DA8FA49588540B1950','3.4.5.6:3456');			
+			routingtable._candidatePeers['C695A1A002B4482EB6D912E3E6518F5CC80EBEE6'].foundAt = 111;
+			routingtable._candidatePeers['F700000015254C87B81D05DA8FA49588540B1950'].foundAt = 222;
+			
+			routingtable.eachCandidate(this.callback);
+			
+			test.ok(this.callback.calledTwice);
+			test.ok(this.callback.calledWith('C695A1A002B4482EB6D912E3E6518F5CC80EBEE6', {ap : '1.2.3.4:1234', foundAt : 111}));
+			test.ok(this.callback.calledWith('F700000015254C87B81D05DA8FA49588540B1950', {ap : '3.4.5.6:3456', foundAt : 222}));
+			test.done();
+		},
 	}),
 	
 	"getting the routing table row shared with another peer's routing table" : testCase({
