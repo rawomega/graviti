@@ -40,6 +40,7 @@ module.exports = {
 			this.lsClear = sinon.collection.stub(leafset, 'clearExpiredDeadAndCandidatePeers');
 			this.rtClear = sinon.collection.stub(routingtable, 'clearExpiredCandidatePeers');
 			this.rtEachCandidate = sinon.collection.stub(routingtable, 'eachCandidate');
+			this.rtEachRow = sinon.collection.stub(routingtable, 'eachRow');
 			done();
 		},
 		
@@ -65,6 +66,7 @@ module.exports = {
 				test.ok(_this.lsClear.callCount < 2);
 				test.ok(_this.rtClear.callCount < 2);
 				test.ok(_this.rtEachCandidate.callCount < 2);
+				test.ok(_this.rtEachRow.callCount < 2);
 				test.done();
 			}, 300);
 		},
@@ -226,15 +228,15 @@ module.exports = {
 			this.origDateGetTime = Date.prototype.getTime;
 			Date.prototype.getTime = function() { return 234; }
 			
-			routingtable.routingTable = {};			
 			done();
 		},
 		
 		tearDown : function(done) {
+			Date.prototype.getTime = this.origDateGetTime;
 			heartbeater.stop();
 			leafset.reset();
 			sinon.collection.restore();
-			Date.prototype.getTime = this.origDateGetTime;
+			routingtable.routingTable = {};			
 			done();
 		},
 		
@@ -286,10 +288,69 @@ module.exports = {
 			}, 200);
 		}
 	}),
+
+	"performing routing table maintenance" : testCase({
+		setUp : function(done) {
+			node.nodeId = '9876543210987654321098765432109876543210';;
+			this.sharedRow = {'ABCD' : '1.2.3.4:5678'};
+			sinon.collection.stub(routingtable, 'getSharedRow').returns(this.sharedRow);
+			this.overlayCallback = { on : function() {}, sendToAddr : function() {} };
+			this.sendToAddr = sinon.collection.stub(this.overlayCallback, 'sendToAddr');
+			
+			this.origDateGetTime = Date.prototype.getTime;
+			Date.prototype.getTime = function() { return 234; }
+			
+			done();
+		},
+		
+		tearDown : function(done) {
+			Date.prototype.getTime = this.origDateGetTime;
+			heartbeater.stop();
+			leafset.reset();
+			routingtable.routingTable = {};			
+			sinon.collection.restore();
+			done();
+		},
+
+		"routing maintenance should be a timed task that picks a random peer from each row and sends it a heartbeat" : function(test) {
+			var _this = this;
+			routingtable.updateWithKnownGood('ABCDEF0123ABCDEF0123ABCDEF0123ABCDEF0123','127.0.0.1:1111', 1);
+			routingtable.updateWithKnownGood('1234567890123456789012345678901234567890','127.0.0.1:2222', 2);
+			routingtable.updateWithKnownGood('9234567890123456789012345678901234567890','127.0.0.1:3333', 3);
+			heartbeater.routingTableCandidateCheckIntervalMsec = 50;
+			heartbeater.routingTableMaintenanceIntervalMsec = 50;
+			
+			heartbeater.start(this.overlayCallback);
+			
+			setTimeout(function() {
+				test.ok(Object.keys(routingtable._candidatePeers).length >= 2);
+				
+				test.strictEqual(_this.sendToAddr.args[0][0], 'p2p:graviti/heartbeat');
+				test.deepEqual(_this.sendToAddr.args[0][1], {
+					routing_table : _this.sharedRow,
+					rsvp_with : 234
+				});
+				test.deepEqual(_this.sendToAddr.args[0][2], {method : 'POST'});
+				test.strictEqual(_this.sendToAddr.args[0][3], '127.0.0.1');
+				test.ok(_this.sendToAddr.args[0][4] === '1111' || _this.sendToAddr.args[0][4] === '2222');
+				
+				test.strictEqual(_this.sendToAddr.args[1][0], 'p2p:graviti/heartbeat');
+				test.deepEqual(_this.sendToAddr.args[1][1], {
+					routing_table : _this.sharedRow,
+					rsvp_with : 234
+				});
+				test.deepEqual(_this.sendToAddr.args[1][2], {method : 'POST'});
+				test.strictEqual(_this.sendToAddr.args[1][3], '127.0.0.1');
+				test.strictEqual(_this.sendToAddr.args[1][4], '3333');
+				
+				test.done();
+			}, 200);
+		}
+	}),
 	
 	"detecting timed out peers" : testCase({
 		setUp : function(done) {
-			this.overlayCallback = {on : function() {}};			
+			this.overlayCallback = {on : function() {}, sendToAddr : function() {}};			
 			heartbeater.heartbeatCheckIntervalMsec = 5000;
 			done();
 		},
