@@ -17,6 +17,8 @@ module.exports = {
 		
 		tearDown : function(done) {
 			sinon.collection.restore();
+			routingtable._table = {};
+			routingtable._candidatePeers = {};
 			done();
 		},
 		
@@ -73,8 +75,7 @@ module.exports = {
 			leafset.reset();
 			this.updateWithProvisional = sinon.collection.stub(leafset, 'updateWithProvisional');
 			
-			routingtable.routingTable = {};
-			this.updateRoutingTable = sinon.collection.stub(routingtable, 'updateRoutingTable');
+			this.rtUpdateWithKnownGood= sinon.collection.stub(routingtable, 'updateWithKnownGood');
 			this.getSharedRow = sinon.collection.stub(routingtable, 'getSharedRow').returns(this.sharedRow);
 			
 			this.overlayCallback = langutil.extend(new events.EventEmitter(), { sendToAddr : function() {}, send : function() {}, sendToId : function() {} });
@@ -89,7 +90,8 @@ module.exports = {
 		tearDown : function(done) {
 			sinon.collection.restore();
 			leafset.reset();
-			routingtable.routingTable = {};
+			routingtable._table = {};
+			routingtable._candidatePeers = {};
 			done();
 		},
 		
@@ -98,7 +100,7 @@ module.exports = {
 				uri : 'p2p:graviti/peers',
 				method : 'GET',
 				content : {
-					joining_node_id : 'ABCDEF'					
+					joining_node_id : 'ABCDEF1234ABCDEF1234ABCDEF1234ABCDEF1234'					
 				}
 			};			
 			
@@ -129,7 +131,7 @@ module.exports = {
 				uri : 'p2p:graviti/peers',
 				method : 'GET',
 				content : {
-					joining_node_id : 'ABCDEF',
+					joining_node_id : 'ABCDEF1234ABCDEF1234ABCDEF1234ABCDEF1234',
 					bootstrap_source_addr : '3.3.3.3',
 					bootstrap_source_port : 3333
 				}
@@ -143,14 +145,14 @@ module.exports = {
 			test.ok(this.sendToId.calledOnce);
 			test.strictEqual(this.sendToId.args[0][0], 'p2p:graviti/peers');
 			test.deepEqual(this.sendToId.args[0][1], {
-					joining_node_id : 'ABCDEF',
+					joining_node_id : 'ABCDEF1234ABCDEF1234ABCDEF1234ABCDEF1234',
 					routing_table : this.sharedRow,
 					bootstrap_request_hops : ['1234'],
 					bootstrap_source_addr : '3.3.3.3',
 					bootstrap_source_port : 3333
 			});
 			test.deepEqual(this.sendToId.args[0][2], {method : 'GET'});
-			test.strictEqual(this.sendToId.args[0][3], 'ABCDEF');
+			test.strictEqual(this.sendToId.args[0][3], 'ABCDEF1234ABCDEF1234ABCDEF1234ABCDEF1234');
 			test.done();
 		},
 		
@@ -159,7 +161,7 @@ module.exports = {
 				uri : 'p2p:graviti/peers',
 				method : 'GET',
 				content : {
-					joining_node_id : 'ABCDEF',
+					joining_node_id : 'ABCDEF1234ABCDEF1234ABCDEF1234ABCDEF1234',
 					routing_table : {'1' : {'4' : {id :'040'}}},
 					bootstrap_request_hops : ['BAAD'],
 					bootstrap_source_addr : '3.3.3.3',
@@ -174,7 +176,7 @@ module.exports = {
 			test.ok(!this.sendToId.called);
 			test.ok(!this.sendToAddr.called);
 			test.deepEqual(msg.content, {
-				joining_node_id : 'ABCDEF',
+				joining_node_id : 'ABCDEF1234ABCDEF1234ABCDEF1234ABCDEF1234',
 				routing_table : {
 					'1' : {'4' : {id :'040'}},
 					'2' : {'A' : {id :'00A'}}
@@ -190,7 +192,7 @@ module.exports = {
 	"handling bootstrap responses" : testCase ({
 		setUp : function(done) {
 			var _this = this;
-			node.nodeId = '1234';
+			node.nodeId = '1234567890123456789012345678901234567890';
 			this.leafset = {'LS' : '5.5.5.5:5555'};
 			this.routingTable = {'RT' : '5.5.5.5:5555'};
 			this.msginfo = {
@@ -200,8 +202,7 @@ module.exports = {
 	
 			this.updateWithProvisional = sinon.collection.stub(leafset, 'updateWithProvisional');
 			this.updateWithKnownGood = sinon.collection.stub(leafset, 'updateWithKnownGood');
-			this.updateRoutingTable = sinon.collection.stub(routingtable, 'updateRoutingTable');
-			this.mergeRoutingTable = sinon.collection.stub(routingtable, 'mergeRoutingTable');
+			this.mergeProvisional = sinon.collection.stub(routingtable, 'mergeProvisional');
 			
 			this.leafsetPeers = [{ap:"1.1.1.1:1111"}, {ap:"2.2.2.2:2222"}];
 			this.routingTableRows = {
@@ -233,6 +234,8 @@ module.exports = {
 		
 		tearDown : function(done) {
 			sinon.collection.restore();
+			routingtable._table = {};
+			routingtable._candidatePeers = {};
 			done();
 		},
 		
@@ -243,7 +246,7 @@ module.exports = {
 			var msg = {
 				uri : 'p2p:graviti/peers',
 				method : 'POST',
-				source_id : 'ABCDEF',
+				source_id : 'ABCDEF1234ABCDEF1234ABCDEF1234ABCDEF1234',
 				content : {
 					leafset : _this.leafset,
 					routing_table : _this.routingTable,
@@ -265,13 +268,13 @@ module.exports = {
 				uri : 'p2p:graviti/peers',
 				method : 'POST',
 				content : {
-					id : 'ABCDEF',
+					id : 'ABCDEF1234ABCDEF1234ABCDEF1234ABCDEF1234',
 					leafset : _this.leafset,
 					routing_table : _this.routingTable,
 					last_bootstrap_hop : true
 				}
 			};
-					
+
 			bootstrapmgr.start(this.overlayCallback);
 			this.overlayCallback.emit("graviti-message-received", msg, this.msginfo);
 	

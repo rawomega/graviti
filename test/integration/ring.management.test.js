@@ -82,7 +82,7 @@ module.exports = {
 				return require('core/leafset').compressedLeafset();
 			};
 			var getRoutingTable = function() {
-				return require('core/routingtable').routingTable;
+				return require('core/routingtable')._table;
 			};
 			
 			// wait till leafset is sorted

@@ -18,14 +18,14 @@ var overEdgeId= '0000000000000000000000000000000000000001';
 module.exports = {
 	"getting the next routing hop" : testCase({
 		setUp : function(done) {
-			routingtable.routingTable = {};
-			leafset.reset();
 			node.nodeId = anId;
 			done();
 		},
 		
 		tearDown : function(done) {
 			sinon.collection.restore();
+			routingtable._table = {};
+			leafset.reset();
 			done();
 		},
 		
@@ -53,7 +53,7 @@ module.exports = {
 		
 		"routing via routing table with exact match should return that match" : function(test) {
 			sinon.collection.stub(leafset, 'getRoutingHop').returns(undefined);
-			routingtable.updateRoutingTable('F7DB7ACE15254C87B81D05DA8FA49588540B1950', '1.1.1.1:1111');
+			routingtable.updateWithKnownGood('F7DB7ACE15254C87B81D05DA8FA49588540B1950', '1.1.1.1:1111', 1);
 
 			var res = routingmgr.getNextHop('F7DB7ACE15254C87B81D05DA8FA49588540B1950');
 
@@ -74,7 +74,7 @@ module.exports = {
 		
 		"routing via routing table with irrelevant entry should return self" : function(test) {
 			sinon.collection.stub(leafset, 'getRoutingHop').returns(undefined);
-			routingtable.updateRoutingTable(  'F78147A002B4482EB6D912E3E6518F5CC80EBEE6', '1.1.1.1:1111');
+			routingtable.updateWithKnownGood(  'F78147A002B4482EB6D912E3E6518F5CC80EBEE6', '1.1.1.1:1111', 1);
 			
 			var res = routingmgr.getNextHop('355607ACE1254C87B81D05DA8FA49588540B1950');
 		
@@ -86,7 +86,7 @@ module.exports = {
 		
 		"routing via routing table to id with no common prefix w/node id should return closest entry" : function(test) {
 			sinon.collection.stub(leafset, 'getRoutingHop').returns(undefined);
-			routingtable.updateRoutingTable(  'A78147A002B4482EB6D912E3E6518F5CC80EBEE6', '1.1.1.1:1111');
+			routingtable.updateWithKnownGood(  'A78147A002B4482EB6D912E3E6518F5CC80EBEE6', '1.1.1.1:1111', 1);
 
 			var res = routingmgr.getNextHop('A45607ACE1254C87B81D05DA8FA49588540B1950');
 			
@@ -98,7 +98,7 @@ module.exports = {
 		
 		"routing via routing table with relevant next hop entry should return that entry" : function(test) {
 			sinon.collection.stub(leafset, 'getRoutingHop').returns(undefined);
-			routingtable.updateRoutingTable(  'F456337A002B4482EB6D912E3E6518F5CC80EBE6', '1.1.1.1:1111');
+			routingtable.updateWithKnownGood(  'F456337A002B4482EB6D912E3E6518F5CC80EBE6', '1.1.1.1:1111', 1);
 
 			var res = routingmgr.getNextHop('F45607ACE1254C87B81D05DA8FA49588540B1950');
 			
@@ -110,7 +110,7 @@ module.exports = {
 		
 		"routing via routing table w/o relevant next hop entry returns closest entry from [leafset, routingtable] when closest entry is in same row of routing table" : function(test) {
 			sinon.collection.stub(leafset, 'getRoutingHop').returns(undefined);
-			routingtable.updateRoutingTable(  'F756337A002B4482EB6D912E3E6518F5CC80EBE6', '1.1.1.1:1111');
+			routingtable.updateWithKnownGood(  'F756337A002B4482EB6D912E3E6518F5CC80EBE6', '1.1.1.1:1111', 1);
 
 			var res = routingmgr.getNextHop('F78607ACE1254C87B81D05DA8FA49588540B1950');
 			
@@ -122,7 +122,7 @@ module.exports = {
 		
 		"routing via routing table w/o relevant next hop entry returns closest entry from [leafset, routingtable] when closest entry is in previous row of routing table" : function(test) {
 			sinon.collection.stub(leafset, 'getRoutingHop').returns(undefined);
-			routingtable.updateRoutingTable(  'EFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF', '1.1.1.1:1111');
+			routingtable.updateWithKnownGood(  'EFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF', '1.1.1.1:1111', 1);
 
 			var res = routingmgr.getNextHop('F08607ACE1254C87B81D05DA8FA49588540B1950');
 			
@@ -134,7 +134,7 @@ module.exports = {
 		
 		"routing via routing table w/o relevant next hop entry returns closest entry from [leafset, routingtable] when no previous row in routing table" : function(test) {
 			sinon.collection.stub(leafset, 'getRoutingHop').returns(undefined);
-			routingtable.updateRoutingTable(  'EFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF', '1.1.1.1:1111');
+			routingtable.updateWithKnownGood( 'EFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF', '1.1.1.1:1111', 1);
 
 			var res = routingmgr.getNextHop('DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD');
 			
@@ -148,7 +148,7 @@ module.exports = {
 			sinon.collection.stub(leafset, 'getRoutingHop').returns(undefined);
 			leafset._put('EFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF', '1.2.3.4:1234');
 			leafset._put('FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF', '5.6.7.8:5678');
-			routingtable.updateRoutingTable(  'EFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF', '1.2.3.4:1234');
+			routingtable.updateWithKnownGood('EFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF', '1.2.3.4:1234', 1);
 
 			var res = routingmgr.getNextHop('008607ACE1254C87B81D05DA8FA49588540B1950');
 			
@@ -163,11 +163,11 @@ module.exports = {
 			sinon.collection.stub(leafset, 'getRoutingHop').returns(undefined);
 			leafset._put('EFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF', '1.2.3.4:1234');
 			leafset._put('FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF','5.6.7.8:5678');
-			routingtable.updateRoutingTable(  'EFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF', '1.2.3.4:1234');
-			routingtable.updateRoutingTable(  '1000000000000000000000000000000000000000', '1.1.1.1:1111');
-			routingtable.updateRoutingTable(  '1100000000000000000000000000000000000000', '2.2.2.2:2222');
-			routingtable.updateRoutingTable(  '1110000000000000000000000000000000000000', '3.3.3.3:3333');
-			routingtable.updateRoutingTable(  '1111000000000000000000000000000000000000', '4.4.4.4:4444');
+			routingtable.updateWithKnownGood(  'EFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF', '1.2.3.4:1234', 0);
+			routingtable.updateWithKnownGood(  '1000000000000000000000000000000000000000', '1.1.1.1:1111', 1);
+			routingtable.updateWithKnownGood(  '1100000000000000000000000000000000000000', '2.2.2.2:2222', 2);
+			routingtable.updateWithKnownGood(  '1110000000000000000000000000000000000000', '3.3.3.3:3333', 3);
+			routingtable.updateWithKnownGood(  '1111000000000000000000000000000000000000', '4.4.4.4:4444', 4);
 
 			var res = routingmgr.getNextHop('1010101010101010101010101010101010101010');
 			

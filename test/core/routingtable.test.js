@@ -17,14 +17,13 @@ var overEdgeId= '0000000000000000000000000000000000000001';
 module.exports = {
 	"updating the routing table with a known good peer" : testCase({
 		setUp : function(done) {
-			routingtable._table = {};
 			node.nodeId = anId;
 			done();
 		},
 		
 		tearDown : function(done) {
 			routingtable._candidatePeers = {};
-			routingtable._table = {};			
+			routingtable._table = {};
 			done();
 		},
 		
@@ -291,10 +290,16 @@ module.exports = {
 	
 	"iterating over peers in the routing table" : testCase({
 		setUp : function(done) {
-			routingtable._table = {};
 			node.nodeId = anId;
 			var _this = this;
 			this.callback = sinon.stub();
+			done();
+		},
+		
+		tearDown : function(done) {
+			routingtable._candidatePeers = {};
+			routingtable._table = {};
+			sinon.collection.restore();
 			done();
 		},
 		
@@ -385,12 +390,11 @@ module.exports = {
 			test.ok(this.callback.calledWith('C695A1A002B4482EB6D912E3E6518F5CC80EBEE6', {ap : '1.2.3.4:1234', foundAt : 111}));
 			test.ok(this.callback.calledWith('F700000015254C87B81D05DA8FA49588540B1950', {ap : '3.4.5.6:3456', foundAt : 222}));
 			test.done();
-		},
+		}
 	}),
 	
 	"getting the routing table row shared with another peer's routing table" : testCase({
 		setUp : function(done) {
-			routingtable._table = {};
 			leafset.reset();
 			node.nodeId = anId;
 			done();
@@ -399,6 +403,7 @@ module.exports = {
 		tearDown : function(done) {
 			sinon.collection.restore();
 			routingtable._table = {};
+			routingtable._candidatePeers = {};
 			done();
 		},
 		

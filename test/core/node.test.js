@@ -1,23 +1,21 @@
 var sinon = require('sinon');
 var assert = require('assert');
-var node = require('core/node');
 var connmgr = require('core/connmgr');
-var testCase = require('nodeunit').testCase;
+var node = require('core/node');
 var messenger = require('core/messenger');
+var testCase = require('nodeunit').testCase;
 
 module.exports = {		
 	"starting a node" : testCase({
 		setUp : function(done) {
 			var _this = this;
-		 	
+
 			this.msg = {"uri" : "p2p:myapp/myresource", "key" : "val"};
 			this.msginfo = {};
-			this.connmgrOn = connmgr.on;
-			sinon.collection.stub(connmgr, 'on', function(evt, cbk) {
+			this.on = sinon.collection.stub(connmgr, 'on', function(evt, cbk) {
 				if (evt === 'message')
 					cbk(_this.msg, _this.msginfo);
 			});
-
 			done();
 		},
 		
@@ -25,15 +23,15 @@ module.exports = {
 			sinon.collection.restore();
 			done();
 		},
-	
+
 		"should start normally" : function(test) {
 			node.start(1234, "127.0.0.1");
 	
-			test.ok(connmgr.on.calledWith('message'));
+			test.ok(this.on.calledWith('message'));
 			test.ok(node.nodeId !== undefined);
 			test.done();
 		},
-		
+	
 		"should not set nodeid if already set (to allow node id injection)" : function(test) {
 			node.nodeId = 'FACE'
 			
@@ -59,7 +57,7 @@ module.exports = {
 			test.done();
 		}
 	}),
-	
+
 	"message sending" : testCase({
 		tearDown : function(done) {
 			sinon.collection.restore();
@@ -90,7 +88,6 @@ module.exports = {
 			var msg = new messenger.Message('p2p:myapp/myuri', {"key" : "val"}, {"hops" : 11});
 			connmgr.send = function() {};
 			var send = sinon.collection.stub(connmgr, 'send', function(port, host, data) {
-				console.log(data);
 				test.ok(data.indexOf('hops: 12') > -1);				
 			});
 	

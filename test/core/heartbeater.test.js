@@ -9,15 +9,14 @@ module.exports = {
 	"startup" : testCase({
 		setUp : function(done) {
 			this.overlayCallback = { on : function() {} };
-			this.on = sinon.collection.stub(this.overlayCallback, 'on');
-			
-			routingtable.routingTable = {};
+			this.on = sinon.collection.stub(this.overlayCallback, 'on');			
 			
 			done();
 		},
 		
 		tearDown : function(done) {
 			heartbeater.stop();
+			routingtable._table = {};
 			leafset.reset();
 			sinon.collection.restore();
 			done();
@@ -103,13 +102,12 @@ module.exports = {
 			
 			Date.prototype.getTime = function() { return 234; }
 			
-			routingtable.routingTable = {};
-			
 			done();
 		},
 		
 		tearDown : function(done) {
 			heartbeater.stop();
+			routingtable._table = {};
 			leafset.reset();
 			sinon.collection.restore();
 			Date.prototype.getTime = this.origDateGetTime;
@@ -236,7 +234,8 @@ module.exports = {
 			heartbeater.stop();
 			leafset.reset();
 			sinon.collection.restore();
-			routingtable.routingTable = {};			
+			routingtable._table = {};
+			routingtable._candidatePeers = {};
 			done();
 		},
 		
@@ -307,7 +306,7 @@ module.exports = {
 			Date.prototype.getTime = this.origDateGetTime;
 			heartbeater.stop();
 			leafset.reset();
-			routingtable.routingTable = {};			
+			routingtable._table = {};			
 			sinon.collection.restore();
 			done();
 		},
@@ -428,6 +427,8 @@ module.exports = {
 		tearDown : function(done) {
 			leafset.reset();
 			sinon.collection.restore();
+			routingtable._candidatePeers = {};
+			routingtable._table = {};
 			Date.prototype.getTime = this.origDateGetTime;
 			done();
 		},
