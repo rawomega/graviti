@@ -278,14 +278,12 @@ module.exports = {
 			bootstrapmgr.start(this.overlayCallback);
 			this.overlayCallback.emit("graviti-message-received", msg, this.msginfo);
 	
-			test.ok(this.sendToAddr.callCount === 5);
-			test.ok(this.sendToAddr.calledWith ('p2p:graviti/peers', {
-						leafset : leafset.compressedLeafset()
-					}, { method : 'POST' }, '1.1.1.1', '1111'));
+			test.ok(this.sendToAddr.callCount === 4);
 			test.ok(this.sendToAddr.calledWith ('p2p:graviti/peers', {
 				leafset : leafset.compressedLeafset()
-			}, { method : 'POST' }, '2.2.2.2', '2222'));
+			}, { method : 'POST' }, '1.1.1.1', '1111'));
 			test.ok(this.sendToAddr.calledWith ('p2p:graviti/peers', {
+				leafset : leafset.compressedLeafset(),
 				routing_table : { '0' : this.routingTableRows['0']}
 			}, { method : 'POST' }, '2.2.2.2', '2222'));
 			test.ok(this.sendToAddr.calledWith ('p2p:graviti/peers', {
