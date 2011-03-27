@@ -378,14 +378,15 @@ module.exports = {
 		},
 		
 		"should remove timed out dead peers regularly" : function(test) {
-			var lsClear = sinon.collection.stub(leafset, 'clearExpiredDeadAndCandidatePeers');
-			var rtClear = sinon.collection.stub(routingtable, 'clearExpiredCandidatePeers');
-			heartbeater.timedOutPeerCheckIntervalMsec = 50;
+			var lsClearCandidates = sinon.collection.stub(leafset, 'clearExpiredDeadAndCandidatePeers');
+			var lsClearTimedOut = sinon.collection.stub(leafset, 'clearTimedOutPeers');			
+			var rtClear = sinon.collection.stub(routingtable, 'clearExpiredCandidatePeers');			
 			
 			heartbeater.start(this.overlayCallback);
 			
 			setTimeout(function() {
-				test.ok(lsClear.called);
+				test.ok(lsClearCandidates.called);
+				test.ok(lsClearTimedOut.called);
 				test.ok(rtClear.called);
 				test.done();
 			}, 200);

@@ -204,7 +204,7 @@ module.exports = {
 			test.done();
 		},
 		
-		"should be able to clear all timed out dead peers" : function(test) {
+		"should be able to clear all timed out dead candidate peers" : function(test) {
 			leafset._put(lowerId,"1.2.3.4:1234");
 			leafset._put(higherId, "1.2.3.4:5678");			
 			leafset.removePeer(lowerId);
@@ -226,6 +226,18 @@ module.exports = {
 			
 			test.strictEqual(1, Object.keys(leafset._candidateset).length);
 			test.ok(leafset._candidateset[lowerId] === undefined);
+			test.done();
+		},
+		
+		"should be able to clear all timed out leafset peers" : function(test) {
+			leafset._put(lowerId,"1.2.3.4:1234");
+			leafset._put(higherId, "1.2.3.4:5678");			
+			leafset._leafset[lowerId].lastHeartbeatReceived = new Date().getTime() - 100000;
+			
+			leafset.clearTimedOutPeers();
+			
+			test.strictEqual(1, Object.keys(leafset._leafset).length);
+			test.ok(leafset._leafset[lowerId] === undefined);
 			test.done();
 		}
 	}), 
