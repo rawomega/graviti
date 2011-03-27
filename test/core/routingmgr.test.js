@@ -176,5 +176,5 @@ module.exports = {
 			test.strictEqual('1111', res.port);
 			test.done();
 		}
-	})
+	})	
 };

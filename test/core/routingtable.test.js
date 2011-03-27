@@ -36,6 +36,15 @@ module.exports = {
 			test.done();
 		},
 		
+		'updating with a known good peer without a round trip time should set that time to a long value' : function(test) {
+			routingtable.updateWithKnownGood('0F5147A002B4482EB6D912E3E6518F5CC80EBEE6', '1.2.3.4:1234');
+			
+			test.deepEqual({
+				"0":{"0":{id:'0F5147A002B4482EB6D912E3E6518F5CC80EBEE6',ap:'1.2.3.4:1234', rtt: 10000}}
+			}, routingtable._table);
+			test.done();
+		},
+		
 		"update empty routing table with known good id with no bits in common with node id" : function(test) {
 			routingtable.updateWithKnownGood('0F5147A002B4482EB6D912E3E6518F5CC80EBEE6', '1.2.3.4:1234', 10);
 			
@@ -206,7 +215,7 @@ module.exports = {
 			done();
 		},
 		
-		"should merge empty routing table into empty" : function(test) {
+		"should merge empty routing table of provisional peers into empty" : function(test) {
 			routingtable.mergeProvisional({});
 			
 			test.deepEqual({}, routingtable._table);
@@ -214,7 +223,7 @@ module.exports = {
 			test.done();
 		},
 		
-		"should merge non-empty routing table into empty" : function(test) {
+		"should merge non-empty routing table with provisional peers into empty" : function(test) {
 			var rt = {
 				"1":{
 					"7":{id:"F7DB7ACE15254C87B81D05DA8FA49588540B1950",ap:'1.2.3.4:1234'},
@@ -232,7 +241,7 @@ module.exports = {
 			test.done();
 		},
 		
-		"should merge non-empty routing table into non-empty" : function(test) {
+		"should merge non-empty routing table with provisional peers into non-empty" : function(test) {
 			routingtable.updateWithProvisional('C695A1A002B4482EB6D912E3E6518F5CC80EBEE6','3.4.5.6:3456');
 			var rt = {
 				"1":{
@@ -250,6 +259,56 @@ module.exports = {
 			test.ok(0 < routingtable._candidatePeers['C695A1A002B4482EB6D912E3E6518F5CC80EBEE6'].foundAt);
 			test.ok(0 < routingtable._candidatePeers['F7DB7ACE15254C87B81D05DA8FA49588540B1950'].foundAt);
 			test.ok(0 < routingtable._candidatePeers['F8D147A002B4482EB6D912E3E6518F5CC80EBEE6'].foundAt);
+			test.done();
+		},
+		
+		"should merge empty routing table of known good peers into empty" : function(test) {
+			routingtable.mergeKnownGood({});
+			
+			test.deepEqual({}, routingtable._table);
+			test.deepEqual({}, routingtable._candidatePeers);
+			test.done();
+		},
+		
+		"should merge non-empty routing table with known good peers into empty" : function(test) {
+			var rt = {
+				"1":{
+					"7":{id:"F7DB7ACE15254C87B81D05DA8FA49588540B1950",ap:'1.2.3.4:1234', rtt : 111},
+					"8":{id:"F8D147A002B4482EB6D912E3E6518F5CC80EBEE6",ap:'5.6.7.8:5678'}
+				}
+			};
+			
+			routingtable.mergeKnownGood(rt);
+
+			test.strictEqual('F7DB7ACE15254C87B81D05DA8FA49588540B1950', routingtable._table['1']['7'].id);
+			test.strictEqual('F8D147A002B4482EB6D912E3E6518F5CC80EBEE6', routingtable._table['1']['8'].id);
+			test.strictEqual('1.2.3.4:1234', routingtable._table['1']['7'].ap);
+			test.strictEqual('5.6.7.8:5678', routingtable._table['1']['8'].ap);
+			test.ok(111 === routingtable._table['1']['7'].rtt);
+			test.ok(10000 === routingtable._table['1']['8'].rtt);
+			test.done();
+		},
+		
+		"should merge non-empty routing table with known good peers into non-empty" : function(test) {
+			routingtable.updateWithKnownGood('C695A1A002B4482EB6D912E3E6518F5CC80EBEE6','3.4.5.6:3456', 333);
+			var rt = {
+				"1":{
+					"7":{id:"F7DB7ACE15254C87B81D05DA8FA49588540B1950",ap:'1.2.3.4:1234', rtt: 111},
+					"8":{id:"F8D147A002B4482EB6D912E3E6518F5CC80EBEE6",ap:'5.6.7.8:5678'}
+				}
+			};
+			
+			routingtable.mergeKnownGood(rt);
+			
+			test.strictEqual('C695A1A002B4482EB6D912E3E6518F5CC80EBEE6', routingtable._table['0']['C'].id);
+			test.strictEqual('F8D147A002B4482EB6D912E3E6518F5CC80EBEE6', routingtable._table['1']['8'].id);
+			test.strictEqual('F7DB7ACE15254C87B81D05DA8FA49588540B1950', routingtable._table['1']['7'].id);
+			test.strictEqual('3.4.5.6:3456', routingtable._table['0']['C'].ap);
+			test.strictEqual('1.2.3.4:1234', routingtable._table['1']['7'].ap);
+			test.strictEqual('5.6.7.8:5678', routingtable._table['1']['8'].ap);
+			test.ok(333 === routingtable._table['0']['C'].rtt);
+			test.ok(111 === routingtable._table['1']['7'].rtt);
+			test.ok(10000 === routingtable._table['1']['8'].rtt);
 			test.done();
 		}
 	}),
@@ -447,5 +506,45 @@ module.exports = {
 			test.strictEqual('F822222222222222222222222222222222222222', res['1']['8'].id);
 			test.done();
 		}
+	}),
+	
+	"finding a better hop than 'us' using information in our routing table" : testCase({
+		setUp : function(done) {
+			leafset.reset();
+			node.nodeId = 'ABCDEF1234ABCDEF1234ABCDEF1234ABCDEF1234';
+			done();
+		},
+		
+		tearDown : function(done) {
+			sinon.collection.restore();
+			routingtable._table = {};
+			routingtable._candidatePeers = {};
+			done();
+		},
+		
+		"should return empty better hop for empty routing table" : function(test) {			
+			var res = routingtable.findBetterRoutingHop(higherId);
+
+			test.deepEqual(undefined, res);
+			test.done();
+		},
+	
+		"should return nothing if we have nothing better than this node" : function(test) {		
+			routingtable.updateWithKnownGood('8000000000000000000000000000000000000000', '1.1.1.1:1111', 1);
+			
+			var res = routingtable.findBetterRoutingHop('900000000000000000000000000000000000', 'A000000000000000000000000000000000000000');
+
+			test.deepEqual(undefined, res);
+			test.done();
+		},
+		
+		"should return an entry that is better than this node" : function(test) {		
+			routingtable.updateWithKnownGood('B000000000000000000000000000000000000000', '1.1.1.1:1111', 1);
+			
+			var res = routingtable.findBetterRoutingHop('700000000000000000000000000000000000', 'C000000000000000000000000000000000000000');
+
+			test.deepEqual('B000000000000000000000000000000000000000', res.id);
+			test.done();
+		},
 	})
 };

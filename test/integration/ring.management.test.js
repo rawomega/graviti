@@ -114,7 +114,7 @@ module.exports = {
 				_this.nodes.done(test);
 			});
 		},
-
+/*
 		"should send and receive a bundle of messages" : function(test) {
 			var _this = this;
 			var sendSmallMessage = function() {
@@ -290,5 +290,5 @@ console.log('\n\cccccccccc\n\n');
 				_this.nodes.done(test);
 			});
 		}
-	})
+*/	})
 };

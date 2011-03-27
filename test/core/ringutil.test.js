@@ -15,6 +15,16 @@ var slightlyLessNearEdgeId= 'FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFC';
 
 module.exports = {
 	"finding nearest id in ring" : testCase({
+		"should reject bad dest id length" : function(test) {
+			assert.throws(function(){ ringutil.getNearestId('123', []);}, /invalid id length/i);
+	    	test.done();
+		},
+		
+		"should reject bad ids length" : function(test) {
+			assert.throws(function(){ ringutil.getNearestId(anId, ['4567']);}, /invalid id length/i);
+	    	test.done();
+		},
+	
 		"should find no nearest id when id set undefined" : function(test) {
 			test.strictEqual(undefined, ringutil.getNearestId(anId, undefined).nearest);
 			test.done();
@@ -67,6 +77,16 @@ module.exports = {
 			test.strictEqual(lowerId, res.nearest);
 			test.strictEqual(lowerId, res.highest);
 			test.strictEqual(wrappedId, res.lowest);
+			test.done();
+		},
+		
+		"should find nearest id when wrapping not allowed with specific idss" : function(test) {
+			var res = ringutil.getNearestId('C000000000000000000000000000000000000000',
+					["ABCDEF1234ABCDEF1234ABCDEF1234ABCDEF1234","B000000000000000000000000000000000000000"], false);
+			
+			test.strictEqual('B000000000000000000000000000000000000000', res.nearest);
+			test.strictEqual('B000000000000000000000000000000000000000', res.highest);
+			test.strictEqual('ABCDEF1234ABCDEF1234ABCDEF1234ABCDEF1234', res.lowest);
 			test.done();
 		},
 		
@@ -187,12 +207,18 @@ module.exports = {
 		},
 		
 		"should determine if given id is nearest to own id than any leafset ids when leafset contains own id": function(test) {
-			test.ok(ringutil.amINearest(higherId, anId, {anId : '1.2.3.4:1234'}));
+			var arg = {};
+			arg[anId] = '1.2.3.4:1234';
+			
+			test.ok(ringutil.amINearest(higherId, anId, arg));
 			test.done();
 		},
 
 		"should determine if given id is nearest to own id than any leafset ids when leafset contains further id": function(test) {
-			test.ok(ringutil.amINearest(higherId, anId, {lowerId : '5.6.7.8:5678'}));
+			var arg = {};
+			arg[lowerId] = '5.6.7.8:5678';
+			
+			test.ok(ringutil.amINearest(higherId, anId, arg));
 			test.done();
 		},
 		

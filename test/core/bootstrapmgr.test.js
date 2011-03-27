@@ -274,6 +274,7 @@ module.exports = {
 					last_bootstrap_hop : true
 				}
 			};
+			bootstrapmgr.bootstrapping = true;
 
 			bootstrapmgr.start(this.overlayCallback);
 			this.overlayCallback.emit("graviti-message-received", msg, this.msginfo);

@@ -472,7 +472,7 @@ module.exports = {
 			});
 			test.deepEqual(this.sendToAddr.args[0][2], {method : 'POST'});
 			test.strictEqual(this.sendToAddr.args[0][3], '127.0.0.1');
-			test.strictEqual(this.sendToAddr.args[0][4], 1234);
+			test.strictEqual(this.sendToAddr.args[0][4], 1234);			
 			test.done();
 		},
 		
@@ -495,7 +495,7 @@ module.exports = {
 			test.deepEqual(this.sendToAddr.args[0][2], {method : 'POST'});
 			test.strictEqual(this.sendToAddr.args[0][3], '127.0.0.1');
 			test.strictEqual(this.sendToAddr.args[0][4], 1234);
-			test.ok(leafset._leafset['ABCDEF0123ABCDEF0123ABCDEF0123ABCDEF0123'].lastHeartbeatSent === undefined);
+			test.ok(leafset._leafset['ABCDEF0123ABCDEF0123ABCDEF0123ABCDEF0123'].lastHeartbeatSent > 0);
 			test.done();
 		},
 		
