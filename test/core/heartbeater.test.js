@@ -122,7 +122,7 @@ module.exports = {
 			heartbeater.heartbeatCheckIntervalMsec = 50;
 			
 			heartbeater.start(this.overlayCallback);
-			
+
 			setTimeout(function() {
 				test.strictEqual(_this.sendToAddr.args[0][0], 'p2p:graviti/heartbeat');
 				test.deepEqual(_this.sendToAddr.args[0][1], {

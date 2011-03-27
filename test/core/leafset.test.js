@@ -321,8 +321,8 @@ module.exports = {
 		},
 		
 		"should update existing leafset with known good peer by replacing, without raising new peer event" : function(test) {
-			leafset._leafset[lowerId] = { ap : "1.2.3.4", lastHeartbeatReceived : 1};
-			leafset._leafset[anId] = { ap : "2.3.4.5", lastHeartbeatReceived : 2};
+			leafset._leafset[lowerId] = { ap : "1.2.3.4", lastHeartbeatReceived : 1, someExistingValue : 42};
+			leafset._leafset[anId] = { ap : "2.3.4.5", lastHeartbeatReceived : 2, anotherExistingValue : 42};
 			
 			leafset.updateWithKnownGood(anId, '3.4.5.6');
 			
@@ -331,6 +331,7 @@ module.exports = {
 			test.equal('3.4.5.6', leafset._leafset[anId].ap);
 			test.equal(1, leafset._leafset[lowerId].lastHeartbeatReceived);
 			test.ok(leafset._leafset[anId].lastHeartbeatReceived > 2);
+			test.equal(42, leafset._leafset[anId].anotherExistingValue);
 			test.ok(!this.arrivedCallback.called);
 			test.done();
 		},
