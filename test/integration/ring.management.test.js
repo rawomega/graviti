@@ -84,10 +84,18 @@ module.exports = {
 			var getRoutingTable = function() {
 				return require('core/routingtable')._table;
 			};
+			var getRoutingTableSize = function() {
+				var res = 0;
+				require('core/routingtable').each(function() {
+					res++
+				});
+				return res;
+			};
 			
 			// wait till leafset is sorted
 			this.nodes.select(0).waitUntilEqual(3, this.getLeafsetSize, test);
 			this.nodes.select(3).waitUntilEqual(3, this.getLeafsetSize, test);
+			this.nodes.select(3).waitUntilEqual(3, getRoutingTableSize, test);
 				
 			// leafset populated
 			this.nodes.select(3).eval(getLeafset, test, function(res) {
@@ -219,9 +227,14 @@ module.exports = {
 			
 			// ... and make sure that same message now goes there and not elsewhere
 			this.nodes.select(0).eval(this.sendMessageToId, test);
-			this.nodes.select(3).waitUntilEqual(1, this.countMessages, test);
-			this.nodes.select(0).waitUntilEqual(0, this.countMessages, test);			
+			this.nodes.select(3).waitUntilEqual(1, this.countMessages, test, function() {
+console.log('\n\naaaaaaaaa\n\n');							
+			});
+			this.nodes.select(0).waitUntilEqual(0, this.countMessages, test, function() {
+console.log('\n\nbbbbbbbbb\n\n');				
+			});
 			this.nodes.select(2).waitUntilEqual(0, this.countMessages, test, function() {
+console.log('\n\cccccccccc\n\n');
 				_this.nodes.done(test);		
 			});
 		},
