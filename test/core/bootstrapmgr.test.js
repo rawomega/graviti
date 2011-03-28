@@ -5,6 +5,7 @@ var node = require('core/node');
 var leafset = require('core/leafset');
 var routingtable = require('core/routingtable');
 var testCase = require('nodeunit').testCase;
+var heartbeater = require('core/heartbeater');
 
 module.exports = {
 	"bootstrap manager startup" : testCase({
@@ -220,7 +221,7 @@ module.exports = {
 			});
 	
 			this.overlayCallback = langutil.extend(new events.EventEmitter(), { sendToAddr : function() {}, send : function() {} });
-			this.sendToAddr = sinon.collection.stub(this.overlayCallback, 'sendToAddr');
+			this.sendHeartbeatToAddr = sinon.collection.stub(heartbeater, 'sendHeartbeatToAddr');
 			bootstrapmgr.overlayCallback = this.overlayCallback;
 			
 			done();
@@ -273,20 +274,20 @@ module.exports = {
 			bootstrapmgr.start(this.overlayCallback);
 			this.overlayCallback.emit("graviti-message-received", msg, this.msginfo);
 	
-			test.ok(this.sendToAddr.callCount === 4);
-			test.ok(this.sendToAddr.calledWith ('p2p:graviti/peers', {
+			test.ok(this.sendHeartbeatToAddr.callCount === 4);
+			test.ok(this.sendHeartbeatToAddr.calledWith ('1.1.1.1', '1111', {
 				leafset : leafset.compressedLeafset()
-			}, { method : 'POST' }, '1.1.1.1', '1111'));
-			test.ok(this.sendToAddr.calledWith ('p2p:graviti/peers', {
+			}));
+			test.ok(this.sendHeartbeatToAddr.calledWith ('2.2.2.2', '2222', {
 				leafset : leafset.compressedLeafset(),
 				routing_table : { '0' : this.routingTableRows['0']}
-			}, { method : 'POST' }, '2.2.2.2', '2222'));
-			test.ok(this.sendToAddr.calledWith ('p2p:graviti/peers', {
+			}));
+			test.ok(this.sendHeartbeatToAddr.calledWith ('5.5.5.5', '5555', {
 				routing_table : { '0' : this.routingTableRows['0']}
-			}, { method : 'POST' }, '5.5.5.5', '5555'));
-			test.ok(this.sendToAddr.calledWith ('p2p:graviti/peers', {
+			}));
+			test.ok(this.sendHeartbeatToAddr.calledWith ('6.6.6.6', '6666', {
 				routing_table : { '1' : this.routingTableRows['1']}
-			}, { method : 'POST' }, '6.6.6.6', '6666'));
+			}));
 			test.done();
 		}
 	})

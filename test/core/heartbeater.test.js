@@ -408,12 +408,13 @@ module.exports = {
 				}
 			};
 			this.msginfo = {
+					source_ap : '127.0.0.1:5678',
 					sender_ap : '127.0.0.1:1234'
 			};
 		
 			this.lsUpdateWithProvisional = sinon.collection.stub(leafset, 'updateWithProvisional');
 			this.lsUpdateWithKnownGood = sinon.collection.stub(leafset, 'updateWithKnownGood');
-			this.rtUpdateWithKnownGood = sinon.collection.stub(routingtable, 'updateWithKnownGood');
+			this.rtUpdateWithKnownGood = sinon.collection.stub(routingtable, 'updateWithKnownGood');			
 			this.rtMergeProvisional = sinon.collection.stub(routingtable, 'mergeProvisional');
 			this.overlayCallback = { sendToAddr : function() {}, on : function() {} };
 			this.sendToAddr = sinon.collection.stub(this.overlayCallback, 'sendToAddr');
@@ -433,12 +434,21 @@ module.exports = {
 			done();
 		},
 
+		"update leafset and routing table with details of source node on receiving a heartbeat" : function(test) {
+			var rtUpdateWithProvisional = sinon.collection.stub(routingtable, 'updateWithProvisional');
+			
+			heartbeater._handleReceivedGravitiMessage(this.msg, this.msginfo);
+			
+			test.ok(this.lsUpdateWithKnownGood.calledWith('ABCDEF0123ABCDEF0123ABCDEF0123ABCDEF0123', '127.0.0.1:5678'));
+			test.ok(rtUpdateWithProvisional.calledWith('ABCDEF0123ABCDEF0123ABCDEF0123ABCDEF0123', '127.0.0.1:5678'));
+			test.done();
+		},
+		
 		"update leafset on receipt of heartbeat with leafset data" : function(test) {
 			delete this.msg.content.routing_table;
 			
 			heartbeater._handleReceivedGravitiMessage(this.msg, this.msginfo);
 			
-			test.ok(this.lsUpdateWithKnownGood.calledWith('ABCDEF0123ABCDEF0123ABCDEF0123ABCDEF0123', '127.0.0.1:1234'));
 			test.ok(this.lsUpdateWithProvisional.calledWith({a:'b'}));
 			test.done();
 		},
@@ -448,7 +458,6 @@ module.exports = {
 			
 			heartbeater._handleReceivedGravitiMessage(this.msg, this.msginfo);
 			
-			test.ok(this.lsUpdateWithKnownGood.calledWith('ABCDEF0123ABCDEF0123ABCDEF0123ABCDEF0123', '127.0.0.1:1234'));
 			test.ok(this.rtMergeProvisional.calledWith({c:'d'}));
 			test.done();
 		},
@@ -471,7 +480,7 @@ module.exports = {
 			});
 			test.deepEqual(this.sendToAddr.args[0][2], {method : 'POST'});
 			test.strictEqual(this.sendToAddr.args[0][3], '127.0.0.1');
-			test.strictEqual(this.sendToAddr.args[0][4], '1234');			
+			test.strictEqual(this.sendToAddr.args[0][4], '5678');			
 			test.done();
 		},
 		
@@ -493,7 +502,7 @@ module.exports = {
 			});
 			test.deepEqual(this.sendToAddr.args[0][2], {method : 'POST'});
 			test.strictEqual(this.sendToAddr.args[0][3], '127.0.0.1');
-			test.strictEqual(this.sendToAddr.args[0][4], '1234');
+			test.strictEqual(this.sendToAddr.args[0][4], '5678');
 			test.ok(leafset._leafset['ABCDEF0123ABCDEF0123ABCDEF0123ABCDEF0123'].lastHeartbeatSent > 0);
 			test.done();
 		},
@@ -509,7 +518,7 @@ module.exports = {
 			test.ok(!this.sendToAddr.called);
 			test.ok(this.rtUpdateWithKnownGood.calledOnce);
 			test.strictEqual(this.rtUpdateWithKnownGood.args[0][0], 'ABCDEF0123ABCDEF0123ABCDEF0123ABCDEF0123');
-			test.strictEqual(this.rtUpdateWithKnownGood.args[0][1], '127.0.0.1:1234');
+			test.strictEqual(this.rtUpdateWithKnownGood.args[0][1], '127.0.0.1:5678');
 			test.strictEqual(this.rtUpdateWithKnownGood.args[0][2], 234 - 222);
 			test.done();
 		},

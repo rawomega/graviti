@@ -69,7 +69,7 @@ module.exports = {
 		},
 		
 		tearDown : function(done) {
-			this.nodes.stopNow();			
+			this.nodes.stopNow();
 			setTimeout(function() {
 				util.log('\n\n========\n\n');	
 				done();
@@ -114,7 +114,7 @@ module.exports = {
 				_this.nodes.done(test);
 			});
 		},
-/*
+
 		"should send and receive a bundle of messages" : function(test) {
 			var _this = this;
 			var sendSmallMessage = function() {
@@ -188,18 +188,18 @@ module.exports = {
 	
 			// check that on 2 different nodes we've had at least 1 heartbeat from every other node
 			this.nodes.select(0).eval(countReceivedHeartbeatsPerSender, test, function(res) {
-				test.ok(res[_this.nodeIds[1]] > 1);
-				test.ok(res[_this.nodeIds[2]] > 1);
-				test.ok(res[_this.nodeIds[3]] > 1);
+				test.ok(res[_this.nodeIds[1]] >= 1);
+				test.ok(res[_this.nodeIds[2]] >= 1);
+				test.ok(res[_this.nodeIds[3]] >= 1);
 			});
 			this.nodes.select(2).eval(countReceivedHeartbeatsPerSender, test, function(res) {
-				test.ok(res[_this.nodeIds[0]] > 1);
-				test.ok(res[_this.nodeIds[1]] > 1);
-				test.ok(res[_this.nodeIds[3]] > 1);
+				test.ok(res[_this.nodeIds[0]] >= 1);
+				test.ok(res[_this.nodeIds[1]] >= 1);
+				test.ok(res[_this.nodeIds[3]] >= 1);
 				_this.nodes.done(test);
 			});
 		},
-		
+
 		"should be able to deal with orderly departure and return of a node" : function(test) {
 			var _this = this;
 
@@ -227,19 +227,14 @@ module.exports = {
 			
 			// ... and make sure that same message now goes there and not elsewhere
 			this.nodes.select(0).eval(this.sendMessageToId, test);
-			this.nodes.select(3).waitUntilEqual(1, this.countMessages, test, function() {
-console.log('\n\naaaaaaaaa\n\n');							
-			});
-			this.nodes.select(0).waitUntilEqual(0, this.countMessages, test, function() {
-console.log('\n\nbbbbbbbbb\n\n');				
-			});
+			this.nodes.select(3).waitUntilEqual(1, this.countMessages, test);
+			this.nodes.select(0).waitUntilEqual(0, this.countMessages, test);
 // TODO: on this line the test should be deterministic - seems to be 0 or 1 ATM depending on routing table etc - check why			
 			this.nodes.select(2).waitUntilAtLeast(0, this.countMessages, test, function() {
-console.log('\n\cccccccccc\n\n');
 				_this.nodes.done(test);		
 			});
 		},
-
+/*
 		"should be able to deal with sudden departure of a node" : function(test) {
 			var _this = this;
 			
