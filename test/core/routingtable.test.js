@@ -538,12 +538,13 @@ module.exports = {
 			test.done();
 		},
 		
-		"should return an entry that is better than this node" : function(test) {		
+		"should return an entry that is better than this node in zeroth row" : function(test) {		
 			routingtable.updateWithKnownGood('B000000000000000000000000000000000000000', '1.1.1.1:1111', 1);
 			
 			var res = routingtable.findBetterRoutingHop('700000000000000000000000000000000000', 'C000000000000000000000000000000000000000');
 
 			test.deepEqual('B000000000000000000000000000000000000000', res.id);
+			test.deepEqual('1.1.1.1:1111', res.ap);
 			test.done();
 		},
 	})
