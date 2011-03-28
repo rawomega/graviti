@@ -408,8 +408,7 @@ module.exports = {
 				}
 			};
 			this.msginfo = {
-					sender_addr : '127.0.0.1',
-					sender_port : 1234
+					sender_ap : '127.0.0.1:1234'
 			};
 		
 			this.lsUpdateWithProvisional = sinon.collection.stub(leafset, 'updateWithProvisional');
@@ -472,7 +471,7 @@ module.exports = {
 			});
 			test.deepEqual(this.sendToAddr.args[0][2], {method : 'POST'});
 			test.strictEqual(this.sendToAddr.args[0][3], '127.0.0.1');
-			test.strictEqual(this.sendToAddr.args[0][4], 1234);			
+			test.strictEqual(this.sendToAddr.args[0][4], '1234');			
 			test.done();
 		},
 		
@@ -494,7 +493,7 @@ module.exports = {
 			});
 			test.deepEqual(this.sendToAddr.args[0][2], {method : 'POST'});
 			test.strictEqual(this.sendToAddr.args[0][3], '127.0.0.1');
-			test.strictEqual(this.sendToAddr.args[0][4], 1234);
+			test.strictEqual(this.sendToAddr.args[0][4], '1234');
 			test.ok(leafset._leafset['ABCDEF0123ABCDEF0123ABCDEF0123ABCDEF0123'].lastHeartbeatSent > 0);
 			test.done();
 		},
@@ -549,8 +548,7 @@ module.exports = {
 				method : 'DELETE'
 			}
 			this.msginfo = {
-				sender_addr : '127.0.0.1',
-				sender_port : 1234
+				sender_ap : '127.0.0.1:1234'
 			};			
 			done();
 		},
