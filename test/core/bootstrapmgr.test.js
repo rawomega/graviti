@@ -9,7 +9,7 @@ var testCase = require('nodeunit').testCase;
 module.exports = {
 	"bootstrap manager startup" : testCase({
 		setUp : function(done) {
-			node.nodeId = '1234';
+			node.nodeId = '1234567890123456789012345678901234567890';
 			this.overlayCallback = { on : function() {}, sendToAddr : function() {} };
 			this.on = sinon.collection.stub(this.overlayCallback, 'on');
 			done();
@@ -65,10 +65,9 @@ module.exports = {
 
 	"handling bootstrap requests" : testCase ({
 		setUp : function(done) {
-			node.nodeId = '1234';
+			node.nodeId = '1234567890123456789012345678901234567890';
 			this.msginfo = {
-				sender_addr : '2.2.2.2',
-				sender_port : 2222
+				sender_ap : '2.2.2.2:2222'
 			};
 			this.sharedRow = {'2' : {'A' : {id :'00A'}}};
 			
@@ -114,14 +113,14 @@ module.exports = {
 			test.deepEqual(this.sendToAddr.args[0][1], 	{
 					leafset : leafset.compressedLeafset(),
 					routing_table : this.sharedRow,
-					bootstrap_request_hops : ['1234'],
+					bootstrap_request_hops : ['1234567890123456789012345678901234567890'],
 					last_bootstrap_hop : true
 			});
 			test.deepEqual(this.sendToAddr.args[0][2], {
 					method : 'POST'
 			});
 			test.strictEqual(this.sendToAddr.args[0][3], '2.2.2.2');
-			test.strictEqual(this.sendToAddr.args[0][4], 	2222);
+			test.strictEqual(this.sendToAddr.args[0][4], '2222');
 			test.done();
 		},
 		
@@ -132,8 +131,7 @@ module.exports = {
 				method : 'GET',
 				content : {
 					joining_node_id : 'ABCDEF1234ABCDEF1234ABCDEF1234ABCDEF1234',
-					bootstrap_source_addr : '3.3.3.3',
-					bootstrap_source_port : 3333
+					bootstrap_source_ap : '3.3.3.3:3333'
 				}
 			};
 			
@@ -147,9 +145,8 @@ module.exports = {
 			test.deepEqual(this.sendToId.args[0][1], {
 					joining_node_id : 'ABCDEF1234ABCDEF1234ABCDEF1234ABCDEF1234',
 					routing_table : this.sharedRow,
-					bootstrap_request_hops : ['1234'],
-					bootstrap_source_addr : '3.3.3.3',
-					bootstrap_source_port : 3333
+					bootstrap_request_hops : ['1234567890123456789012345678901234567890'],
+					bootstrap_source_ap : '3.3.3.3:3333'
 			});
 			test.deepEqual(this.sendToId.args[0][2], {method : 'GET'});
 			test.strictEqual(this.sendToId.args[0][3], 'ABCDEF1234ABCDEF1234ABCDEF1234ABCDEF1234');
@@ -164,8 +161,7 @@ module.exports = {
 					joining_node_id : 'ABCDEF1234ABCDEF1234ABCDEF1234ABCDEF1234',
 					routing_table : {'1' : {'4' : {id :'040'}}},
 					bootstrap_request_hops : ['BAAD'],
-					bootstrap_source_addr : '3.3.3.3',
-					bootstrap_source_port : 3333
+					bootstrap_source_ap : '3.3.3.3:3333'
 				}
 			};
 				
@@ -181,9 +177,8 @@ module.exports = {
 					'1' : {'4' : {id :'040'}},
 					'2' : {'A' : {id :'00A'}}
 				},
-				bootstrap_request_hops : ['BAAD', '1234'],
-				bootstrap_source_addr : '3.3.3.3',
-				bootstrap_source_port : 3333
+				bootstrap_request_hops : ['BAAD', '1234567890123456789012345678901234567890'],
+				bootstrap_source_ap : '3.3.3.3:3333'
 			});
 			test.done();
 		}
@@ -196,8 +191,7 @@ module.exports = {
 			this.leafset = {'LS' : '5.5.5.5:5555'};
 			this.routingTable = {'RT' : '5.5.5.5:5555'};
 			this.msginfo = {
-				sender_addr : '2.2.2.2',
-				sender_port : 2222
+				sender_ap : '2.2.2.2:2222'
 			};
 	
 			this.updateWithProvisional = sinon.collection.stub(leafset, 'updateWithProvisional');

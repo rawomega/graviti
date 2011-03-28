@@ -136,6 +136,21 @@ module.exports = {
 			test.done();
 		},
 
+		"should throw if no sender port in message" : function(test) {
+			// setup
+			var _this = this;
+			connmgr.on('message', function() {test.fail('unexpected message');});
+			
+			connmgr.listen(1234, "127.0.0.1");
+			this.server.emit('connection', this.socket);
+			
+			assert.throws(function() {
+				_this.socket.emit('data', 'GET p2p:graviti/something\n'
+						+ 'source_port: 123\n\n');
+			}, /sender port/i);
+			test.done();
+		},
+		
 		"should handle parseable message callback" : function(test) {
 			// setup
 			var rcvdmsg = undefined;
@@ -150,13 +165,14 @@ module.exports = {
 			this.server.emit('connection', this.socket);
 			this.socket.emit('data', 'GET p2p:myapp/something\n' +
 					'source_port : 1111\n' +
+					'sender_port : 2222\n' +
 					'key: val\n\n'
 			);
 			
 			// assert
 			test.strictEqual('val', rcvdmsg.key);
-			test.strictEqual('6.6.6.6', rcvdmsginfo.sender_addr);
-			test.strictEqual('1111', rcvdmsginfo.sender_port);
+			test.strictEqual('6.6.6.6:2222', rcvdmsginfo.sender_ap);
+			test.strictEqual('6.6.6.6:1111', rcvdmsginfo.source_ap);			
 			test.strictEqual('myapp', rcvdmsginfo.app_name);
 			test.done();
 		},
@@ -174,15 +190,39 @@ module.exports = {
 			connmgr.listen(1234, "127.0.0.1");
 			this.server.emit('connection', this.socket);
 			this.socket.emit('data', 'GET p2p:myapp/something\n');
-			this.socket.emit('data', 'source_port : 1111\n' +
+			this.socket.emit('data',
+					'source_port : 1111\n' +
+					'sender_port : 2222\n' +
 					'key: val\n\n'
 			);
 			
 			// assert
 			test.strictEqual('val', rcvdmsg.key);
-			test.strictEqual('6.6.6.6', rcvdmsginfo.sender_addr);
-			test.strictEqual('1111', rcvdmsginfo.sender_port);
+			test.strictEqual('6.6.6.6:2222', rcvdmsginfo.sender_ap);
+			test.strictEqual('6.6.6.6:1111', rcvdmsginfo.source_ap);
 			test.strictEqual('myapp', rcvdmsginfo.app_name);
+			test.done();
+		},
+		
+		"should add source addr to message if not present" : function(test) {
+			// setup
+			var rcvdmsg = undefined;
+			var rcvdmsginfo = undefined;
+			connmgr.on("message", function(msg, msginfo) {
+				rcvdmsg = msg;
+				rcvdmsginfo = msginfo
+			});
+	
+			// act
+			connmgr.listen(1234, "127.0.0.1");
+			this.server.emit('connection', this.socket);
+			this.socket.emit('data', 'GET p2p:myapp/something\n' +
+					'source_port : 1111\n' +
+					'sender_port : 2222\n\n'
+			);
+			
+			// assert
+			test.strictEqual('6.6.6.6', rcvdmsg.source_addr);
 			test.done();
 		}
 	}),

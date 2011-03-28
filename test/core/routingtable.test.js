@@ -129,7 +129,7 @@ module.exports = {
 			test.done();
 		}
 	}),
-		
+	
 	"updating the routing table with provisional peers" : testCase({
 		setUp : function(done) {
 			node.nodeId = anId;
@@ -451,7 +451,7 @@ module.exports = {
 			test.done();
 		}
 	}),
-	
+
 	"getting the routing table row shared with another peer's routing table" : testCase({
 		setUp : function(done) {
 			leafset.reset();
@@ -545,7 +545,77 @@ module.exports = {
 
 			test.deepEqual('B000000000000000000000000000000000000000', res.id);
 			test.deepEqual('1.1.1.1:1111', res.ap);
+			test.deepEqual(res.row, {
+				'0' : { 'B' : {id : 'B000000000000000000000000000000000000000', ap : '1.1.1.1:1111', rtt : 1}}
+			});
 			test.done();
 		},
+
+		"should return an entry that is better than this node in our first row" : function(test) {		
+			routingtable.updateWithKnownGood('A300000000000000000000000000000000000000', '1.1.1.1:1111', 1);
+			
+			var res = routingtable.findBetterRoutingHop('A00000000000000000000000000000000000', 'A200000000000000000000000000000000000000');
+
+			test.deepEqual('A300000000000000000000000000000000000000', res.id);
+			test.deepEqual('1.1.1.1:1111', res.ap);
+			test.deepEqual(res.row, {
+				'1' : { '3' : {id : 'A300000000000000000000000000000000000000', ap : '1.1.1.1:1111', rtt : 1}}
+			});
+			test.done();
+		},
+		
+		"should return nothing if our best route is no good to sender due to insufficiently long comon prefix" : function(test) {		
+			routingtable.updateWithKnownGood('ABCD000000000000000000000000000000000000', '1.1.1.1:1111', 1);
+			
+			var res = routingtable.findBetterRoutingHop('A00000000000000000000000000000000000', 'AC00000000000000000000000000000000000000');
+
+			test.deepEqual(undefined, res);
+			test.done();
+		},
+		
+		"should return an entry that is better than this node in our fourth row" : function(test) {		
+			routingtable.updateWithKnownGood('ABCF000000000000000000000000000000000000', '1.1.1.1:1111', 1);
+			
+			var res = routingtable.findBetterRoutingHop('ABC000000000000000000000000000000000', 'AC00000000000000000000000000000000000000');
+
+			test.deepEqual('ABCF000000000000000000000000000000000000', res.id);
+			test.deepEqual('1.1.1.1:1111', res.ap);
+			test.deepEqual(res.row, {
+				'3' : { 'F' : {id : 'ABCF000000000000000000000000000000000000', ap : '1.1.1.1:1111', rtt : 1}}
+			});
+			test.done();
+		},
+
+		"given multiple matches, should prefer one with a longer shared prefix" : function(test) {		
+			routingtable.updateWithKnownGood('ABCF000000000000000000000000000000000000', '1.1.1.1:1111', 1);
+			routingtable.updateWithKnownGood('ABF0000000000000000000000000000000000000', '2.2.2.2:2222', 2);
+			
+			var res = routingtable.findBetterRoutingHop('ABC000000000000000000000000000000000', 'AC00000000000000000000000000000000000000');
+
+			test.deepEqual('ABCF000000000000000000000000000000000000', res.id);
+			test.deepEqual('1.1.1.1:1111', res.ap);
+			test.deepEqual(res.row, {
+				'3' : { 'F' : {id : 'ABCF000000000000000000000000000000000000', ap : '1.1.1.1:1111', rtt : 1}}
+			});
+			test.done();
+		},
+		
+		"should return nothing if our best route is further than us" : function(test) {		
+			routingtable.updateWithKnownGood('AF00000000000000000000000000000000000000', '1.1.1.1:1111', 1);
+			
+			var res = routingtable.findBetterRoutingHop('A00000000000000000000000000000000000', 'AD00000000000000000000000000000000000000');
+
+			test.deepEqual(undefined, res);
+			test.done();
+		},
+		
+		"should return nothing if we have a closer route but it doesn't have the right prefix" : function(test) {		
+			routingtable.updateWithKnownGood('B000000000000000000000000000000000000000', '1.1.1.1:1111', 1);
+			
+			var res = routingtable.findBetterRoutingHop('A00000000000000000000000000000000000', 'AF00000000000000000000000000000000000000');
+
+			test.deepEqual(undefined, res);
+			test.done();
+		}
 	})
 };
