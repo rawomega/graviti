@@ -4,6 +4,7 @@ var testCase = require('nodeunit').testCase;
 var node = require('core/node');
 var leafset = require('core/leafset');
 var routingmgr = require('core/routingmgr');
+var routingtable = require('core/routingtable');
 var id = require('common/id');
 var uri = require('common/uri');
 var bootstrapmgr = require('core/bootstrapmgr');
@@ -220,6 +221,7 @@ module.exports = {
 			this.gravitiReceived = sinon.stub();
 			this.msg = { dest_id : 'FEED', he : 'llo'};
 			this.msginfo = {
+					source_ap : '3.3.3.3:3333',
 					app_name : 'myapp'					
 			};
 
@@ -299,6 +301,22 @@ module.exports = {
 			test.ok(!this.appReceived.called);
 			test.ok(!this.appForwarding.called);
 			test.ok(!this.gravitiReceived.called);
+			test.done();
+		},
+		
+		"tell upstream node if we have a better route for the message being routed than ourselves" : function(test) {
+			var sendHeartbeat = sinon.collection.stub(heartbeater, 'sendHeartbeatToAddr');
+			var rtFindBetterRoutingHop = sinon.collection.stub(routingtable, 'findBetterRoutingHop').returns({
+				row : 'some row'
+			});
+			sinon.collection.stub(leafset, 'isThisNodeNearestTo').returns(false);
+			
+			overlay._processMessage(this.msg, this.msginfo);
+					
+			test.ok(sendHeartbeat.calledOnce);
+			test.equal('3.3.3.3', sendHeartbeat.args[0][0]);
+			test.equal('3333', sendHeartbeat.args[0][1]);
+			test.deepEqual({routing_table : 'some row'}, sendHeartbeat.args[0][2]);			
 			test.done();
 		}
 	}),
