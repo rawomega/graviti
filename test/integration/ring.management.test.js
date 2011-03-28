@@ -234,7 +234,7 @@ module.exports = {
 				_this.nodes.done(test);		
 			});
 		},
-/*
+
 		"should be able to deal with sudden departure of a node" : function(test) {
 			var _this = this;
 			
@@ -245,8 +245,9 @@ module.exports = {
 			
 			var setShortHeartbeatTimeout = function() {
 				var heartbeater = require('core/heartbeater');
+				var leafset = require('core/leafset');
+				leafset.timedOutPeerIntervalMsec = 3000;
 				heartbeater.timedOutPeerCheckIntervalMsec = 500;
-				heartbeater.timedOutPeerIntervalMsec = 3000;
 				heartbeater.stop(false);
 				heartbeater.start(require('core/overlay'));
 			};
@@ -285,5 +286,5 @@ module.exports = {
 				_this.nodes.done(test);
 			});
 		}
-*/	})
+	})
 };
