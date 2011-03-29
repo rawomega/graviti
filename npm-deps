@@ -1,4 +1,4 @@
-buffertools@1.0.0         Working with node.js buffers made easy.    =bnoordhuis active installed latest remote buffer buffers
+buffertools@1.0.0         Working with node.js buffers made easy.    =bnoordhuis active installed remote buffer buffers
 chain-gang@0.2.1          Small in-process queueing library    =technoweenie active installed remote
 jslint-core@2011.01.09    The JavaScript Code Quality Tool    =bramstein active installed latest remote JavaScript lint jslint jslint-core fulljslint
 node-uuid@1.1.0           Simple, fast generation of RFC4122(v4) UUIDs.    =broofa active installed latest remote uuid guid rfc4122

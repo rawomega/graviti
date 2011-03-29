@@ -168,6 +168,26 @@ module.exports = {
 			test.ok(0 < routingtable._candidatePeers['0F5147A002B4482EB6D912E3E6518F5CC80EBEE6'].foundAt);
 			test.done();
 		},
+		
+		"do not update routing table with a provisional peer that is already a known good peer, when override flag not set" : function(test) {
+			routingtable.updateWithKnownGood('0F5147A002B4482EB6D912E3E6518F5CC80EBEE6', '1.2.3.4:1234');
+			
+			routingtable.updateWithProvisional('0F5147A002B4482EB6D912E3E6518F5CC80EBEE6', '1.2.3.4:1234');
+			
+			test.equal(0, Object.keys(routingtable._candidatePeers).length);
+			test.done();
+		},
+		
+		"update routing table with a provisional peer that is already a known good peer, when override flag set" : function(test) {
+			routingtable.updateWithKnownGood('0F5147A002B4482EB6D912E3E6518F5CC80EBEE6', '1.2.3.4:1234');
+			
+			routingtable.updateWithProvisional('0F5147A002B4482EB6D912E3E6518F5CC80EBEE6', '1.2.3.4:1234', true);
+			
+			test.equal(1, Object.keys(routingtable._candidatePeers).length);
+			test.strictEqual('1.2.3.4:1234', routingtable._candidatePeers['0F5147A002B4482EB6D912E3E6518F5CC80EBEE6'].ap);
+			test.ok(0 < routingtable._candidatePeers['0F5147A002B4482EB6D912E3E6518F5CC80EBEE6'].foundAt);
+			test.done();
+		},
 
 		"update routing table with a provisional peer that is already known but has a different address" : function(test) {
 			routingtable.updateWithProvisional('0F5147A002B4482EB6D912E3E6518F5CC80EBEE6', '1.2.3.4:1234');
@@ -343,6 +363,59 @@ module.exports = {
 			routingtable.clearExpiredCandidatePeers();
 			
 			test.equal(0, Object.keys(routingtable._candidatePeers).length);
+			test.done();
+		}
+	}),
+	
+	"getting a peer from the rooting table" : testCase({
+		setUp : function(done) {
+			node.nodeId = anId;
+			done();
+		},
+		
+		tearDown : function(done) {
+			routingtable._candidatePeers = {};
+			routingtable._table = {};
+			sinon.collection.restore();
+			done();
+		},
+		
+		"should get nothing for a non-existent peer" : function(test) {
+			var res = routingtable.peer('ABCDEF1234ABCDEF1234ABCDEF1234ABCDEF1234');
+			
+			test.equal(undefined, res);
+			test.done();
+		},
+		
+		"should get nothing for a non-matching peer" : function(test) {
+			routingtable.updateWithKnownGood('F700000015254C87B81D05DA8FA49588540B1950','9.0.1.2:9012', 1);
+			routingtable.updateWithKnownGood('F8D147A002B4482EB6D912E3E6518F5CC80EBEE6','3.4.5.6:3456', 2);
+			
+			var res = routingtable.peer('ABCDEF1234ABCDEF1234ABCDEF1234ABCDEF1234');
+			
+			test.equal(undefined, res);
+			test.done();
+		},
+		
+		"should get matching peer in zeroth row for a non-matching peer" : function(test) {
+			routingtable.updateWithKnownGood('ABCDEF1234ABCDEF1234ABCDEF1234ABCDEF1234','9.0.1.2:9012', 1);
+			routingtable.updateWithKnownGood('F8D147A002B4482EB6D912E3E6518F5CC80EBEE6','3.4.5.6:3456', 2);
+			
+			var res = routingtable.peer('ABCDEF1234ABCDEF1234ABCDEF1234ABCDEF1234');
+			
+			test.equal('ABCDEF1234ABCDEF1234ABCDEF1234ABCDEF1234', res.id);
+			test.equal('9.0.1.2:9012', res.ap);
+			test.done();
+		},
+		
+		"should get matching peer in first row for a non-matching peer" : function(test) {
+			routingtable.updateWithKnownGood('ABCDEF1234ABCDEF1234ABCDEF1234ABCDEF1234','9.0.1.2:9012', 1);
+			routingtable.updateWithKnownGood('F8D147A002B4482EB6D912E3E6518F5CC80EBEE6','3.4.5.6:3456', 2);
+			
+			var res = routingtable.peer('F8D147A002B4482EB6D912E3E6518F5CC80EBEE6');
+			
+			test.equal('F8D147A002B4482EB6D912E3E6518F5CC80EBEE6', res.id);
+			test.equal('3.4.5.6:3456', res.ap);
 			test.done();
 		}
 	}),
