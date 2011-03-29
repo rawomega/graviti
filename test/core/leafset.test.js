@@ -25,7 +25,7 @@ module.exports = {
 		},
 		
 		"should return self as next routing hop when leafset empty" : function(test) {
-			var res = leafset.getRoutingHop(anId)
+			var res = leafset.getRoutingHop(anId);
 			test.strictEqual(anId, res.id);
 			test.strictEqual(undefined, res.addr);
 			test.strictEqual(undefined, res.port);

@@ -33,7 +33,7 @@ module.exports = {
 		},
 	
 		"should not set nodeid if already set (to allow node id injection)" : function(test) {
-			node.nodeId = 'FACE'
+			node.nodeId = 'FACE';
 			
 			node.start(1234, "127.0.0.1");
 	
@@ -47,7 +47,7 @@ module.exports = {
 			var rcvdmsginfo = undefined;
 			node.on("message", function(msg, msginfo) {
 				rcvdmsg = msg;
-				rcvdmsginfo = msginfo
+				rcvdmsginfo = msginfo;
 			});
 	
 			node.start(1234, "127.0.0.1");

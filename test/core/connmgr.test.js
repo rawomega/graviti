@@ -51,7 +51,7 @@ module.exports = {
 					test.done();
 					if (failTimeoutId) clearTimeout(failTimeoutId);
 				}
-			}
+			};
 			
 			connmgr.listen(1234, "127.0.0.1");
 			this.server.emit("error", { code : 'EADDRINUSE' });

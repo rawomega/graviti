@@ -527,13 +527,13 @@ module.exports = {
 
 	"getting the routing table row shared with another peer's routing table" : testCase({
 		setUp : function(done) {
-			leafset.reset();
 			node.nodeId = anId;
 			done();
 		},
 		
 		tearDown : function(done) {
 			sinon.collection.restore();
+			leafset.reset();
 			routingtable._table = {};
 			routingtable._candidatePeers = {};
 			done();
@@ -583,13 +583,13 @@ module.exports = {
 	
 	"finding a better hop than 'us' using information in our routing table" : testCase({
 		setUp : function(done) {
-			leafset.reset();
 			node.nodeId = 'ABCDEF1234ABCDEF1234ABCDEF1234ABCDEF1234';
 			done();
 		},
 		
 		tearDown : function(done) {
 			sinon.collection.restore();
+			leafset.reset();
 			routingtable._table = {};
 			routingtable._candidatePeers = {};
 			done();

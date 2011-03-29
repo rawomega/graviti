@@ -108,14 +108,14 @@ module.exports = {
 			
 			this.uri = 'p2p:myapp/myresource';
 			this.content = {my : 'content'};
-			this.send = sinon.collection.stub(node, 'send')
+			this.send = sinon.collection.stub(node, 'send');
 			this.appForwarding = sinon.stub();
 			this.appReceived = sinon.stub();
 			this.msginfo = {
 					app_name : 'myapp',
 					next_hop_id : 'CDEF',
 					next_hop_addr : '5.5.5.5',
-					next_hop_port : 5555,
+					next_hop_port : 5555
 			};
 
 			overlay.on('myapp-app-message-forwarding', this.appForwarding);

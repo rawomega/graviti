@@ -2,13 +2,15 @@ var sinon = require('sinon');
 var heartbeater = require('core/heartbeater');
 var leafset = require('core/leafset');
 var routingtable = require('core/routingtable');
+var langutil = require('common/langutil');
+var events = require('events');
 var node = require('core/node');
 var testCase = require('nodeunit').testCase;
 
 module.exports = {
 	"startup" : testCase({
 		setUp : function(done) {
-			this.overlayCallback = { on : function() {} };
+			this.overlayCallback = { on : function() {}, removeListener : function() {} };
 			this.on = sinon.collection.stub(this.overlayCallback, 'on');			
 			
 			done();
@@ -34,7 +36,7 @@ module.exports = {
 		setUp : function(done) {
 			node.nodeId = '9876543210987654321098765432109876543210';
 			
-			this.overlayCallback = { sendToAddr : function() {}, on : function() {} };
+			this.overlayCallback = langutil.extend(new events.EventEmitter(), { sendToAddr : function() {} });
 			this.sendToAddr = sinon.collection.stub(this.overlayCallback, 'sendToAddr');
 			this.lsClear = sinon.collection.stub(leafset, 'clearExpiredDeadAndCandidatePeers');
 			this.rtClear = sinon.collection.stub(routingtable, 'clearExpiredCandidatePeers');
@@ -47,6 +49,20 @@ module.exports = {
 			leafset.reset();
 			sinon.collection.restore();
 			done();
+		},
+		
+		"should remove listener after stopping" : function(test) {
+			var _this = this;
+			var cbk = sinon.collection.stub(heartbeater, '_handleReceivedGravitiMessage');
+			heartbeater.start(this.overlayCallback);
+
+			this.overlayCallback.emit('graviti-message-received', 'boo');			
+			heartbeater.stop();
+			
+			_this.overlayCallback.emit('graviti-message-received', 'baa');
+			test.ok(cbk.calledOnce);
+			test.ok(cbk.calledWith('boo'));
+			test.done();
 		},
 		
 		"should not invoke timed tasks after stopping" : function(test) {
@@ -97,10 +113,10 @@ module.exports = {
 	"sending heartbeat messages to leafset peers" : testCase({
 		setUp : function(done) {
 			this.origDateGetTime = Date.prototype.getTime;
-			this.overlayCallback = { on : function() {}, sendToAddr : function() {} };
+			this.overlayCallback = { on : function() {}, sendToAddr : function() {}, removeListener : function() {} };
 			this.sendToAddr = sinon.collection.stub(this.overlayCallback, 'sendToAddr');
 			
-			Date.prototype.getTime = function() { return 234; }
+			Date.prototype.getTime = function() { return 234; };
 			
 			done();
 		},
@@ -214,17 +230,17 @@ module.exports = {
 				test.ok(leafset._candidateset['1234567890123456789012345678901234567890'].lastHeartbeatSent > (new Date().getTime() - 1000));
 				test.done();
 			}, 200);
-		},
+		}
 	}),
 	
 	"sending probe heartbeats to routing table peers" : testCase({
 		setUp : function(done) {
 			this.sharedRow = {'ABCD' : '1.2.3.4:5678'};
 			sinon.collection.stub(routingtable, 'getSharedRow').returns(this.sharedRow);
-			this.overlayCallback = { on : function() {}, sendToAddr : function() {} };
+			this.overlayCallback = { on : function() {}, sendToAddr : function() {}, removeListener : function() {} };
 			this.sendToAddr = sinon.collection.stub(this.overlayCallback, 'sendToAddr');
 			this.origDateGetTime = Date.prototype.getTime;
-			Date.prototype.getTime = function() { return 234; }
+			Date.prototype.getTime = function() { return 234; };
 			
 			done();
 		},
@@ -290,14 +306,14 @@ module.exports = {
 
 	"performing routing table maintenance" : testCase({
 		setUp : function(done) {
-			node.nodeId = '9876543210987654321098765432109876543210';;
+			node.nodeId = '9876543210987654321098765432109876543210';
 			this.sharedRow = {'ABCD' : '1.2.3.4:5678'};
 			sinon.collection.stub(routingtable, 'getSharedRow').returns(this.sharedRow);
-			this.overlayCallback = { on : function() {}, sendToAddr : function() {} };
+			this.overlayCallback = { on : function() {}, sendToAddr : function() {}, removeListener : function() {} };
 			this.sendToAddr = sinon.collection.stub(this.overlayCallback, 'sendToAddr');
 			
 			this.origDateGetTime = Date.prototype.getTime;
-			Date.prototype.getTime = function() { return 234; }
+			Date.prototype.getTime = function() { return 234; };
 			
 			done();
 		},
@@ -349,7 +365,7 @@ module.exports = {
 	
 	"detecting timed out peers" : testCase({
 		setUp : function(done) {
-			this.overlayCallback = {on : function() {}, sendToAddr : function() {}};			
+			this.overlayCallback = {on : function() {}, sendToAddr : function() {}, removeListener : function() {}};			
 			heartbeater.heartbeatCheckIntervalMsec = 5000;
 			done();
 		},
@@ -396,7 +412,7 @@ module.exports = {
 	"handling received heartbeats" : testCase({
 		setUp : function(done) {
 			this.origDateGetTime = Date.prototype.getTime;
-			Date.prototype.getTime = function() { return 234; }
+			Date.prototype.getTime = function() { return 234; };
 			
 			this.msg = {
 				uri : 'p2p:graviti/heartbeat',
@@ -416,7 +432,7 @@ module.exports = {
 			this.lsUpdateWithKnownGood = sinon.collection.stub(leafset, 'updateWithKnownGood');
 			this.rtUpdateWithKnownGood = sinon.collection.stub(routingtable, 'updateWithKnownGood');			
 			this.rtMergeProvisional = sinon.collection.stub(routingtable, 'mergeProvisional');
-			this.overlayCallback = { sendToAddr : function() {}, on : function() {} };
+			this.overlayCallback = { sendToAddr : function() {}, on : function() {}, removeListener : function() {} };
 			this.sendToAddr = sinon.collection.stub(this.overlayCallback, 'sendToAddr');
 			this.sharedRow = {'ABCD' : '1.2.3.4:5678'};
 			sinon.collection.stub(routingtable, 'getSharedRow').returns(this.sharedRow);
@@ -555,7 +571,7 @@ module.exports = {
 			this.msg = {
 				uri : 'p2p:graviti/peers/ABCDEF0123ABCDEF0123ABCDEF0123ABCDEF0123',
 				method : 'DELETE'
-			}
+			};
 			this.msginfo = {
 				sender_ap : '127.0.0.1:1234'
 			};			
