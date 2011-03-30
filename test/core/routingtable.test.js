@@ -333,7 +333,7 @@ module.exports = {
 		}
 	}),
 	
-	"clearing expired candidate peers" : testCase({
+	"housekeeping local transient state" : testCase({
 		setUp : function(done) {
 			node.nodeId = anId;
 			done();
@@ -341,28 +341,65 @@ module.exports = {
 		
 		tearDown : function(done) {
 			routingtable._candidatePeers = {};
-			routingtable._table = {};			
+			routingtable._table = {};
+			routingtable._proposedBetterRoutingHops = {};
 			done();
 		},
 		
-		"leave unexpired candidate peer" : function(test) {
+		"when clearing out expired candidate peers, leave unexpired candidate peer" : function(test) {
 			routingtable.updateWithProvisional('C695A1A002B4482EB6D912E3E6518F5CC80EBEE6','3.4.5.6:3456');			
 			
-			routingtable.clearExpiredCandidatePeers();
+			routingtable.housekeep();
 			
 			test.equal(1, Object.keys(routingtable._candidatePeers).length);
 			test.equal('C695A1A002B4482EB6D912E3E6518F5CC80EBEE6', Object.keys(routingtable._candidatePeers).shift());
 			test.done();
 		},
 		
-		"remove expired candidate peer" : function(test) {
+		"when clearing out expired candidate peers, remove expired candidate peer" : function(test) {
 			routingtable.updateWithProvisional('C695A1A002B4482EB6D912E3E6518F5CC80EBEE6','3.4.5.6:3456');			
 			routingtable._candidatePeers['C695A1A002B4482EB6D912E3E6518F5CC80EBEE6'].foundAt = new Date().getTime()
 				- routingtable.candidatePeerRetentionIntervalMsec - 10000;
 			
-			routingtable.clearExpiredCandidatePeers();
+			routingtable.housekeep();
 			
 			test.equal(0, Object.keys(routingtable._candidatePeers).length);
+			test.done();
+		},
+		
+		"when clearing out expired proposed routing hops, leave unexpired route" : function(test) {
+			routingtable.updateWithKnownGood('B000000000000000000000000000000000000000', '1.1.1.1:1111', 1);			
+			routingtable.findBetterRoutingHop('700000000000000000000000000000000000', 'C000000000000000000000000000000000000000');
+			
+			routingtable.housekeep();
+			
+			test.equal(1, Object.keys(routingtable._proposedBetterRoutingHops).length);
+			test.equal('700000000000000000000000000000000000', Object.keys(routingtable._proposedBetterRoutingHops)[0]);
+			test.done();
+		},
+		
+		"clear out expired proposed routing hop" : function(test) {
+			routingtable.updateWithKnownGood('B000000000000000000000000000000000000000', '1.1.1.1:1111', 1);			
+			routingtable.findBetterRoutingHop('700000000000000000000000000000000000', 'C000000000000000000000000000000000000000');
+			routingtable._proposedBetterRoutingHops['700000000000000000000000000000000000']['B000000000000000000000000000000000000000'] = new Date().getTime() - 100 * 60000;
+			
+			routingtable.housekeep();
+			
+			test.equal(0, Object.keys(routingtable._proposedBetterRoutingHops).length);
+			test.done();
+		},
+		
+		"leave unaffected hops when clearing out expired proposed routing hop" : function(test) {
+			routingtable.updateWithKnownGood('B000000000000000000000000000000000000000', '1.1.1.1:1111', 1);
+			routingtable.updateWithKnownGood('C000000000000000000000000000000000000000', '1.1.1.1:1111', 1);
+			routingtable.findBetterRoutingHop('700000000000000000000000000000000000', 'D000000000000000000000000000000000000000');
+			routingtable.findBetterRoutingHop('700000000000000000000000000000000000', 'D000000000000000000000000000000000000000');
+			routingtable._proposedBetterRoutingHops['700000000000000000000000000000000000']['B000000000000000000000000000000000000000'] = new Date().getTime() - 100 * 60000;
+			
+			routingtable.housekeep();
+			
+			test.equal(1, Object.keys(routingtable._proposedBetterRoutingHops).length);
+			test.equal('C000000000000000000000000000000000000000', Object.keys(routingtable._proposedBetterRoutingHops['700000000000000000000000000000000000'])[0]);
 			test.done();
 		}
 	}),
@@ -584,6 +621,7 @@ module.exports = {
 	"finding a better hop than 'us' using information in our routing table" : testCase({
 		setUp : function(done) {
 			node.nodeId = 'ABCDEF1234ABCDEF1234ABCDEF1234ABCDEF1234';
+			sinon.collection.stub(Date.prototype, 'getTime').returns(1234);
 			done();
 		},
 		
@@ -592,6 +630,7 @@ module.exports = {
 			leafset.reset();
 			routingtable._table = {};
 			routingtable._candidatePeers = {};
+			routingtable._proposedBetterRoutingHops = {};
 			done();
 		},
 		
@@ -599,6 +638,7 @@ module.exports = {
 			var res = routingtable.findBetterRoutingHop(higherId);
 
 			test.deepEqual(undefined, res);
+			test.equal(0, Object.keys(routingtable._proposedBetterRoutingHops).length);
 			test.done();
 		},
 	
@@ -608,6 +648,7 @@ module.exports = {
 			var res = routingtable.findBetterRoutingHop('900000000000000000000000000000000000', 'A000000000000000000000000000000000000000');
 
 			test.deepEqual(undefined, res);
+			test.equal(0, Object.keys(routingtable._proposedBetterRoutingHops).length);
 			test.done();
 		},
 		
@@ -623,7 +664,54 @@ module.exports = {
 			});
 			test.done();
 		},
+		
+		"should add a proposed entry to local cache" : function(test) {		
+			routingtable.updateWithKnownGood('B000000000000000000000000000000000000000', '1.1.1.1:1111', 1);
+			
+			var res = routingtable.findBetterRoutingHop('700000000000000000000000000000000000', 'C000000000000000000000000000000000000000');
 
+			test.deepEqual(routingtable._proposedBetterRoutingHops,
+					{ '700000000000000000000000000000000000' : { 'B000000000000000000000000000000000000000' : 1234}});
+			test.done();
+		},
+
+		"should not propose same entry twice in quick succession" : function(test) {		
+			routingtable.updateWithKnownGood('B000000000000000000000000000000000000000', '1.1.1.1:1111', 1);
+			routingtable.findBetterRoutingHop('700000000000000000000000000000000000', 'C000000000000000000000000000000000000000');
+			
+			var res = routingtable.findBetterRoutingHop('700000000000000000000000000000000000', 'C000000000000000000000000000000000000000');
+
+			test.deepEqual(undefined, res);
+			test.equal(1, Object.keys(routingtable._proposedBetterRoutingHops).length);
+			test.done();
+		},
+		
+		"when two proposals required in quick succession, propose different entries when available" : function(test) {		
+			routingtable.updateWithKnownGood('B000000000000000000000000000000000000000', '1.1.1.1:1111', 1);
+			routingtable.updateWithKnownGood('C000000000000000000000000000000000000000', '2.2.2.2:2222', 2);
+			
+			var res1 = routingtable.findBetterRoutingHop('700000000000000000000000000000000000', 'D000000000000000000000000000000000000000');			
+			var res2 = routingtable.findBetterRoutingHop('700000000000000000000000000000000000', 'D000000000000000000000000000000000000000');
+
+			test.deepEqual('C000000000000000000000000000000000000000', res1.id);
+			test.deepEqual('2.2.2.2:2222', res1.ap);
+			test.deepEqual(res1.row, {
+				'0' : {
+					'B' : {id : 'B000000000000000000000000000000000000000', ap : '1.1.1.1:1111', rtt : 1},
+					'C' : {id : 'C000000000000000000000000000000000000000', ap : '2.2.2.2:2222', rtt : 2}
+				}
+			});
+			test.deepEqual('B000000000000000000000000000000000000000', res2.id);
+			test.deepEqual('1.1.1.1:1111', res2.ap);
+			test.deepEqual(res1.row, {
+				'0' : {
+					'B' : {id : 'B000000000000000000000000000000000000000', ap : '1.1.1.1:1111', rtt : 1},
+					'C' : {id : 'C000000000000000000000000000000000000000', ap : '2.2.2.2:2222', rtt : 2}
+				}
+			});
+			test.done();
+		},
+		
 		"should return an entry that is better than this node in our first row" : function(test) {		
 			routingtable.updateWithKnownGood('A300000000000000000000000000000000000000', '1.1.1.1:1111', 1);
 			

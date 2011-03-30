@@ -39,7 +39,7 @@ module.exports = {
 			this.overlayCallback = langutil.extend(new events.EventEmitter(), { sendToAddr : function() {} });
 			this.sendToAddr = sinon.collection.stub(this.overlayCallback, 'sendToAddr');
 			this.lsClear = sinon.collection.stub(leafset, 'clearExpiredDeadAndCandidatePeers');
-			this.rtClear = sinon.collection.stub(routingtable, 'clearExpiredCandidatePeers');
+			this.rtHousekeep = sinon.collection.stub(routingtable, 'housekeep');
 			this.rtEachCandidate = sinon.collection.stub(routingtable, 'eachCandidate');
 			this.rtEachRow = sinon.collection.stub(routingtable, 'eachRow');
 			done();
@@ -79,7 +79,7 @@ module.exports = {
 			setTimeout(function() {
 				test.ok(_this.sendToAddr.callCount < 2);
 				test.ok(_this.lsClear.callCount < 2);
-				test.ok(_this.rtClear.callCount < 2);
+				test.ok(_this.rtHousekeep.callCount < 2);
 				test.ok(_this.rtEachCandidate.callCount < 2);
 				test.ok(_this.rtEachRow.callCount < 2);
 				test.done();
@@ -396,14 +396,14 @@ module.exports = {
 		"should remove timed out dead peers regularly" : function(test) {
 			var lsClearCandidates = sinon.collection.stub(leafset, 'clearExpiredDeadAndCandidatePeers');
 			var lsClearTimedOut = sinon.collection.stub(leafset, 'clearTimedOutPeers');			
-			var rtClear = sinon.collection.stub(routingtable, 'clearExpiredCandidatePeers');			
+			var rtHousekeep = sinon.collection.stub(routingtable, 'housekeep');			
 			
 			heartbeater.start(this.overlayCallback);
 			
 			setTimeout(function() {
 				test.ok(lsClearCandidates.called);
 				test.ok(lsClearTimedOut.called);
-				test.ok(rtClear.called);
+				test.ok(rtHousekeep.called);
 				test.done();
 			}, 200);
 		}
