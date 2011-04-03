@@ -3,6 +3,8 @@ var testCase = require('nodeunit').testCase;
 var pns = require('core/pns');
 var langutil = require('common/langutil');
 var leafset = require('core/leafset');
+var routingtable = require('core/routingtable');
+var node = require('core/node');
 
 module.exports = {
 	"initiating pns nearest node search" : testCase({
@@ -225,6 +227,7 @@ module.exports = {
 			test.equal('C105357', pns._inProgress[reqId].nearest.id);
 			test.equal('3.3.3.3:3333', pns._inProgress[reqId].nearest.ap);
 			test.ok(0 <= pns._inProgress[reqId].nearest.rtt);
+			test.equal(4, this.sendToAddr.callCount);
 			test.ok(this.sendToAddr.calledWith('p2p:graviti/pns/routingrow', {
 					req_id : reqId,
 					depth : 10
@@ -245,6 +248,7 @@ module.exports = {
 			
 			this.overlayCallback.emit('graviti-message-received', this.msg, this.msginfo);
 			
+			test.equal(3, this.sendToAddr.callCount);
 			test.ok(success.calledWith('8377371D', '2.2.2.2:2222'));
 			test.equal(0, Object.keys(pns._inProgress).length);						
 			test.done();
@@ -271,6 +275,103 @@ module.exports = {
 				req_id : reqId,
 				depth : 10
 			}, {method : 'GET'}, '9.9.9.9', '9999'));
+			test.done();
+		}
+	}),
+	
+	"handling routing row request message" : testCase({
+		setUp : function(done) {
+			node.nodeId = '2222222222222222222222222222222222222222';
+			this.overlayCallback = langutil.extend(new events.EventEmitter(), { sendToAddr : function() {} });
+			this.sendToAddr = sinon.stub(this.overlayCallback, 'sendToAddr');
+			this.msg = {
+					method : 'GET',
+					uri : 'p2p:graviti/pns/routingrow',
+					source_id : '134F5E7',
+					content : {
+						req_id : 'moo',
+						depth : 10
+					}
+			};
+			this.msginfo = {
+					source_ap : '3.3.3.3:3333'
+			}
+			pns.init(this.overlayCallback);
+			
+			done();
+		},
+		
+		tearDown : function(done) {
+			pns._inProgress = {};
+			routingtable._table = {};
+			sinon.collection.restore();
+			done();
+		},
+		
+		"when routing row request received for empty routing table, return empty row and zero depth" : function(test) {
+			this.overlayCallback.emit('graviti-message-received', this.msg, this.msginfo);
+			
+			test.ok(this.sendToAddr.calledWith('p2p:graviti/pns/routingrow', {
+				req_id : 'moo',
+				routing_row : {},
+				depth : 0
+			}, {method : 'POST'}, '3.3.3.3', '3333'));			
+			test.done();
+		},
+		
+		"when routing row request received without depth, return empty row and zero depth" : function(test) {
+			routingtable.updateWithKnownGood('2221111111111111111111111111111111111111', '5.5.5.5:5555');
+			this.msg.content.depth = undefined;
+			
+			this.overlayCallback.emit('graviti-message-received', this.msg, this.msginfo);
+			
+			test.ok(this.sendToAddr.calledWith('p2p:graviti/pns/routingrow', {
+				req_id : 'moo',
+				routing_row : {},
+				depth : 0
+			}, {method : 'POST'}, '3.3.3.3', '3333'));			
+			test.done();
+		},
+		
+		"when routing row request for non-empty routing table without required row, return next highest available row" : function(test) {
+			routingtable.updateWithKnownGood('2211111111111111111111111111111111111111', '4.4.4.4:4444');
+			routingtable.updateWithKnownGood('2222211111111111111111111111111111111111', '6.6.6.6:6666');
+			
+			this.overlayCallback.emit('graviti-message-received', this.msg, this.msginfo);
+			
+			test.ok(this.sendToAddr.calledWith('p2p:graviti/pns/routingrow', {
+				req_id : 'moo',
+				routing_row : {
+					'1' : {
+						id : '2222211111111111111111111111111111111111',
+						ap : '6.6.6.6:6666',
+						rtt: 10000
+					}
+				},
+				depth : 5
+			}, {method : 'POST'}, '3.3.3.3', '3333'));			
+			test.done();
+		},
+		
+		"when routing row request for non-empty routing table with required row, return that row" : function(test) {
+			routingtable.updateWithKnownGood('2211111111111111111111111111111111111111', '4.4.4.4:4444');
+			routingtable.updateWithKnownGood('2221111111111111111111111111111111111111', '5.5.5.5:5555');
+			routingtable.updateWithKnownGood('2222222222111111111111111111111111111111', '6.6.6.6:6666');
+			routingtable.updateWithKnownGood('2222222222211111111111111111111111111111', '7.7.7.7:7777');
+			
+			this.overlayCallback.emit('graviti-message-received', this.msg, this.msginfo);
+			
+			test.ok(this.sendToAddr.calledWith('p2p:graviti/pns/routingrow', {
+				req_id : 'moo',
+				routing_row : {
+					'1' : {
+						id : '2222222222111111111111111111111111111111',
+						ap : '6.6.6.6:6666',
+						rtt: 10000
+					}
+				},
+				depth : 10
+			}, {method : 'POST'}, '3.3.3.3', '3333'));			
 			test.done();
 		}
 	})
