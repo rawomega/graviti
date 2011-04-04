@@ -188,6 +188,16 @@ module.exports = {
 			test.ok(this.sendToAddr.calledOnce);
 			test.ok(this.sendToAddr.calledWith('p2p:graviti/pns/rttprobe', {req_id : 'reqid'}, {method : 'POST'}, '1.1.1.1', '1111'));			
 			test.done();
+		},
+		
+		"when a rtt probe request is received and contains probe_id, resonse content should contain that probe_id" : function(test) {
+			this.msg.content.probe_id = 'moo';
+
+			this.overlayCallback.emit('graviti-message-received', this.msg, this.msginfo);
+			
+			test.ok(this.sendToAddr.calledOnce);
+			test.ok(this.sendToAddr.calledWith('p2p:graviti/pns/rttprobe', {req_id : 'reqid', probe_id : 'moo'}, {method : 'POST'}, '1.1.1.1', '1111'));			
+			test.done();
 		}
 	}),
 	
