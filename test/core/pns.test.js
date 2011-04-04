@@ -5,6 +5,7 @@ var langutil = require('common/langutil');
 var leafset = require('core/leafset');
 var routingtable = require('core/routingtable');
 var node = require('core/node');
+var id = require('common/id');
 
 module.exports = {
 	"initiating pns nearest node search" : testCase({
@@ -372,6 +373,97 @@ module.exports = {
 				},
 				depth : 10
 			}, {method : 'POST'}, '3.3.3.3', '3333'));			
+			test.done();
+		}
+	}),
+	
+	"handling routing row response message" : testCase({
+		setUp : function(done) {
+			sinon.collection.stub(id, 'generateUuid').returns('generated-uuid');
+			this.overlayCallback = langutil.extend(new events.EventEmitter(), { sendToAddr : function() {} });
+			this.sendToAddr = sinon.stub(this.overlayCallback, 'sendToAddr');
+			this.msg = {
+					method : 'POST',
+					uri : 'p2p:graviti/pns/routingrow',
+					source_id : '76543210',
+					content : {
+						req_id : 'moo',
+						depth : 7,
+						routing_row : {
+							'6' : {id : '6789ABCDEF6789ABCDEF6789ABCDEF6789ABCDEF', ap : '5.5.5.5:5555'},
+							'F' : {id : 'FEDCBA9876FEDCBA9876FEDCBA9876FEDCBA9876', ap : '6.6.6.6:6666'}
+						}
+					}
+			};
+			this.msginfo = {
+					source_ap : '4.4.4.4:4444'
+			}
+			pns.init(this.overlayCallback);
+			
+			done();
+		},
+		
+		tearDown : function(done) {
+			pns._inProgress = {};
+			routingtable._table = {};
+			sinon.collection.restore();
+			done();
+		},
+		
+		"when no routing row is returned in pns leafset response, mark pns search as done and return node" : function(test) {			
+			var success = sinon.stub();
+			var reqId = pns.findNearestNode('2.2.2.2:2222', success);
+			pns._inProgress[reqId].nearest = { id : '1EAF5E7', ap : '2.2.2.2:2222'	};
+			this.msg.content.req_id = reqId;
+			delete this.msg.content.routing_row;
+			
+			this.overlayCallback.emit('graviti-message-received', this.msg, this.msginfo);
+			
+			test.ok(success.calledWith('1EAF5E7', '2.2.2.2:2222'));
+			test.equal(0, Object.keys(pns._inProgress).length);
+			test.done();
+		},
+		
+		"when empty routing row is returned in pns leafset response, mark pns search as done and return node" : function(test) {			
+			var success = sinon.stub();
+			var reqId = pns.findNearestNode('2.2.2.2:2222', success);
+			pns._inProgress[reqId].nearest = { id : '1EAF5E7', ap : '2.2.2.2:2222'	};
+			this.msg.content.req_id = reqId;
+			this.msg.content.routing_row = {};
+			
+			this.overlayCallback.emit('graviti-message-received', this.msg, this.msginfo);
+			
+			test.ok(success.calledWith('1EAF5E7', '2.2.2.2:2222'));
+			test.equal(0, Object.keys(pns._inProgress).length);
+			test.done();
+		},
+		
+		"when routing row is not empty in pns leafset response, should initiate round trip probes" : function(test) {			
+			var reqId = pns.findNearestNode('2.2.2.2:2222');
+			this.msg.content.req_id = reqId;
+			
+			this.overlayCallback.emit('graviti-message-received', this.msg, this.msginfo);
+			
+			test.equal(6, pns._inProgress[reqId].depth);
+			test.ok(this.sendToAddr.calledWith('p2p:graviti/pns/rttprobe', {req_id : reqId, probe_id : 'generated-uuid'}, {method : 'GET'}, '5.5.5.5', '5555'));
+			test.ok(this.sendToAddr.calledWith('p2p:graviti/pns/rttprobe', {req_id : reqId, probe_id : 'generated-uuid'}, {method : 'GET'}, '6.6.6.6', '6666'));
+			test.ok(0 < pns._inProgress[reqId].routing_row_probes['generated-uuid']['6789ABCDEF6789ABCDEF6789ABCDEF6789ABCDEF']);
+			test.ok(0 < pns._inProgress[reqId].routing_row_probes['generated-uuid']['FEDCBA9876FEDCBA9876FEDCBA9876FEDCBA9876']);
+			test.done();
+		},
+		
+		"when zeroth routing row received in pns leafset response, should initiate round trip probes without decrementing depth" : function(test) {			
+			var reqId = pns.findNearestNode('2.2.2.2:2222');
+			this.msg.content.req_id = reqId;
+			this.msg.content.depth = 0;
+			
+			this.overlayCallback.emit('graviti-message-received', this.msg, this.msginfo);
+			
+			test.equal(0, pns._inProgress[reqId].depth);
+			test.ok(this.sendToAddr.calledWith('p2p:graviti/pns/rttprobe', {req_id : reqId, probe_id : 'generated-uuid'}, {method : 'GET'}, '5.5.5.5', '5555'));
+			test.ok(this.sendToAddr.calledWith('p2p:graviti/pns/rttprobe', {req_id : reqId, probe_id : 'generated-uuid'}, {method : 'GET'}, '6.6.6.6', '6666'));
+			test.ok(0 < pns._inProgress[reqId].routing_row_probes['generated-uuid']['6789ABCDEF6789ABCDEF6789ABCDEF6789ABCDEF']);
+			test.ok(0 < pns._inProgress[reqId].routing_row_probes['generated-uuid']['FEDCBA9876FEDCBA9876FEDCBA9876FEDCBA9876']);
 			test.done();
 		}
 	})
