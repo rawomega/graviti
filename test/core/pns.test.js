@@ -57,6 +57,29 @@ module.exports = {
 		}
 	}),
 	
+	"cancelling all pns node searches" : testCase({
+		setUp : function(done) {
+			this.overlayCallback = { sendToAddr : function() {}, on : function() {} };			
+			pns.init(this.overlayCallback);
+			
+			done();
+		},
+		
+		tearDown : function(done) {
+			pns._inProgress = {};
+			done();
+		},
+		
+		"should throw away all state when PNS search cancelled" : function(test) {			
+			var res = pns.findNearestNode('2.2.2.2:2222');
+			
+			pns.cancelAll();
+			
+			test.equal(0, Object.keys(pns._inProgress).length);
+			test.done();
+		}
+	}),
+	
 	"handling leafset request message" : testCase({
 		setUp : function(done) {
 			this.overlayCallback = langutil.extend(new events.EventEmitter(), { sendToAddr : function() {} });
@@ -227,6 +250,15 @@ module.exports = {
 			done();
 		},
 
+		"when req id in rtt probe response is unknown, do nothing" : function(test) {
+			this.msg.content.req_id = 'unknown';
+			
+			this.overlayCallback.emit('graviti-message-received', this.msg, this.msginfo);
+			
+			test.equal(0, this.sendToAddr.callCount);
+			test.done();
+		},
+		
 		"when the first of a series of rtt probe responses is received, store as nearest node and initiate routing table traversal" : function(test) {
 			var reqId = pns.findNearestNode('2.2.2.2:2222');
 			pns._sendLeafsetProbes(reqId, { '734F' : '9.9.9.9:9999', 'C105357' : '3.3.3.3:3333' });
