@@ -120,6 +120,7 @@ module.exports = {
 			this.overlayCallback = langutil.extend(new events.EventEmitter(), { sendToAddr : function() {} });
 			this.sendToAddr = sinon.stub(this.overlayCallback, 'sendToAddr');
 			sinon.collection.stub(leafset, 'compressedLeafset').returns({ dummy : 'leafset'});
+			this.success = sinon.stub();
 			this.msg = {
 					method : 'POST',
 					uri : 'p2p:graviti/pns/leafset',
@@ -142,9 +143,23 @@ module.exports = {
 			done();
 		},
 		
+		"when req id in response not known, do nothing" : function(test) {			
+			var reqId = pns.findNearestNode('2.2.2.2:2222', this.success);
+			this.msg.content = {
+					req_id : 'some-other-req-id',
+					leafset : {}
+			};
+			this.msg.source_id = '1EAF5E7';
+			
+			this.overlayCallback.emit('graviti-message-received', this.msg, this.msginfo);
+			
+			test.equal(1, this.sendToAddr.callCount);
+			test.ok(!this.success.called);
+			test.done();
+		},
+		
 		"when no leafset is returned in pns leafset response, mark pns search as done and return node" : function(test) {			
-			var success = sinon.stub();
-			var reqId = pns.findNearestNode('2.2.2.2:2222', success);
+			var reqId = pns.findNearestNode('2.2.2.2:2222', this.success);
 			this.msg.content = {
 					req_id : reqId,
 					leafset : {}
@@ -153,14 +168,13 @@ module.exports = {
 			
 			this.overlayCallback.emit('graviti-message-received', this.msg, this.msginfo);
 			
-			test.ok(success.calledWith('1EAF5E7', '2.2.2.2:2222'));
+			test.ok(this.success.calledWith('1EAF5E7', '2.2.2.2:2222'));
 			test.equal(0, Object.keys(pns._inProgress).length);
 			test.done();
 		},
 		
-		"when leafset is not empty in pns leafset response, should initiate round trip probes" : function(test) {			
-			var success = sinon.stub();
-			var reqId = pns.findNearestNode('2.2.2.2:2222', success);
+		"when leafset is not empty in pns leafset response, should initiate round trip probes" : function(test) {						
+			var reqId = pns.findNearestNode('2.2.2.2:2222', this.success);
 			this.msg.content = {
 					req_id : reqId,
 					leafset : {
@@ -172,6 +186,7 @@ module.exports = {
 			
 			this.overlayCallback.emit('graviti-message-received', this.msg, this.msginfo);
 			
+			test.ok(!this.success.called);
 			test.ok(this.sendToAddr.calledWith('p2p:graviti/pns/rttprobe', {req_id : reqId}, {method : 'GET'}, '3.3.3.3', '3333'));
 			test.ok(this.sendToAddr.calledWith('p2p:graviti/pns/rttprobe', {req_id : reqId}, {method : 'GET'}, '4.4.4.4', '4444'));
 			test.ok(0 < pns._inProgress[reqId].leafset_probes['ABCDEF']);
@@ -543,6 +558,16 @@ module.exports = {
 			pns._inProgress = {};
 			sinon.collection.restore();
 			done();
+		},
+		
+		"when req id in response not known, do nothing" : function(test) {			
+			this.msg.content.req_id = 'some-other-req-id';
+			
+			this.overlayCallback.emit('graviti-message-received', this.msg, this.msginfo);
+			
+			test.equal(3, this.sendToAddr.callCount);
+			test.ok(!this.success.called);
+			test.done();
 		},
 		
 		"when the routing row rtt probe response is further than current best, report it and finish up" : function(test) {			
