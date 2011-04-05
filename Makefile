@@ -25,7 +25,7 @@ test: lint
 #	nodeunit test/common test/core
 
 integration: lint
-	nodeunit test/integration	
+	nodeunit test/integration/*.test.js
 
 npm-deps:
 	-npm ls installed > npm-deps

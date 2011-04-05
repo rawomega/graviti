@@ -6,6 +6,7 @@ var leafset = require('core/leafset');
 var routingtable = require('core/routingtable');
 var testCase = require('nodeunit').testCase;
 var heartbeater = require('core/heartbeater');
+var pns = require('core/pns');
 
 module.exports = {
 	"bootstrap manager startup" : testCase({
@@ -17,6 +18,7 @@ module.exports = {
 		},
 		
 		tearDown : function(done) {
+			bootstrapmgr.usePns = true;
 			sinon.collection.restore();
 			routingtable._table = {};
 			routingtable._candidatePeers = {};
@@ -31,9 +33,10 @@ module.exports = {
 			test.done();
 		},
 		
-		"bootstrap manager for node joining a ring should initiate sending of bootstrap requests" : function(test) {
+		"bootstrap manager for node joining a ring should initiate sending of bootstrap requests without PNS when PNS off" : function(test) {
 			var sendToAddr = sinon.collection.stub(this.overlayCallback, 'sendToAddr');
 			bootstrapmgr.pendingRequestCheckIntervalMsec = 50;
+			bootstrapmgr.usePns = false;
 			
 			bootstrapmgr.start(this.overlayCallback, '1.2.3.4:1234,5.6.7.8:5678,myhost:8888');
 			
@@ -47,9 +50,29 @@ module.exports = {
 			}, 200);
 		},
 		
+		"bootstrap manager for node joining a ring should initiate sending of bootstrap requests with PNS when PNS on" : function(test) {
+			var sendToAddr = sinon.collection.stub(this.overlayCallback, 'sendToAddr');
+			bootstrapmgr.pendingRequestCheckIntervalMsec = 50;
+			sinon.collection.stub(pns, 'findNearestNode', function(endpoint, success) {
+				console.log(endpoint);
+				success('pns-node-id', '6.6.6.6:6666');
+			});
+			
+			bootstrapmgr.start(this.overlayCallback, '1.2.3.4:1234,5.6.7.8:5678,myhost:8888');
+			
+			test.ok(this.on.calledWith('graviti-message-received', bootstrapmgr._handleReceivedGravitiMessage));
+			test.ok(this.on.calledWith('graviti-message-forwarding', bootstrapmgr._handleForwardingGravitiMessage));
+			setTimeout(function() {
+				test.equal(3, sendToAddr.callCount);
+				test.ok(sendToAddr.calledWith('p2p:graviti/peers', {joining_node_id : node.nodeId}, {method : 'GET'}, '6.6.6.6', '6666'));
+				test.done();
+			}, 200);
+		},
+		
 		"bootstrap manager for node joining a ring should be able to re-send unacknowledged bootstrap requests" : function(test) {
 			bootstrapmgr.pendingRequestCheckIntervalMsec = 50;
 			bootstrapmgr.bootstrapRetryIntervalMsec = 50;
+			bootstrapmgr.usePns = false;
 			var callCount = 0;
 			var sendToAddr = sinon.stub(this.overlayCallback, 'sendToAddr', function() {
 				callCount++;
@@ -90,6 +113,7 @@ module.exports = {
 		tearDown : function(done) {
 			sinon.collection.restore();
 			leafset.reset();
+			bootstrapmgr.usePns = true;
 			routingtable._table = {};
 			routingtable._candidatePeers = {};
 			done();
@@ -229,6 +253,7 @@ module.exports = {
 		
 		tearDown : function(done) {
 			sinon.collection.restore();
+			bootstrapmgr.usePns = true;
 			routingtable._table = {};
 			routingtable._candidatePeers = {};
 			done();
