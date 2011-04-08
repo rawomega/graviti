@@ -7,6 +7,8 @@ var routingtable = require('core/routingtable');
 var node = require('core/node');
 var id = require('common/id');
 
+var joiningNodeId = '1014149403101414940310141494031014149403';
+
 module.exports = {
 	"initiating pns nearest node search" : testCase({
 		setUp : function(done) {
@@ -28,7 +30,7 @@ module.exports = {
 			var success = sinon.stub();
 			var error = sinon.stub();
 
-			var res = pns.findNearestNode('2.2.2.2:2222', success, error);
+			var res = pns.findNearestNode('2.2.2.2:2222', joiningNodeId, success, error);
 			
 			test.equal('2.2.2.2', pns._inProgress[res].addr);
 			test.equal('2222', pns._inProgress[res].port);
@@ -48,7 +50,7 @@ module.exports = {
 			var error = sinon.stub();
 			pns.nearestNodeSearchTimeoutMsec = 100;
 			
-			var res = pns.findNearestNode('2.2.2.2:2222', undefined, error);
+			var res = pns.findNearestNode('2.2.2.2:2222', joiningNodeId, undefined, error);
 			setTimeout(function() {
 				test.equal(0, Object.keys(pns._inProgress).length);
 				test.ok(error.called);
@@ -67,6 +69,7 @@ module.exports = {
 		
 		tearDown : function(done) {
 			pns._inProgress = {};
+			pns.nearestNodeSearchTimeoutMsec = 20000;
 			done();
 		},
 		
@@ -77,6 +80,19 @@ module.exports = {
 			
 			test.equal(0, Object.keys(pns._inProgress).length);
 			test.done();
+		},
+		
+		"should stop all timers when PNS search cancelled" : function(test) {
+			pns.nearestNodeSearchTimeoutMsec = 100;
+			var error = sinon.stub();
+			var res = pns.findNearestNode('2.2.2.2:2222', joiningNodeId, undefined, error);
+			
+			pns.cancelAll();
+			
+			setTimeout(function() {
+				test.ok(!error.called);
+				test.done();
+			}, 200);
 		}
 	}),
 	
@@ -144,7 +160,7 @@ module.exports = {
 		},
 		
 		"when req id in response not known, do nothing" : function(test) {			
-			var reqId = pns.findNearestNode('2.2.2.2:2222', this.success);
+			var reqId = pns.findNearestNode('2.2.2.2:2222', joiningNodeId, this.success);
 			this.msg.content = {
 					req_id : 'some-other-req-id',
 					leafset : {}
@@ -159,7 +175,7 @@ module.exports = {
 		},
 		
 		"when no leafset is returned in pns leafset response, mark pns search as done and return node" : function(test) {			
-			var reqId = pns.findNearestNode('2.2.2.2:2222', this.success);
+			var reqId = pns.findNearestNode('2.2.2.2:2222', joiningNodeId, this.success);
 			this.msg.content = {
 					req_id : reqId,
 					leafset : {}
@@ -173,8 +189,26 @@ module.exports = {
 			test.done();
 		},
 		
+		"when leafset contains joining node id, disregard that entry" : function(test) {			
+			var reqId = pns.findNearestNode('2.2.2.2:2222', joiningNodeId, this.success);
+			this.msg.content = {
+					req_id : reqId,
+					leafset : {
+						'ABCDEF' : '3.3.3.3:3333'
+					}
+			};
+			this.msg.content.leafset[joiningNodeId] = '4.4.4.4:4444';
+			this.msg.source_id = '1EAF5E7';
+			
+			this.overlayCallback.emit('graviti-message-received', this.msg, this.msginfo);
+			
+			test.equal(2, this.sendToAddr.callCount);
+			test.ok(this.sendToAddr.calledWith('p2p:graviti/pns/rttprobe', {req_id : reqId}, {method : 'GET'}, '3.3.3.3', '3333'));
+			test.done();
+		},
+		
 		"when leafset is not empty in pns leafset response, should initiate round trip probes" : function(test) {						
-			var reqId = pns.findNearestNode('2.2.2.2:2222', this.success);
+			var reqId = pns.findNearestNode('2.2.2.2:2222', joiningNodeId, this.success);
 			this.msg.content = {
 					req_id : reqId,
 					leafset : {
@@ -187,6 +221,7 @@ module.exports = {
 			this.overlayCallback.emit('graviti-message-received', this.msg, this.msginfo);
 			
 			test.ok(!this.success.called);
+			test.equal(3, this.sendToAddr.callCount);
 			test.ok(this.sendToAddr.calledWith('p2p:graviti/pns/rttprobe', {req_id : reqId}, {method : 'GET'}, '3.3.3.3', '3333'));
 			test.ok(this.sendToAddr.calledWith('p2p:graviti/pns/rttprobe', {req_id : reqId}, {method : 'GET'}, '4.4.4.4', '4444'));
 			test.ok(0 < pns._inProgress[reqId].leafset_probes['ABCDEF']);
@@ -295,7 +330,7 @@ module.exports = {
 		
 		"when the first rtt probe response is further than current best, report it and finish up" : function(test) {
 			var success = sinon.stub();
-			var reqId = pns.findNearestNode('2.2.2.2:2222', success);
+			var reqId = pns.findNearestNode('2.2.2.2:2222', joiningNodeId, success);
 			pns._sendLeafsetProbes(reqId, { '734F' : '9.9.9.9:9999', 'C105357' : '3.3.3.3:3333' });
 			pns._inProgress[reqId].nearest = {
 				id : '8377371D',
@@ -469,7 +504,7 @@ module.exports = {
 		
 		"when no routing row is returned in pns leafset response, mark pns search as done and return node" : function(test) {			
 			var success = sinon.stub();
-			var reqId = pns.findNearestNode('2.2.2.2:2222', success);
+			var reqId = pns.findNearestNode('2.2.2.2:2222', joiningNodeId, success);
 			pns._inProgress[reqId].nearest = { id : '1EAF5E7', ap : '2.2.2.2:2222'	};
 			this.msg.content.req_id = reqId;
 			delete this.msg.content.routing_row;
@@ -483,7 +518,7 @@ module.exports = {
 		
 		"when empty routing row is returned in pns leafset response, mark pns search as done and return node" : function(test) {			
 			var success = sinon.stub();
-			var reqId = pns.findNearestNode('2.2.2.2:2222', success);
+			var reqId = pns.findNearestNode('2.2.2.2:2222', joiningNodeId, success);
 			pns._inProgress[reqId].nearest = { id : '1EAF5E7', ap : '2.2.2.2:2222'	};
 			this.msg.content.req_id = reqId;
 			this.msg.content.routing_row = {};
@@ -495,6 +530,23 @@ module.exports = {
 			test.done();
 		},
 		
+		"when routing row contains the joining node, disregard that peer" : function(test) {			
+			var reqId = pns.findNearestNode('2.2.2.2:2222', joiningNodeId);
+			this.msg.content.req_id = reqId;
+			this.msg.content.routing_row = {
+				'1' : {id : joiningNodeId, ap : '5.5.5.5:5555'},
+				'F' : {id : 'FEDCBA9876FEDCBA9876FEDCBA9876FEDCBA9876', ap : '6.6.6.6:6666'}
+			};
+			
+			this.overlayCallback.emit('graviti-message-received', this.msg, this.msginfo);
+			
+			test.equal(6, pns._inProgress[reqId].depth);
+			test.equal(2, this.sendToAddr.callCount);
+			test.ok(this.sendToAddr.calledWith('p2p:graviti/pns/rttprobe', {req_id : reqId, probe_id : 'generated-uuid'}, {method : 'GET'}, '6.6.6.6', '6666'));
+			test.ok(0 < pns._inProgress[reqId].routing_row_probes['generated-uuid']['FEDCBA9876FEDCBA9876FEDCBA9876FEDCBA9876']);
+			test.done();
+		},
+		
 		"when routing row is not empty in pns leafset response, should initiate round trip probes" : function(test) {			
 			var reqId = pns.findNearestNode('2.2.2.2:2222');
 			this.msg.content.req_id = reqId;
@@ -502,6 +554,7 @@ module.exports = {
 			this.overlayCallback.emit('graviti-message-received', this.msg, this.msginfo);
 			
 			test.equal(6, pns._inProgress[reqId].depth);
+			test.equal(3, this.sendToAddr.callCount);
 			test.ok(this.sendToAddr.calledWith('p2p:graviti/pns/rttprobe', {req_id : reqId, probe_id : 'generated-uuid'}, {method : 'GET'}, '5.5.5.5', '5555'));
 			test.ok(this.sendToAddr.calledWith('p2p:graviti/pns/rttprobe', {req_id : reqId, probe_id : 'generated-uuid'}, {method : 'GET'}, '6.6.6.6', '6666'));
 			test.ok(0 < pns._inProgress[reqId].routing_row_probes['generated-uuid']['6789ABCDEF6789ABCDEF6789ABCDEF6789ABCDEF']);
@@ -533,7 +586,7 @@ module.exports = {
 			this.success = sinon.stub();
 			
 			pns.init(this.overlayCallback);			
-			this.reqId = pns.findNearestNode('2.2.2.2:2222', this.success);
+			this.reqId = pns.findNearestNode('2.2.2.2:2222', joiningNodeId, this.success);
 			pns._sendRoutingRowProbes(this.reqId, {
 					'7' : { id :'734F', ap : '9.9.9.9:9999'},
 					'C' : { id : 'C105357', ap : '3.3.3.3:3333' }
@@ -638,4 +691,35 @@ module.exports = {
 			test.done();
 		},		
 	}),
+	
+	"reporting success" : testCase({
+		setUp : function(done) {
+			this.overlayCallback = langutil.extend(new events.EventEmitter(), { sendToAddr : function() {} });
+			pns.nearestNodeSearchTimeoutMsec = 50;
+			pns.init(this.overlayCallback);
+			this.success = sinon.stub();
+			this.error = sinon.stub();
+			this.reqId = pns.findNearestNode('2.2.2.2:2222', joiningNodeId, this.success, this.error);
+			
+			done();
+		},
+		
+		tearDown : function(done) {
+			pns.nearestNodeSearchTimeoutMsec = 20000;
+			pns._inProgress = {};
+			done();
+		},
+		
+		"on success, cancel timeout timer" : function(test) {
+			var _this = this;
+			
+			pns._reportSuccess(this.reqId, 'nodeid', 'nodeaddrport');
+			
+			setTimeout(function() {
+				test.ok(_this.success.calledWith('nodeid', 'nodeaddrport'));
+				test.ok(!_this.error.called);
+				test.done();
+			}, 100);
+		}
+	})
 }

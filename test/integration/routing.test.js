@@ -1,0 +1,34 @@
+var util = require('util');
+var multinode = require('testability/multinode');
+var nodeunit = require('nodeunit');
+var evalfuncs = require('./evalfuncs');
+
+module.exports = {
+	"multi-node ring initialisation" : nodeunit.testCase({
+		setUp : function(done) {
+			this.nodes = multinode.start({
+				num_nodes : 16
+			});			
+
+			done();
+		},
+		
+		tearDown : function(done) {
+			this.nodes.stopNow();
+			setTimeout(function() {
+				util.log('\n\n========\n\n');	
+				done();
+			}, 2000);
+		},
+
+		"should do something" : function(test) {
+			var _this = this;			
+			
+			// wait till leafset is sorted
+			_this.nodes.select(0).waitUntilAtLeast(15, evalfuncs.getLeafsetSize, test);
+			_this.nodes.select(15).waitUntilAtLeast(15, evalfuncs.getLeafsetSize, test, function() {
+				_this.nodes.done(test);
+			});
+		}
+	})
+};

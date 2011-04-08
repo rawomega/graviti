@@ -64,6 +64,10 @@ module.exports = {
 		return require('core/leafset').compressedLeafset();
 	},
 	
+	smallLeafsetSize : function() {
+		require('core/leafset').leafsetSize = 6;	
+	},
+	
 	getRoutingTable : function() {
 		return require('core/routingtable')._table;
 	},

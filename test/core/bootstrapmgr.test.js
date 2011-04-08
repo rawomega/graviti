@@ -53,7 +53,7 @@ module.exports = {
 		"bootstrap manager for node joining a ring should initiate sending of bootstrap requests with PNS when PNS on" : function(test) {
 			var sendToAddr = sinon.collection.stub(this.overlayCallback, 'sendToAddr');
 			bootstrapmgr.pendingRequestCheckIntervalMsec = 50;
-			sinon.collection.stub(pns, 'findNearestNode', function(endpoint, success) {
+			sinon.collection.stub(pns, 'findNearestNode', function(endpoint, joiningNodeId, success) {
 				console.log(endpoint);
 				success('pns-node-id', '6.6.6.6:6666');
 			});
@@ -84,6 +84,25 @@ module.exports = {
 				test.ok(callCount >= 6);
 				test.done();
 			}, 200);
+		}
+	}),
+	
+	"bootstrap manager startup" : testCase({
+		setUp : function(done) {
+			this.cancelAll = sinon.collection.stub(pns, 'cancelAll');
+			done();
+		},
+		
+		tearDown : function(done) {
+			sinon.collection.restore();
+			done();
+		},
+		
+		"should stop pns on stop" : function(test) {
+			bootstrapmgr.stop();
+			
+			test.ok(this.cancelAll.called);
+			test.done();
 		}
 	}),
 
@@ -261,7 +280,9 @@ module.exports = {
 		
 		"should emit bootstrap complete event when last bootstrap response received" : function(test) {
 			var bootstrapCompletedCalled = false;
-			this.overlayCallback.on('bootstrap-completed', function() {bootstrapCompletedCalled = true;});
+			this.overlayCallback.on('bootstrap-completed', function() {
+				bootstrapCompletedCalled = true;
+			});
 			var _this = this;
 			var msg = {
 				uri : 'p2p:graviti/peers',
@@ -274,7 +295,7 @@ module.exports = {
 				}
 			};
 					
-			bootstrapmgr.start(this.overlayCallback);
+			bootstrapmgr.start(this.overlayCallback, 'cool-bootstrap');			
 			this.overlayCallback.emit("graviti-message-received", msg, this.msginfo);
 			
 			test.ok(!bootstrapmgr.bootstrapping);

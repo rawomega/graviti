@@ -27,6 +27,13 @@ module.exports = {
 			done();
 		},
 		
+		'updating with node id peer should do nothing' : function(test) {
+			routingtable.updateWithKnownGood(anId, '1.2.3.4:1234', 10);
+			
+			test.deepEqual({}, routingtable._table);
+			test.done();
+		},
+		
 		'updating with any known good peer should remove that peers id from candidate peer set if present' : function(test) {
 			routingtable.updateWithProvisional('0F5147A002B4482EB6D912E3E6518F5CC80EBEE6', '1.2.3.4:1234');
 			
@@ -42,6 +49,14 @@ module.exports = {
 			test.deepEqual({
 				"0":{"0":{id:'0F5147A002B4482EB6D912E3E6518F5CC80EBEE6',ap:'1.2.3.4:1234', rtt: 10000}}
 			}, routingtable._table);
+			test.done();
+		},
+		
+		'updating with a known good peer without a round trip time should add that peer as provisional so it can be probed' : function(test) {
+			routingtable.updateWithKnownGood('0F5147A002B4482EB6D912E3E6518F5CC80EBEE6', '1.2.3.4:1234');
+			
+			console.log('-- ' + JSON.stringify(routingtable._candidatePeers));
+			test.deepEqual('1.2.3.4:1234', routingtable._candidatePeers['0F5147A002B4482EB6D912E3E6518F5CC80EBEE6'].ap);
 			test.done();
 		},
 		
@@ -170,7 +185,7 @@ module.exports = {
 		},
 		
 		"do not update routing table with a provisional peer that is already a known good peer, when override flag not set" : function(test) {
-			routingtable.updateWithKnownGood('0F5147A002B4482EB6D912E3E6518F5CC80EBEE6', '1.2.3.4:1234');
+			routingtable.updateWithKnownGood('0F5147A002B4482EB6D912E3E6518F5CC80EBEE6', '1.2.3.4:1234', 1);
 			
 			routingtable.updateWithProvisional('0F5147A002B4482EB6D912E3E6518F5CC80EBEE6', '1.2.3.4:1234');
 			
