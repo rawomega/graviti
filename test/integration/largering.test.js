@@ -4,17 +4,11 @@ var nodeunit = require('nodeunit');
 var evalfuncs = require('./evalfuncs');
 
 module.exports = {
-	"multi-node ring initialisation" : nodeunit.testCase({
+	"large ring setup and management" : nodeunit.testCase({
 		setUp : function(done) {
-			this.nodeIds = [
-					    '0000000000000000000000000000000000000000',
-					    '4444444444444444444444444444444444444444',
-					    '8888888888888888888888888888888888888888',
-					    'BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB'
-					];
 			this.nodes = multinode.start({
 				num_nodes : 16
-			});
+			});			
 
 			done();
 		},

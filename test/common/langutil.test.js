@@ -103,5 +103,52 @@ module.exports = {
 			test.strictEqual(true, langutil.isArray([1,2,3]));
 			test.done();
 		}
+	}),
+	
+	"array removal operations" : testCase({
+		"should remove item from array by index" : function(test) {
+			var a = ['a', 'b', 'c'];
+			
+			langutil.arrRemove(a, 1);
+			
+			test.deepEqual(['a', 'c'], a);
+			test.done();
+		},
+		
+		"should remove item from array by index for numeric values" : function(test) {
+			var a = [1, 2, 3];
+			
+			langutil.arrRemove(a, 1);
+			
+			test.deepEqual([1, 3], a);
+			test.done();
+		},
+		
+		"should remove item from array by value" : function(test) {
+			var a = ['a', 'b', 'c'];
+			
+			langutil.arrRemoveItem(a, 'b');
+			
+			test.deepEqual(['a', 'c'], a);
+			test.done();
+		},
+		
+		"should remove multiple copies of an item from array by value" : function(test) {
+			var a = ['a', 'b', 'b', 'c', 'b'];
+			
+			langutil.arrRemoveItem(a, 'b');
+			
+			test.deepEqual(['a', 'c'], a);
+			test.done();
+		},
+		
+		"should remove item from array by value for numeric values" : function(test) {
+			var a = [1, 2, 3];
+			
+			langutil.arrRemoveItem(a, 1);
+			
+			test.deepEqual([2, 3], a);
+			test.done();
+		},
 	})
 };

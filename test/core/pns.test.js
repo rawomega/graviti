@@ -184,7 +184,7 @@ module.exports = {
 			
 			this.overlayCallback.emit('graviti-message-received', this.msg, this.msginfo);
 			
-			test.ok(this.success.calledWith('1EAF5E7', '2.2.2.2:2222'));
+			test.ok(this.success.calledWith('1EAF5E7', '2.2.2.2:2222', []));
 			test.equal(0, Object.keys(pns._inProgress).length);
 			test.done();
 		},
@@ -204,6 +204,26 @@ module.exports = {
 			
 			test.equal(2, this.sendToAddr.callCount);
 			test.ok(this.sendToAddr.calledWith('p2p:graviti/pns/rttprobe', {req_id : reqId}, {method : 'GET'}, '3.3.3.3', '3333'));
+			test.done();
+		},
+		
+		"track leafset nodes as discovered nodes for current request, without duplicates" : function(test) {			
+			var reqId = pns.findNearestNode('2.2.2.2:2222', joiningNodeId, this.success);
+			this.msg.content = {
+					req_id : reqId,
+					leafset : {
+						'ABCDEF' : '3.3.3.3:3333',
+						'123456' : '4.4.4.4:4444',
+						'789ABC' : '5.5.5.5:5555'
+					}
+			};
+			this.msg.source_id = '1EAF5E7';
+			pns._inProgress[reqId].discoveredPeers.push('5.5.5.5:5555');
+			
+			this.overlayCallback.emit('graviti-message-received', this.msg, this.msginfo);
+			
+			test.deepEqual(['3.3.3.3:3333', '4.4.4.4:4444', '5.5.5.5:5555'].sort(),
+					pns._inProgress[reqId].discoveredPeers.sort());
 			test.done();
 		},
 		
@@ -342,7 +362,7 @@ module.exports = {
 			this.overlayCallback.emit('graviti-message-received', this.msg, this.msginfo);
 			
 			test.equal(3, this.sendToAddr.callCount);
-			test.ok(success.calledWith('8377371D', '2.2.2.2:2222'));
+			test.ok(success.calledWith('8377371D', '2.2.2.2:2222', ['9.9.9.9:9999', '3.3.3.3:3333']));
 			test.equal(0, Object.keys(pns._inProgress).length);						
 			test.done();
 		},
@@ -511,7 +531,7 @@ module.exports = {
 			
 			this.overlayCallback.emit('graviti-message-received', this.msg, this.msginfo);
 			
-			test.ok(success.calledWith('1EAF5E7', '2.2.2.2:2222'));
+			test.ok(success.calledWith('1EAF5E7', '2.2.2.2:2222', []));
 			test.equal(0, Object.keys(pns._inProgress).length);
 			test.done();
 		},
@@ -525,7 +545,7 @@ module.exports = {
 			
 			this.overlayCallback.emit('graviti-message-received', this.msg, this.msginfo);
 			
-			test.ok(success.calledWith('1EAF5E7', '2.2.2.2:2222'));
+			test.ok(success.calledWith('1EAF5E7', '2.2.2.2:2222', []));
 			test.equal(0, Object.keys(pns._inProgress).length);
 			test.done();
 		},
@@ -575,7 +595,24 @@ module.exports = {
 			test.ok(0 < pns._inProgress[reqId].routing_row_probes['generated-uuid']['6789ABCDEF6789ABCDEF6789ABCDEF6789ABCDEF']);
 			test.ok(0 < pns._inProgress[reqId].routing_row_probes['generated-uuid']['FEDCBA9876FEDCBA9876FEDCBA9876FEDCBA9876']);
 			test.done();
-		}
+		},
+		
+		"track routing row nodes as discovered nodes for current request, eliminating duplicates and seed node" : function(test) {			
+			var reqId = pns.findNearestNode('2.2.2.2:2222');
+			this.msg.content.req_id = reqId;
+			this.msg.content.routing_row = {
+				'6' : {id : '6789ABCDEF6789ABCDEF6789ABCDEF6789ABCDEF', ap : '5.5.5.5:5555'},
+				'A' : {id : 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA', ap : '2.2.2.2:2222'},	// expect this one to be thrown away as its the seed node
+				'F' : {id : 'FEDCBA9876FEDCBA9876FEDCBA9876FEDCBA9876', ap : '6.6.6.6:6666'}
+			};
+			pns._inProgress[reqId].discoveredPeers.push('6.6.6.6:6666');
+			
+			this.overlayCallback.emit('graviti-message-received', this.msg, this.msginfo);
+			
+			test.deepEqual(['5.5.5.5:5555', '6.6.6.6:6666'].sort(),
+					pns._inProgress[reqId].discoveredPeers.sort());
+			test.done();
+		},
 	}),
 	
 	"handling routing row round trip probe response message" : testCase({
@@ -633,7 +670,7 @@ module.exports = {
 			this.overlayCallback.emit('graviti-message-received', this.msg, this.msginfo);
 			
 			test.equal(3, this.sendToAddr.callCount);
-			test.ok(this.success.calledWith('8377371D', '2.2.2.2:2222'));
+			test.ok(this.success.calledWith('8377371D', '2.2.2.2:2222', ['9.9.9.9:9999', '3.3.3.3:3333']));
 			test.equal(0, Object.keys(pns._inProgress).length);						
 			test.done();
 		},
@@ -716,7 +753,7 @@ module.exports = {
 			pns._reportSuccess(this.reqId, 'nodeid', 'nodeaddrport');
 			
 			setTimeout(function() {
-				test.ok(_this.success.calledWith('nodeid', 'nodeaddrport'));
+				test.ok(_this.success.calledWith('nodeid', 'nodeaddrport', []));
 				test.ok(!_this.error.called);
 				test.done();
 			}, 100);
