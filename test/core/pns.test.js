@@ -184,7 +184,13 @@ module.exports = {
 			
 			this.overlayCallback.emit('graviti-message-received', this.msg, this.msginfo);
 			
-			test.ok(this.success.calledWith('1EAF5E7', '2.2.2.2:2222', []));
+			test.ok(this.success.calledWith({
+				id : '1EAF5E7',
+				ap : '2.2.2.2:2222',
+				rtt : pns.rttWhenInsufficientPeers,
+				discovered_peers : [],
+				public_seed_ap : '2.2.2.2:2222'
+			}));
 			test.equal(0, Object.keys(pns._inProgress).length);
 			test.done();
 		},
@@ -250,7 +256,7 @@ module.exports = {
 		}
 	}),
 	
-	"handling round trip probe message" : testCase({
+	"handling leafset round trip probe message" : testCase({
 		setUp : function(done) {
 			this.overlayCallback = langutil.extend(new events.EventEmitter(), { sendToAddr : function() {} });
 			this.sendToAddr = sinon.stub(this.overlayCallback, 'sendToAddr');
@@ -362,7 +368,13 @@ module.exports = {
 			this.overlayCallback.emit('graviti-message-received', this.msg, this.msginfo);
 			
 			test.equal(3, this.sendToAddr.callCount);
-			test.ok(success.calledWith('8377371D', '2.2.2.2:2222', ['9.9.9.9:9999', '3.3.3.3:3333']));
+			test.deepEqual(success.args[0][0], {
+				id : '8377371D',
+				ap : '2.2.2.2:2222',
+				rtt : -1,
+				discovered_peers : ['9.9.9.9:9999', '3.3.3.3:3333'],
+				public_seed_ap: undefined
+			});
 			test.equal(0, Object.keys(pns._inProgress).length);						
 			test.done();
 		},
@@ -531,7 +543,13 @@ module.exports = {
 			
 			this.overlayCallback.emit('graviti-message-received', this.msg, this.msginfo);
 			
-			test.ok(success.calledWith('1EAF5E7', '2.2.2.2:2222', []));
+			test.deepEqual(success.args[0][0], {
+				id : '1EAF5E7',
+				ap : '2.2.2.2:2222',
+				rtt : pns.rttWhenInsufficientPeers,
+				discovered_peers : [],
+				public_seed_ap: undefined
+			});
 			test.equal(0, Object.keys(pns._inProgress).length);
 			test.done();
 		},
@@ -545,7 +563,13 @@ module.exports = {
 			
 			this.overlayCallback.emit('graviti-message-received', this.msg, this.msginfo);
 			
-			test.ok(success.calledWith('1EAF5E7', '2.2.2.2:2222', []));
+			test.deepEqual(success.args[0][0], {
+				id : '1EAF5E7',
+				ap : '2.2.2.2:2222',
+				rtt : pns.rttWhenInsufficientPeers,
+				discovered_peers : [],
+				public_seed_ap: undefined
+			});
 			test.equal(0, Object.keys(pns._inProgress).length);
 			test.done();
 		},
@@ -599,13 +623,15 @@ module.exports = {
 		
 		"track routing row nodes as discovered nodes for current request, eliminating duplicates and seed node" : function(test) {			
 			var reqId = pns.findNearestNode('2.2.2.2:2222');
-			this.msg.content.req_id = reqId;
+			this.msg.content.req_id = reqId;			
 			this.msg.content.routing_row = {
 				'6' : {id : '6789ABCDEF6789ABCDEF6789ABCDEF6789ABCDEF', ap : '5.5.5.5:5555'},
 				'A' : {id : 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA', ap : '2.2.2.2:2222'},	// expect this one to be thrown away as its the seed node
-				'F' : {id : 'FEDCBA9876FEDCBA9876FEDCBA9876FEDCBA9876', ap : '6.6.6.6:6666'}
+				'F' : {id : 'EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE', ap : '6.6.6.6:6666'},
+				'F' : {id : 'FEDCBA9876FEDCBA9876FEDCBA9876FEDCBA9876', ap : '7.7.7.7:7777'}	// expect this one to also be discarded as it is seeds public ip
 			};
 			pns._inProgress[reqId].discoveredPeers.push('6.6.6.6:6666');
+			pns._inProgress[reqId].publicSeedAp = '7.7.7.7:7777';
 			
 			this.overlayCallback.emit('graviti-message-received', this.msg, this.msginfo);
 			
@@ -670,7 +696,13 @@ module.exports = {
 			this.overlayCallback.emit('graviti-message-received', this.msg, this.msginfo);
 			
 			test.equal(3, this.sendToAddr.callCount);
-			test.ok(this.success.calledWith('8377371D', '2.2.2.2:2222', ['9.9.9.9:9999', '3.3.3.3:3333']));
+			test.deepEqual(this.success.args[0][0], {
+				id : '8377371D',
+				ap : '2.2.2.2:2222',
+				rtt : -1,
+				discovered_peers : ['9.9.9.9:9999', '3.3.3.3:3333'],
+				public_seed_ap: undefined
+			});
 			test.equal(0, Object.keys(pns._inProgress).length);						
 			test.done();
 		},
@@ -750,10 +782,16 @@ module.exports = {
 		"on success, cancel timeout timer" : function(test) {
 			var _this = this;
 			
-			pns._reportSuccess(this.reqId, 'nodeid', 'nodeaddrport');
+			pns._reportSuccess(this.reqId, 'nodeid', 'nodeaddrport', 123);
 			
 			setTimeout(function() {
-				test.ok(_this.success.calledWith('nodeid', 'nodeaddrport', []));
+				test.deepEqual(_this.success.args[0][0], {
+					id : 'nodeid',
+					ap : 'nodeaddrport',
+					rtt : 123,
+					discovered_peers : [],
+					public_seed_ap: undefined
+				});				
 				test.ok(!_this.error.called);
 				test.done();
 			}, 100);
