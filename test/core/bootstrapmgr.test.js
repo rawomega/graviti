@@ -6,7 +6,7 @@ var leafset = require('core/leafset');
 var routingtable = require('core/routingtable');
 var testCase = require('nodeunit').testCase;
 var heartbeater = require('core/heartbeater');
-var pns = require('core/pns');
+var pnsrunner = require('core/pnsrunner');
 
 module.exports = {
 	"bootstrap manager startup" : testCase({
@@ -53,9 +53,8 @@ module.exports = {
 		"bootstrap manager for node joining a ring should initiate sending of bootstrap requests with PNS when PNS on" : function(test) {
 			var sendToAddr = sinon.collection.stub(this.overlayCallback, 'sendToAddr');
 			bootstrapmgr.pendingRequestCheckIntervalMsec = 50;
-			sinon.collection.stub(pns, 'findNearestNode', function(endpoint, joiningNodeId, success) {
-				console.log(endpoint);
-				success('pns-node-id', '6.6.6.6:6666');
+			sinon.collection.stub(pnsrunner, 'run', function(endpoint, success) {
+				success('6.6.6.6:6666');
 			});
 			
 			bootstrapmgr.start(this.overlayCallback, '1.2.3.4:1234,5.6.7.8:5678,myhost:8888');
@@ -89,7 +88,7 @@ module.exports = {
 	
 	"bootstrap manager startup" : testCase({
 		setUp : function(done) {
-			this.cancelAll = sinon.collection.stub(pns, 'cancelAll');
+			this.cancelAll = sinon.collection.stub(pnsrunner, 'cancelAll');
 			done();
 		},
 		
