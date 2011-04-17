@@ -175,7 +175,7 @@ module.exports = {
 			test.ok(leafset._leafset[higherId] !== undefined);
 			test.ok(leafset._leafset[higherId].deadAt === undefined);
 			test.strictEqual(1, Object.keys(leafset._deadset).length);
-			test.ok(leafset._deadset[lowerId].deadAt > (new Date().getTime() - 10000));
+			test.ok(leafset._deadset[lowerId].deadAt > (Date.now() - 10000));
 			test.ok(callback.calledWith(lowerId));
 			test.done();
 		},
@@ -209,7 +209,7 @@ module.exports = {
 			leafset._put(higherId, "1.2.3.4:5678");			
 			leafset.removePeer(lowerId);
 			leafset.removePeer(higherId);
-			leafset._deadset[lowerId].deadAt = (new Date().getTime() - 100000);
+			leafset._deadset[lowerId].deadAt = (Date.now() - 100000);
 			
 			leafset.clearExpiredDeadAndCandidatePeers();
 			
@@ -219,8 +219,8 @@ module.exports = {
 		},
 		
 		"should be able to clear all expired candidate peers" : function(test) {
-			leafset._candidateset[lowerId] = {foundAt : new Date().getTime() - 100000};
-			leafset._candidateset[higherId] = {foundAt : new Date().getTime()};
+			leafset._candidateset[lowerId] = {foundAt : Date.now() - 100000};
+			leafset._candidateset[higherId] = {foundAt : Date.now()};
 			
 			leafset.clearExpiredDeadAndCandidatePeers();
 			
@@ -232,7 +232,7 @@ module.exports = {
 		"should be able to clear all timed out leafset peers" : function(test) {
 			leafset._put(lowerId,"1.2.3.4:1234");
 			leafset._put(higherId, "1.2.3.4:5678");			
-			leafset._leafset[lowerId].lastHeartbeatReceived = new Date().getTime() - 100000;
+			leafset._leafset[lowerId].lastHeartbeatReceived = Date.now() - 100000;
 			
 			leafset.clearTimedOutPeers();
 			
@@ -376,7 +376,7 @@ module.exports = {
 		},
 		
 		"should resurrect peer in the deadset if it is known good" : function(test) {
-			leafset._deadset[anId] = {ap : "1.2.3.4", deadAt : new Date().getTime()};
+			leafset._deadset[anId] = {ap : "1.2.3.4", deadAt : Date.now()};
 			leafset._leafset[lowerId] = { ap : "1.2.3.4", lastHeartbeatReceived : 1};
 			
 			leafset.updateWithKnownGood(anId, '2.3.4.5');
@@ -600,7 +600,7 @@ module.exports = {
 		},
 		
 		"should ignore any provisional peers in the deadset" : function(test) {
-			leafset._deadset[anId] = {ap : "1.2.3.4", deadAt : new Date().getTime()};
+			leafset._deadset[anId] = {ap : "1.2.3.4", deadAt : Date.now()};
 			leafset._leafset[lowerId] = { ap : "1.2.3.4", foundAt : 1};
 			
 			leafset.updateWithProvisional(anId, '2.3.4.5');

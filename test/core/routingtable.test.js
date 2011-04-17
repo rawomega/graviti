@@ -373,7 +373,7 @@ module.exports = {
 		
 		"when clearing out expired candidate peers, remove expired candidate peer" : function(test) {
 			routingtable.updateWithProvisional('C695A1A002B4482EB6D912E3E6518F5CC80EBEE6','3.4.5.6:3456');			
-			routingtable._candidatePeers['C695A1A002B4482EB6D912E3E6518F5CC80EBEE6'].foundAt = new Date().getTime()
+			routingtable._candidatePeers['C695A1A002B4482EB6D912E3E6518F5CC80EBEE6'].foundAt = Date.now()
 				- routingtable.candidatePeerRetentionIntervalMsec - 10000;
 			
 			routingtable.housekeep();
@@ -396,7 +396,7 @@ module.exports = {
 		"clear out expired proposed routing hop" : function(test) {
 			routingtable.updateWithKnownGood('B000000000000000000000000000000000000000', '1.1.1.1:1111', 1);			
 			routingtable.findBetterRoutingHop('700000000000000000000000000000000000', 'C000000000000000000000000000000000000000');
-			routingtable._proposedBetterRoutingHops['700000000000000000000000000000000000']['B000000000000000000000000000000000000000'] = new Date().getTime() - 100 * 60000;
+			routingtable._proposedBetterRoutingHops['700000000000000000000000000000000000']['B000000000000000000000000000000000000000'] = Date.now() - 100 * 60000;
 			
 			routingtable.housekeep();
 			
@@ -409,7 +409,7 @@ module.exports = {
 			routingtable.updateWithKnownGood('C000000000000000000000000000000000000000', '1.1.1.1:1111', 1);
 			routingtable.findBetterRoutingHop('700000000000000000000000000000000000', 'D000000000000000000000000000000000000000');
 			routingtable.findBetterRoutingHop('700000000000000000000000000000000000', 'D000000000000000000000000000000000000000');
-			routingtable._proposedBetterRoutingHops['700000000000000000000000000000000000']['B000000000000000000000000000000000000000'] = new Date().getTime() - 100 * 60000;
+			routingtable._proposedBetterRoutingHops['700000000000000000000000000000000000']['B000000000000000000000000000000000000000'] = Date.now() - 100 * 60000;
 			
 			routingtable.housekeep();
 			
@@ -636,7 +636,7 @@ module.exports = {
 	"finding a better hop than 'us' using information in our routing table" : testCase({
 		setUp : function(done) {
 			node.nodeId = 'ABCDEF1234ABCDEF1234ABCDEF1234ABCDEF1234';
-			sinon.collection.stub(Date.prototype, 'getTime').returns(1234);
+			sinon.collection.stub(Date, 'now').returns(1234);
 			done();
 		},
 		

@@ -112,11 +112,11 @@ module.exports = {
 
 	"sending heartbeat messages to leafset peers" : testCase({
 		setUp : function(done) {
-			this.origDateGetTime = Date.prototype.getTime;
+			this.origNow = Date.now;
 			this.overlayCallback = { on : function() {}, sendToAddr : function() {}, removeListener : function() {} };
 			this.sendToAddr = sinon.collection.stub(this.overlayCallback, 'sendToAddr');
 			
-			Date.prototype.getTime = function() { return 234; };
+			Date.now = function() { return 234; };
 			
 			done();
 		},
@@ -126,7 +126,7 @@ module.exports = {
 			routingtable._table = {};
 			leafset.reset();
 			sinon.collection.restore();
-			Date.prototype.getTime = this.origDateGetTime;
+			Date.now = this.origNow;
 			done();
 		},
 		
@@ -172,8 +172,8 @@ module.exports = {
 			heartbeater.start(this.overlayCallback);
 			
 			setTimeout(function() {
-				test.ok(leafset._leafset['ABCDEF0123ABCDEF0123ABCDEF0123ABCDEF0123'].lastHeartbeatSent > (new Date().getTime() - 1000));
-				test.ok(leafset._leafset['1234567890123456789012345678901234567890'].lastHeartbeatSent > (new Date().getTime() - 1000));
+				test.ok(leafset._leafset['ABCDEF0123ABCDEF0123ABCDEF0123ABCDEF0123'].lastHeartbeatSent > (Date.now() - 1000));
+				test.ok(leafset._leafset['1234567890123456789012345678901234567890'].lastHeartbeatSent > (Date.now() - 1000));
 				test.ok(_this.sendToAddr.calledTwice);
 				test.done();
 			}, 200);
@@ -183,8 +183,8 @@ module.exports = {
 			var _this = this;
 			leafset._put('ABCDEF0123ABCDEF0123ABCDEF0123ABCDEF0123','127.0.0.1:8888');
 			leafset._put('1234567890123456789012345678901234567890','127.0.0.1:9999');
-			leafset._leafset['ABCDEF0123ABCDEF0123ABCDEF0123ABCDEF0123'].lastHeartbeatSent = new Date().getTime();
-			leafset._leafset['1234567890123456789012345678901234567890'].lastHeartbeatSent = new Date().getTime();
+			leafset._leafset['ABCDEF0123ABCDEF0123ABCDEF0123ABCDEF0123'].lastHeartbeatSent = Date.now();
+			leafset._leafset['1234567890123456789012345678901234567890'].lastHeartbeatSent = Date.now();
 			
 			heartbeater.heartbeatIntervalMsec = 1000;
 			heartbeater.heartbeatCheckIntervalMsec = 50;
@@ -226,8 +226,8 @@ module.exports = {
 				test.strictEqual(_this.sendToAddr.args[1][3], '127.0.0.1');
 				test.strictEqual(_this.sendToAddr.args[1][4], '9999');
 				
-				test.ok(leafset._candidateset['ABCDEF0123ABCDEF0123ABCDEF0123ABCDEF0123'].lastHeartbeatSent > (new Date().getTime() - 1000));
-				test.ok(leafset._candidateset['1234567890123456789012345678901234567890'].lastHeartbeatSent > (new Date().getTime() - 1000));
+				test.ok(leafset._candidateset['ABCDEF0123ABCDEF0123ABCDEF0123ABCDEF0123'].lastHeartbeatSent > (Date.now() - 1000));
+				test.ok(leafset._candidateset['1234567890123456789012345678901234567890'].lastHeartbeatSent > (Date.now() - 1000));
 				test.done();
 			}, 200);
 		}
@@ -239,14 +239,14 @@ module.exports = {
 			sinon.collection.stub(routingtable, 'getSharedRow').returns(this.sharedRow);
 			this.overlayCallback = { on : function() {}, sendToAddr : function() {}, removeListener : function() {} };
 			this.sendToAddr = sinon.collection.stub(this.overlayCallback, 'sendToAddr');
-			this.origDateGetTime = Date.prototype.getTime;
-			Date.prototype.getTime = function() { return 234; };
+			this.origNow = Date.now;
+			Date.now = function() { return 234; };
 			
 			done();
 		},
 		
 		tearDown : function(done) {
-			Date.prototype.getTime = this.origDateGetTime;
+			Date.now = this.origNow;
 			heartbeater.stop();
 			leafset.reset();
 			sinon.collection.restore();
@@ -283,8 +283,8 @@ module.exports = {
 				test.strictEqual(_this.sendToAddr.args[1][3], '127.0.0.1');
 				test.strictEqual(_this.sendToAddr.args[1][4], '9999');
 				
-				test.ok(routingtable._candidatePeers['ABCDEF0123ABCDEF0123ABCDEF0123ABCDEF0123'].lastProbedAt > (new Date().getTime() - 1000));
-				test.ok(routingtable._candidatePeers['1234567890123456789012345678901234567890'].lastProbedAt > (new Date().getTime() - 1000));
+				test.ok(routingtable._candidatePeers['ABCDEF0123ABCDEF0123ABCDEF0123ABCDEF0123'].lastProbedAt > (Date.now() - 1000));
+				test.ok(routingtable._candidatePeers['1234567890123456789012345678901234567890'].lastProbedAt > (Date.now() - 1000));
 				test.done();
 			}, 200);
 		},
@@ -312,14 +312,14 @@ module.exports = {
 			this.overlayCallback = { on : function() {}, sendToAddr : function() {}, removeListener : function() {} };
 			this.sendToAddr = sinon.collection.stub(this.overlayCallback, 'sendToAddr');
 			
-			this.origDateGetTime = Date.prototype.getTime;
-			Date.prototype.getTime = function() { return 234; };
+			this.origNow = Date.now;
+			Date.now = function() { return 234; };
 			
 			done();
 		},
 		
 		tearDown : function(done) {
-			Date.prototype.getTime = this.origDateGetTime;
+			Date.now = this.origNow;
 			heartbeater.stop();
 			leafset.reset();
 			routingtable._table = {};			
@@ -380,8 +380,8 @@ module.exports = {
 		"should detect timed out peer in leafset and purge" : function(test) {
 			leafset._put('ABCDEF0123ABCDEF0123ABCDEF0123ABCDEF0123','127.0.0.1:8888');
 			leafset._put('1234567890123456789012345678901234567890','127.0.0.1:9999');
-			leafset._leafset['ABCDEF0123ABCDEF0123ABCDEF0123ABCDEF0123'].lastHeartbeatReceived = (new Date().getTime() - 1000000);
-			leafset._leafset['1234567890123456789012345678901234567890'].lastHeartbeatReceived = (new Date().getTime() - 1000000);			
+			leafset._leafset['ABCDEF0123ABCDEF0123ABCDEF0123ABCDEF0123'].lastHeartbeatReceived = (Date.now() - 1000000);
+			leafset._leafset['1234567890123456789012345678901234567890'].lastHeartbeatReceived = (Date.now() - 1000000);			
 			heartbeater.timedOutPeerCheckIntervalMsec = 50;
 			
 			heartbeater.start(this.overlayCallback);
@@ -411,8 +411,8 @@ module.exports = {
 	
 	"handling received heartbeats" : testCase({
 		setUp : function(done) {
-			this.origDateGetTime = Date.prototype.getTime;
-			Date.prototype.getTime = function() { return 234; };
+			this.origNow = Date.now;
+			Date.now = function() { return 234; };
 			
 			this.msg = {
 				uri : 'p2p:graviti/heartbeat',
@@ -446,7 +446,7 @@ module.exports = {
 			sinon.collection.restore();
 			routingtable._candidatePeers = {};
 			routingtable._table = {};
-			Date.prototype.getTime = this.origDateGetTime;
+			Date.now = this.origNow;
 			done();
 		},
 

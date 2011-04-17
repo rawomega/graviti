@@ -98,7 +98,7 @@ module.exports = {
 	"sending messages" : testCase({
 		setUp : function(done) {
 			node.nodeId = 'ABCD';
-			sinon.collection.stub(Date.prototype, 'getTime').returns(12345678);
+			sinon.collection.stub(Date, 'now').returns(12345678);
 			sinon.collection.stub(id, 'generateUuid').returns('1234');
 			sinon.collection.stub(routingmgr, 'getNextHop').returns({
 				id : 'CDEF',
