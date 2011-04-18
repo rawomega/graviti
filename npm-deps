@@ -1,11 +1,16 @@
-buffertools@1.0.0         active installed
-chain-gang@0.2.1          active installed
-jslint-core@2011.01.09    active installed
-node-uuid@1.1.0           active installed
-nodeunit@0.5.0            installed
-nodeunit@0.5.1            active installed
-nodeunit-coverage@0.0.1   active installed
-npm@0.2.15                active installed
-opts@1.2.1                active installed
-request@1.2.0             active installed
-sinon@1.0.1               active installed
+buffertools@1.0.0        active installed   Working with node.js buffers made easy.     buffer buffers
+colors@0.5.0             active installed   get colors in your node.js console like what    
+eyes@0.1.6               active installed   a customizable value inspector     inspector debug inspect print
+jslint-core@2011.01.09   active installed   The JavaScript Code Quality Tool     JavaScript lint jslint jslint-core fulljslint
+loggly@0.3.2             active installed   A client implementation for Loggly cloud Logging-as-a-Service API     cloud computing api logging loggly
+node-uuid@1.1.0          active installed   Simple, fast generation of RFC4122(v4) UUIDs.     uuid guid rfc4122
+nodeunit@0.5.0           installed   Easy unit testing for node.js and the browser.    
+nodeunit@0.5.1           active installed   Easy unit testing for node.js and the browser.    
+npm@0.2.15               installed   A package manager for node     package manager modules install package.json
+npm@0.3.18               active installed   A package manager for node     package manager modules install package.json
+opts@1.2.1               active installed   Command line argument parser written in the style of commonjs. To be used with node.js    
+request@1.9.5            active http installed simple util utility   Simplified HTTP request client.    
+sinon@1.0.1              installed   JavaScript test spies, stubs and mocks.    
+sinon@1.0.2              active installed   JavaScript test spies, stubs and mocks.    
+vows@0.5.8               active installed   Asynchronous BDD & continuous integration for node.js     testing spec test BDD
+winston@0.2.7            active installed   A multi-transport async logging library for Node.js     logging sysadmin tools

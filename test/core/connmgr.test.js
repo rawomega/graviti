@@ -3,7 +3,7 @@ var assert = require('assert');
 var events = require('events');
 var net = require('net');
 var langutil = require('common/langutil');
-var util = require('util');
+var winston = require('winston');
 var connmgr = require('core/connmgr');
 var testCase = require('nodeunit').testCase;
 
@@ -17,8 +17,7 @@ module.exports = {
 
 			this.socket = langutil.extend(new events.EventEmitter(), {remoteAddress : '6.6.6.6'});
 						
-			sinon.collection.stub(net, 'createServer').returns(this.server);
-			this.utilLog = sinon.collection.spy(util, 'log');
+			sinon.collection.stub(net, 'createServer').returns(this.server);			
 			done();
 		},
 		
@@ -95,6 +94,7 @@ module.exports = {
 
 		"should not process if no uri in message" : function(test) {
 			var _this = this;
+			var logFunc = sinon.collection.spy(winston, 'warn');
 			connmgr.on('message', function() {test.fail('unexpected message');});
 			
 			connmgr.listen(1234, "127.0.0.1");
@@ -102,7 +102,7 @@ module.exports = {
 			
 			_this.socket.emit('data', 'GET\n\n{"key" : "val"}');
 			
-			test.ok(/destination uri/i.test(this.utilLog.args[0][0]));
+			test.ok(/destination uri/i.test(logFunc.args[0][0]));
 			test.done();
 		},
 		

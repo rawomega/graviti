@@ -15,15 +15,6 @@ test: lint
 	-mkdir -p build
 	nodeunit test/common test/core
 
-#coverage: lint
-#	-rm -rf build/lib-cov
-#	mkdir -p build
-	#node-jscoverage lib/ build/lib-cov  --exclude thirdparty
-	#cp -R lib/thirdparty build/lib-cov
-	#expresso -q -I builnd/lib-cov
-	#awaiting nodeunit coverage integration
-#	nodeunit test/common test/core
-
 integration: lint
 	nodeunit test/integration/*.test.js
 

@@ -1,4 +1,4 @@
-var util = require('util');
+var winston = require('winston');
 var multinode = require('testability/multinode');
 var nodeunit = require('nodeunit');
 var evalfuncs = require('./evalfuncs');
@@ -22,7 +22,7 @@ module.exports = {
 		tearDown : function(done) {
 			this.nodes.stopNow();
 			setTimeout(function() {
-				util.log('\n\n========\n\n');	
+				winston.info('\n\n========\n\n');	
 				done();
 			}, 2000);
 		},

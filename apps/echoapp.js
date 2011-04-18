@@ -1,4 +1,3 @@
-var util = require('util');
 var langutil = require('../lib/common/langutil')
 var app = require('../lib/api/app');
 
@@ -17,7 +16,7 @@ var self = module.exports = langutil.extend(new app.GravitiApp('echoapp'), {
 	},
 	
 	message : function(msg, msginfo) {
-		util.log('got greeting ' + msg.content.greeting);
+		//console.log('got greeting ' + msg.content.greeting);
 		if (msg.content.greeting === 'hello')
 			self.reply(msg, 'p2p:echoapp/hello', {greeting : 'hi'}, {method : 'POST'});
 	},
