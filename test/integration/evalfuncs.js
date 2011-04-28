@@ -5,6 +5,30 @@ module.exports = {
 		return Object.keys(require('core/leafset').compressedLeafset()).length;
 	},
 	
+	clearDeadPeersListInLeafset : function() {
+		require('core/leafset')._deadset = {};
+	},
+	
+	getLeafset : function() {
+		return require('core/leafset').compressedLeafset();
+	},
+	
+	smallLeafsetSize : function() {
+		require('core/leafset').leafsetSize = 6;	
+	},
+	
+	getRoutingTable : function() {
+		return require('core/routingtable')._table;
+	},
+	
+	getRoutingTableSize : function() {
+		var res = 0;
+		require('core/routingtable').each(function() {
+			res++
+		});
+		return res;
+	},
+	
 	heartbeatFrequently : function() {
 		var heartbeater = require('core/heartbeater');
 		var overlay = require('core/overlay');
@@ -29,9 +53,21 @@ module.exports = {
 		return app.receivedMessages === undefined ? 0 : app.receivedMessages.length;
 	},
 	
+	getReceivedMessages : function() {
+		var app = require('core/appmgr').apps[0];
+		return app.receivedMessages === undefined ? [] : app.receivedMessages;
+	},
+	
 	sendMessageToId : function() {
 		require('core/overlay').sendToId('p2p:echoapp/departednodetest',
 				{subject : 'test'}, {method : 'POST'}, 'B111111111111111111111111111111111111111');
+	},
+	
+	sendMessageToRandomId : function() {
+		var randomId = require('common/id').generateNodeId();
+		require('core/overlay').sendToId('p2p:echoapp/departednodetest',
+				{subject : 'test'}, {method : 'POST'}, randomId);
+		return randomId;
 	},
 	
 	trackReceivedPeerArrivedAndDepartedEvents : function() {
@@ -54,29 +90,5 @@ module.exports = {
 	
 	getPeerDepartedEvents : function() {
 		return require('core/appmgr').apps[0].departedPeers;
-	},
-	
-	clearDeadPeersListInLeafset : function() {
-		require('core/leafset')._deadset = {};
-	},
-	
-	getLeafset : function() {
-		return require('core/leafset').compressedLeafset();
-	},
-	
-	smallLeafsetSize : function() {
-		require('core/leafset').leafsetSize = 6;	
-	},
-	
-	getRoutingTable : function() {
-		return require('core/routingtable')._table;
-	},
-	
-	getRoutingTableSize : function() {
-		var res = 0;
-		require('core/routingtable').each(function() {
-			res++
-		});
-		return res;
 	}
 }

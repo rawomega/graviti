@@ -143,6 +143,21 @@ module.exports = {
 			test.done();
 		},
 		
+		"should get id space size as bigint" : function(test) {
+			var res = id.getIdSpaceSizeAsBigint();
+			
+			test.strictEqual('10000000000000000000000000000000000000000', bigint.bigInt2str(res, 16));
+			test.done();
+		},
+		
+		"highest possible id and id space size should be just one id apart" : function(test) {
+			var highest = id.getHighestPossibleIdAsBigint();
+			var size = id.getIdSpaceSizeAsBigint();
+			
+			test.ok(bigint.equals(bigint.add(highest, bigint.str2bigInt('1', 16)), size));
+			test.done();
+		},
+		
 		"should get halfway point on ring" : function(test) {
 			var biggest = id.getHighestPossibleIdAsBigint();
 			var one = bigint.str2bigInt('1', 16);

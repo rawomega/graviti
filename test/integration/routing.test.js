@@ -2,24 +2,31 @@ var winston = require('winston');
 var multinode = require('testability/multinode');
 var nodeunit = require('nodeunit');
 var evalfuncs = require('./evalfuncs');
+var ringutil = require('core/ringutil');
 
 module.exports = {
 	"multi-node ring initialisation" : nodeunit.testCase({
 		setUp : function(done) {
-			this.nodeIds = [
-					    '0000000000000000000000000000000000000000',
-					    '4444444444444444444444444444444444444444',
-					    '8888888888888888888888888888888888888888',
-					    'BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB'
-					];
+			var _this = this;
+			var numNodes = 16;
+			var testServersStarted = 0;
 			this.nodes = multinode.start({
-				num_nodes : 16
+				num_nodes : numNodes,
+								
+				testServerStarted : function(idx) {
+					_this.nodes.select(idx).eval(evalfuncs.smallLeafsetSize, undefined, function() {
+						testServersStarted++;
+						if (testServersStarted >= numNodes)
+							done();						
+					});
+				}
 			});
-
-			done();
 		},
 		
 		tearDown : function(done) {
+			for (var nodeIdx in this.nodes.nodeIds) {
+				winston.info('Node ' + nodeIdx + ' id: ' + this.nodes.nodeIds[nodeIdx]);
+			}
 			this.nodes.stopNow();
 			setTimeout(function() {
 				winston.info('\n\n========\n\n');	
@@ -27,14 +34,51 @@ module.exports = {
 			}, 2000);
 		},
 
-		"a set of nodes starting up simulaneously should self-organise" : function(test) {
+		"should route a number of messages for randomly generated ids to the right node" : function(test) {
 			var _this = this;			
 			
+			this.nodes.selectAll().eval(evalfuncs.trackReceivedMessages, test);
+			
 			// wait till leafset is sorted
-			_this.nodes.select(0).waitUntilAtLeast(15, evalfuncs.getLeafsetSize, test);
-			_this.nodes.select(15).waitUntilAtLeast(15, evalfuncs.getLeafsetSize, test, function() {
-				_this.nodes.done(test);
-			});
+			this.nodes.selectAll().waitUntilAtLeast(6, evalfuncs.getLeafsetSize, test);
+			
+			// send some messages and ensure they are received where expected
+			var expectedReceivedMessages = {};
+			var numSends = 10;
+setTimeout(function() {			
+			for (var i = 0; i < numSends; i++) {				
+				_this.nodes.select(i).eval(evalfuncs.sendMessageToRandomId, test, function(randomId) {
+					var nearestNodeId = ringutil.getNearestId(randomId, _this.nodes.nodeIds).nearest;
+					var nearestNodeIndex = _this.nodes.nodeIds.indexOf(nearestNodeId);
+					winston.info('SHOULD HAVE SENT msg to random id ' + randomId + ' to ' + nearestNodeId + ' (node ' + nearestNodeIndex + ')');					
+					expectedReceivedMessages[randomId] = nearestNodeIndex; 
+				});
+			}
+	
+			// now see that sent messages arrived where expected
+			setTimeout(function() {
+				var messagesFound = 0;
+				Object.keys(expectedReceivedMessages).forEach(function(destId) {
+					var expectedReceivingNode = expectedReceivedMessages[destId];
+					_this.nodes.select(expectedReceivingNode).eval(evalfuncs.getReceivedMessages, test, function(msgs) {
+						for (var msgIdx in msgs) {
+							var msg = msgs[msgIdx];
+							if (msg.dest_id === destId) {
+								messagesFound++;
+								if (messagesFound >= numSends)
+									_this.nodes.done(test);
+								
+								return;
+							}
+						}
+						
+						test.fail("Expected message sent to " + destId + " on node " + expectedReceivingNode + ", but did not find it there - instead found " + JSON.stringify(msgs));
+						_this.nodes.done(test);
+					});
+				});
+				
+			}, 3000);
+}, 3000);			
 		}
 	})
 };

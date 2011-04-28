@@ -7,6 +7,7 @@ module.exports = {
 	"large ring setup and management" : nodeunit.testCase({
 		setUp : function(done) {
 			this.nodes = multinode.start({
+				wait_timeout_msec : 10000,
 				num_nodes : 16
 			});			
 

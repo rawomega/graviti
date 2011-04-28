@@ -100,11 +100,12 @@ module.exports = {
 			node.nodeId = 'ABCD';
 			sinon.collection.stub(Date, 'now').returns(12345678);
 			sinon.collection.stub(id, 'generateUuid').returns('1234');
-			sinon.collection.stub(routingmgr, 'getNextHop').returns({
-				id : 'CDEF',
-				addr : '5.5.5.5',
-				port : 5555
-			});
+			this.nextHop = {
+					id : 'CDEF',
+					addr : '5.5.5.5',
+					port : 5555
+				};
+			sinon.collection.stub(routingmgr, 'getNextHop').returns(this.nextHop);
 			
 			this.uri = 'p2p:myapp/myresource';
 			this.content = {my : 'content'};
@@ -130,7 +131,6 @@ module.exports = {
 		
 		"be able to send a message to a uri mapping to a remote node" : function(test) {
 			var destId = uri.parse(this.uri).hash;
-			sinon.collection.stub(leafset, 'isThisNodeNearestTo').returns(false);
 			
 			overlay.send(this.uri, this.content, {method : 'POST'});
 			
@@ -148,7 +148,7 @@ module.exports = {
 		
 		"be able to send a message to a uri mapping to the current node" : function(test) {
 			var destId =  uri.parse(this.uri).hash;
-			sinon.collection.stub(leafset, 'isThisNodeNearestTo').returns(true);
+			this.nextHop.id = node.nodeId;
 			
 			overlay.send(this.uri, this.content, {method : 'POST'});
 						
@@ -178,7 +178,6 @@ module.exports = {
 		
 		"be able to send a message directly to an id when remote node is nearest" : function(test) {
 			var destId = 'AAAA';
-			sinon.collection.stub(leafset, 'isThisNodeNearestTo').returns(false);
 						
 			overlay.sendToId(this.uri, this.content, {method : 'POST'}, 'AAAA');
 
@@ -196,7 +195,7 @@ module.exports = {
 		
 		"be able to send a message directly to an id when current node is nearest" : function(test) {
 			var destId = 'AAAA';
-			sinon.collection.stub(leafset, 'isThisNodeNearestTo').returns(true);
+			this.nextHop.id = node.nodeId;
 						
 			overlay.sendToId(this.uri, this.content, {method : 'POST'}, 'AAAA');
 
@@ -230,11 +229,12 @@ module.exports = {
 			overlay.on('graviti-message-forwarding', this.gravitiForwarding);
 			overlay.on('graviti-message-received', this.gravitiReceived);
 
-			sinon.collection.stub(routingmgr, 'getNextHop').returns({
-				id : 'CDEF',
-				addr : '5.5.5.5',
-				port : 5555
-			});
+			this.nextHop = {
+					id : 'CDEF',
+					addr : '5.5.5.5',
+					port : 5555
+				};
+			sinon.collection.stub(routingmgr, 'getNextHop').returns(this.nextHop);
 			
 			done();
 		},
@@ -245,7 +245,7 @@ module.exports = {
 		},
 		
 		"handle message destined for an app on this node" : function(test) {
-			sinon.collection.stub(leafset, 'isThisNodeNearestTo').returns(true);
+			this.nextHop.id = node.nodeId;
 			
 			overlay._processMessage(this.msg, this.msginfo);
 			
@@ -258,7 +258,7 @@ module.exports = {
 		},
 		
 		"handle message destined for graviti on this node" : function(test) {
-			sinon.collection.stub(leafset, 'isThisNodeNearestTo').returns(true);
+			this.nextHop.id = node.nodeId;
 			this.msginfo.app_name = 'graviti';
 			
 			overlay._processMessage(this.msg, this.msginfo);
@@ -272,8 +272,6 @@ module.exports = {
 		},
 		
 		"handle message destined for an app on another node" : function(test) {
-			sinon.collection.stub(leafset, 'isThisNodeNearestTo').returns(false);
-			
 			overlay._processMessage(this.msg, this.msginfo);
 			
 			test.strictEqual(this.send.args[0][0], '5.5.5.5');
@@ -288,7 +286,6 @@ module.exports = {
 		},
 		
 		"handle message destined for graviti on another node" : function(test) {
-			sinon.collection.stub(leafset, 'isThisNodeNearestTo').returns(false);
 			this.msginfo.app_name = 'graviti';
 			
 			overlay._processMessage(this.msg, this.msginfo);
@@ -309,7 +306,6 @@ module.exports = {
 			var rtFindBetterRoutingHop = sinon.collection.stub(routingtable, 'findBetterRoutingHop').returns({
 				row : 'some row'
 			});
-			sinon.collection.stub(leafset, 'isThisNodeNearestTo').returns(false);
 			
 			overlay._processMessage(this.msg, this.msginfo);
 					
