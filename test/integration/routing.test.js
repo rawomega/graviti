@@ -1,11 +1,11 @@
-var winston = require('winston');
+var logger = require('logmgr').getDefaultLogger();
 var multinode = require('testability/multinode');
 var nodeunit = require('nodeunit');
 var evalfuncs = require('./evalfuncs');
 var ringutil = require('core/ringutil');
 
 module.exports = {
-	"multi-node ring initialisation" : nodeunit.testCase({
+	"message routing" : nodeunit.testCase({
 		setUp : function(done) {
 			var _this = this;
 			var numNodes = 16;
@@ -25,11 +25,11 @@ module.exports = {
 		
 		tearDown : function(done) {
 			for (var nodeIdx in this.nodes.nodeIds) {
-				winston.info('Node ' + nodeIdx + ' id: ' + this.nodes.nodeIds[nodeIdx]);
+				logger.info('Node ' + nodeIdx + ' id: ' + this.nodes.nodeIds[nodeIdx]);
 			}
 			this.nodes.stopNow();
 			setTimeout(function() {
-				winston.info('\n\n========\n\n');	
+				logger.info('\n\n========\n\n');	
 				done();
 			}, 2000);
 		},
@@ -50,7 +50,7 @@ setTimeout(function() {
 				_this.nodes.select(i).eval(evalfuncs.sendMessageToRandomId, test, function(randomId) {
 					var nearestNodeId = ringutil.getNearestId(randomId, _this.nodes.nodeIds).nearest;
 					var nearestNodeIndex = _this.nodes.nodeIds.indexOf(nearestNodeId);
-					winston.info('SHOULD HAVE SENT msg to random id ' + randomId + ' to ' + nearestNodeId + ' (node ' + nearestNodeIndex + ')');					
+					logger.info('SHOULD HAVE SENT msg to random id ' + randomId + ' to ' + nearestNodeId + ' (node ' + nearestNodeIndex + ')');					
 					expectedReceivedMessages[randomId] = nearestNodeIndex; 
 				});
 			}

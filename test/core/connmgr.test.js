@@ -3,7 +3,7 @@ var assert = require('assert');
 var events = require('events');
 var net = require('net');
 var langutil = require('common/langutil');
-var winston = require('winston');
+var logger = require('logmgr').getLogger('core/connmgr');
 var connmgr = require('core/connmgr');
 var testCase = require('nodeunit').testCase;
 
@@ -94,7 +94,7 @@ module.exports = {
 
 		"should not process if no uri in message" : function(test) {
 			var _this = this;
-			var logFunc = sinon.collection.spy(winston, 'warn');
+			var logFunc = sinon.collection.spy(logger, 'warn');
 			connmgr.on('message', function() {test.fail('unexpected message');});
 			
 			connmgr.listen(1234, "127.0.0.1");
