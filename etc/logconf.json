@@ -1,0 +1,16 @@
+{
+	"console" :  {
+		"level" : "info"
+	},
+	
+	"file" : {
+		"filename" : "/tmp/graviti.log",
+		"level" : "verbose",
+		"rotateSizeKb" : 1024,
+		"rotateGenerations" : 10,
+		"modules" : {
+			"core/node" : "verbose",
+			"core/connmgr" : "verbose"
+		}		
+	}
+}
