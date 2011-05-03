@@ -3,7 +3,7 @@ all: clean lint test integration npm-deps
 .PHONY: test
 .PHONY: npm-deps
 
-export NODE_PATH = ./lib:./apps
+export NODE_PATH = lib:apps
 
 clean:
 	-rm -rf build
@@ -12,11 +12,12 @@ lint:
 	jsl --conf etc/jsl.conf
 
 test: lint
-	-mkdir -p build
 	nodeunit test/common test/core
 
+test = test/integration/*.test.js
 integration: lint
-	nodeunit test/integration/*.test.js
+	export GRAVITI_LOG_CONF_FILE=test/integration/logconf.json; \
+	nodeunit $(test)
 
 npm-deps:
 	-npm ls installed > npm-deps
