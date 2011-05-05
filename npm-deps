@@ -11,6 +11,7 @@ npm@0.3.18               active installed   A package manager for node     packa
 opts@1.2.1               active installed   Command line argument parser written in the style of commonjs. To be used with node.js    
 request@1.9.5            active http installed simple util utility   Simplified HTTP request client.    
 sinon@1.0.1              installed   JavaScript test spies, stubs and mocks.    
-sinon@1.0.2              active installed   JavaScript test spies, stubs and mocks.    
+sinon@1.0.2              installed   JavaScript test spies, stubs and mocks.    
+sinon@1.1.0              active installed   JavaScript test spies, stubs and mocks.    
 vows@0.5.8               active installed   Asynchronous BDD & continuous integration for node.js     testing spec test BDD
 winston@0.2.7            active installed   A multi-transport async logging library for Node.js     logging sysadmin tools

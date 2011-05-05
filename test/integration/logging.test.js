@@ -36,7 +36,7 @@ module.exports = {
 					rotateGenerations : 10
 				}
 			});
-			
+
 			done();
 		},
 		
@@ -80,13 +80,14 @@ module.exports = {
 						loggedLines.forEach(function(loggedLine) {
 							if (l.indexOf(loggedLine) > -1)	
 								langutil.arrRemoveItem(loggedLines, loggedLine);
-						})
+						});
 					}) ;
 				});
+
+				if (loggedLines.length > 0) {
+					test.fail('Some of the logged lines were not found in logfiles: ' + loggedLines);
+				}
 			};
-			if (loggedLines.length > 0) {
-				test.fail('Some of the logged lines were not found in logfiles: ' + loggedLines);
-			}
 			
 			logABit(1, function() {
 				check();

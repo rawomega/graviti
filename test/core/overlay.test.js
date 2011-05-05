@@ -319,9 +319,9 @@ module.exports = {
 	
 	"leaving a ring" : testCase({
 		setUp : function(done) {
-			this.node = sinon.collection.mock(node);
-			this.heartbeater = sinon.collection.mock(heartbeater);
-			this.bootstrapmgr = sinon.collection.mock(bootstrapmgr);
+			this.nodeStop = sinon.collection.stub(node, 'stop');
+			this.heartbeaterStop = sinon.collection.stub(heartbeater, 'stop');
+			this.bootstrapmgrStop = sinon.collection.stub(bootstrapmgr, 'stop');
 			done();
 		},
 		
@@ -332,17 +332,14 @@ module.exports = {
 		
 		"should stop node, bootstrapper and heartbeater when leaving ring" : function(test) {	
 			// setup
-			this.heartbeater.expects('stop');
-			this.bootstrapmgr.expects('stop');
-			this.node.expects('stop');
 	
 			// act
 			overlay.leave();
 			
 			// assert
-			this.bootstrapmgr.verify();
-			this.heartbeater.verify();
-			this.node.verify();
+			test.ok(this.bootstrapmgrStop.called);
+			test.ok(this.heartbeaterStop.called);
+			test.ok(this.nodeStop.called);
 			test.done();
 		}
 	})
