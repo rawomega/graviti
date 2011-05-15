@@ -178,7 +178,7 @@ module.exports = {
 			
 			var clearOutLeafset = function() {
 				require('core/leafset').reset();
-				require('core/connmgr').stopListening();				
+				require('core/connmgr').stop();				
 			};
 			
 			var setShortHeartbeatTimeout = function() {

@@ -200,6 +200,36 @@ module.exports = {
 		},
 	}),
 	
+	"parsing an ack" : testCase({
+		"should recognise a valid ack" : function(test) {
+			var res = messenger.parseAck('ACK 123');
+			
+			test.equal('123', res);
+			test.done();
+		},
+		
+		"should not parse ack with line break" : function(test) {
+			var res = messenger.parseAck('ACK 123\n');
+			
+			test.equal(undefined, res);
+			test.done();
+		},
+		
+		"should not parse non-ack" : function(test) {
+			var res = messenger.parseAck('BACK 123');
+			
+			test.equal(undefined, res);
+			test.done();
+		},
+		
+		"should not parse nothing" : function(test) {
+			var res = messenger.parseAck(undefined);
+			
+			test.equal(undefined, res);
+			test.done();
+		}
+	}),
+	
 	"parsing a message" : testCase({
 		setUp : function(done) {
 			node.nodeId = myId;

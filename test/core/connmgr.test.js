@@ -3,7 +3,6 @@ var assert = require('assert');
 var events = require('events');
 var net = require('net');
 var langutil = require('common/langutil');
-var logger = require('logmgr').getLogger('core/connmgr');
 var connmgr = require('core/connmgr');
 var testCase = require('nodeunit').testCase;
 
@@ -29,7 +28,7 @@ module.exports = {
 		"should start to listen normally" : function(test) {
 			var on = sinon.collection.stub(this.server, 'on');
 			
-			connmgr.listen(1234, "127.0.0.1");
+			connmgr.start(1234, "127.0.0.1");
 	
 			test.ok(on.calledWith('error'));
 			test.ok(on.calledWith('connection'));
@@ -52,177 +51,20 @@ module.exports = {
 				}
 			};
 			
-			connmgr.listen(1234, "127.0.0.1");
+			connmgr.start(1234, "127.0.0.1");
 			this.server.emit("error", { code : 'EADDRINUSE' });
 			
 			failTimeoutId = setTimeout(function() {
 				test.fail() ;test.done(); }, 500);
 		},
 		
-		"should emit close event on server close" : function(test) {
-			var closeEmitted = false;
-			connmgr.on('close', function() {
-				closeEmitted = true;
-			});
-			
-			connmgr.listen(1234, "127.0.0.1");
-			this.server.emit('close');
-			
-			test.ok(closeEmitted);
-			test.done();
-		},
-		
 		"should handle close event on socket of a received connection" : function(test) {
-			connmgr.listen(1234, "127.0.0.1");
+			connmgr.start(1234, "127.0.0.1");
 			this.server.emit('connection', this.socket);
 			
 			this.socket.emit('close');
 			
 			// TODO: for now we just log on socket close, add assertions when we do more
-			test.done();
-		},
-		
-		"should handle unparseable message through socket" : function(test) {
-			connmgr.on('message', function() {test.fail('unexpected message');});			
-			
-			connmgr.listen(1234, "127.0.0.1");
-			this.server.emit('connection', this.socket);			
-			this.socket.emit('data', 'badmsg');
-			
-			test.done();
-		},
-
-		"should not process if no uri in message" : function(test) {
-			var _this = this;
-			var logFunc = sinon.collection.spy(logger, 'warn');
-			connmgr.on('message', function() {test.fail('unexpected message');});
-			
-			connmgr.listen(1234, "127.0.0.1");
-			this.server.emit('connection', this.socket);
-			
-			_this.socket.emit('data', 'GET\n\n{"key" : "val"}');
-			
-			test.ok(/destination uri/i.test(logFunc.args[0][0]));
-			test.done();
-		},
-		
-		"should throw if hop count over 100" : function(test) {
-			// setup
-			var _this = this;
-			connmgr.on('message', function() {test.fail('unexpected message');});
-			
-			connmgr.listen(1234, "127.0.0.1");
-			this.server.emit('connection', this.socket);
-			
-			assert.throws(function() {
-				_this.socket.emit('data',
-						'GET p2p:graviti/something\n' +
-						'hops : 101\n\n');
-			}, /too many hops/i);			
-			test.done();
-		},
-		
-		"should throw if no source port in message" : function(test) {
-			// setup
-			var _this = this;
-			connmgr.on('message', function() {test.fail('unexpected message');});
-			
-			connmgr.listen(1234, "127.0.0.1");
-			this.server.emit('connection', this.socket);
-			
-			assert.throws(function() {
-				_this.socket.emit('data', 'GET p2p:graviti/something\n\n');
-			}, /source port/i);
-			test.done();
-		},
-
-		"should throw if no sender port in message" : function(test) {
-			// setup
-			var _this = this;
-			connmgr.on('message', function() {test.fail('unexpected message');});
-			
-			connmgr.listen(1234, "127.0.0.1");
-			this.server.emit('connection', this.socket);
-			
-			assert.throws(function() {
-				_this.socket.emit('data', 'GET p2p:graviti/something\n'
-						+ 'source_port: 123\n\n');
-			}, /sender port/i);
-			test.done();
-		},
-		
-		"should handle parseable message callback" : function(test) {
-			// setup
-			var rcvdmsg = undefined;
-			var rcvdmsginfo = undefined;
-			connmgr.on("message", function(msg, msginfo) {
-				rcvdmsg = msg;
-				rcvdmsginfo = msginfo
-			});
-	
-			// act
-			connmgr.listen(1234, "127.0.0.1");
-			this.server.emit('connection', this.socket);
-			this.socket.emit('data', 'GET p2p:myapp/something\n' +
-					'source_port : 1111\n' +
-					'sender_port : 2222\n' +
-					'key: val\n\n'
-			);
-			
-			// assert
-			test.strictEqual('val', rcvdmsg.key);
-			test.strictEqual('6.6.6.6:2222', rcvdmsginfo.sender_ap);
-			test.strictEqual('6.6.6.6:1111', rcvdmsginfo.source_ap);			
-			test.strictEqual('myapp', rcvdmsginfo.app_name);
-			test.done();
-		},
-		
-		"should handle parseable message in two parts" : function(test) {
-			// setup
-			var rcvdmsg = undefined;
-			var rcvdmsginfo = undefined;
-			connmgr.on("message", function(msg, msginfo) {
-				rcvdmsg = msg;
-				rcvdmsginfo = msginfo
-			});
-	
-			// act
-			connmgr.listen(1234, "127.0.0.1");
-			this.server.emit('connection', this.socket);
-			this.socket.emit('data', 'GET p2p:myapp/something\n');
-			this.socket.emit('data',
-					'source_port : 1111\n' +
-					'sender_port : 2222\n' +
-					'key: val\n\n'
-			);
-			
-			// assert
-			test.strictEqual('val', rcvdmsg.key);
-			test.strictEqual('6.6.6.6:2222', rcvdmsginfo.sender_ap);
-			test.strictEqual('6.6.6.6:1111', rcvdmsginfo.source_ap);
-			test.strictEqual('myapp', rcvdmsginfo.app_name);
-			test.done();
-		},
-		
-		"should add source addr to message if not present" : function(test) {
-			// setup
-			var rcvdmsg = undefined;
-			var rcvdmsginfo = undefined;
-			connmgr.on("message", function(msg, msginfo) {
-				rcvdmsg = msg;
-				rcvdmsginfo = msginfo
-			});
-	
-			// act
-			connmgr.listen(1234, "127.0.0.1");
-			this.server.emit('connection', this.socket);
-			this.socket.emit('data', 'GET p2p:myapp/something\n' +
-					'source_port : 1111\n' +
-					'sender_port : 2222\n\n'
-			);
-			
-			// assert
-			test.strictEqual('6.6.6.6', rcvdmsg.source_addr);
 			test.done();
 		}
 	}),
@@ -254,7 +96,7 @@ module.exports = {
 	
 			test.ok(setEncoding.calledWith('UTF-8'));
 			test.ok(write.calledWith(this.rawmsg, 'UTF8'));
-			test.ok(end.called);
+//			test.ok(end.called);
 			test.done();
 		},
 	
@@ -274,6 +116,8 @@ module.exports = {
 			test.done();
 		}
 	}),
+
+	// TODO: message receiving
 	
 	"stopping the listener" : testCase ({		
 		tearDown : function(done) {
@@ -287,7 +131,7 @@ module.exports = {
 			var close = sinon.collection.stub(connmgr.server, "close");
 	
 			// act
-			connmgr.stopListening();
+			connmgr.stop();
 	
 			// assert
 			test.ok(close.called);
