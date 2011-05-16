@@ -16,7 +16,7 @@ module.exports = {
 
 			this.socket = langutil.extend(new events.EventEmitter(), {remoteAddress : '6.6.6.6'});
 						
-			sinon.collection.stub(net, 'createServer').returns(this.server);			
+			sinon.collection.stub(net, 'createServer').returns(this.server);
 			done();
 		},
 		
@@ -117,7 +117,69 @@ module.exports = {
 		}
 	}),
 
-	// TODO: message receiving
+	"message receiving" : testCase ({
+		setUp : function(done) {
+			this.socket = langutil.extend(new events.EventEmitter(), {end : function() {}});
+			this.existingParsed = { existing : 'parsed'};
+			this.socketEnd = sinon.stub(this.socket, 'end');
+			this.socket.existingParsed = this.existingParsed;
+			this.socket.remoteAddress = '2.2.2.2';		
+			
+			this.callback = sinon.stub();
+			this.server = langutil.extend(new events.EventEmitter(), {listen : function() {}});
+			sinon.collection.stub(this.server, 'listen');
+			sinon.collection.stub(net, 'createServer').returns(this.server);
+			
+			connmgr._initSocket(this.socket);
+			
+			done();
+		},
+		
+		tearDown : function(done) {
+			sinon.collection.restore();
+			done();
+		},
+		
+		"should delegate to callback to parse message" : function(test) {
+			connmgr.start('1111', '1.1.1.1', { receivedDataCallback : this.callback });
+			
+			this.socket.emit('data', 'some_data');
+			
+			test.deepEqual(this.callback.args[0], [new String('some_data'), '2.2.2.2', this.existingParsed]);
+			test.done();
+		},
+		
+		"should close socket on parsing if fully parsed" : function(test) {
+			connmgr.start('1111', '1.1.1.1', { receivedDataCallback : this.callback });
+			
+			this.socket.emit('data', 'some_data');
+			
+			test.ok(this.socketEnd.called);
+			test.done();
+		},
+		
+		"should absorb exception from parsing" : function(test) {
+			this.callback = sinon.stub().throws(new Error());
+			connmgr.start('1111', '1.1.1.1', { receivedDataCallback : this.callback });
+			
+			this.socket.emit('data', 'some_data');
+			
+			test.ok(this.socketEnd.called);
+			test.done();
+		},
+		
+		"should store partial parse state in socket" : function(test) {
+			this.callback = sinon.stub().returns({ partial : 'state' });
+			connmgr.start('1111', '1.1.1.1', { receivedDataCallback : this.callback });
+			
+			this.socket.emit('data', 'some_data');
+			
+			test.deepEqual(this.callback.args[0], [new String('some_data'), '2.2.2.2', this.existingParsed]);
+			test.deepEqual({partial : 'state'}, this.socket.existingParsed);
+			test.ok(!this.socketEnd.called);
+			test.done();
+		}
+	}),
 	
 	"stopping the listener" : testCase ({		
 		tearDown : function(done) {
