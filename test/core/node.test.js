@@ -2,7 +2,7 @@ var sinon = require('sinon');
 var assert = require('assert');
 var udpmgr = require('messaging/udpmgr');
 var node = require('core/node');
-var messenger = require('messaging/messenger');
+var messages = require('messaging/messages');
 var testCase = require('nodeunit').testCase;
 
 module.exports = {		
@@ -67,7 +67,7 @@ module.exports = {
 		
 		"should send with hop zero" : function(test) {
 			// setup
-			var msg = new messenger.Message('p2p:myapp/myuri', {"key" : "val"});
+			var msg = new messages.Message('p2p:myapp/myuri', {"key" : "val"});
 			sinon.stub(msg, 'stringify').returns('stringified');
 			var send = sinon.collection.stub(udpmgr, 'send', function(port, host, data) {
 				test.strictEqual('stringified', data);
@@ -85,7 +85,7 @@ module.exports = {
 
 		"should increment hop count when sending" : function(test) {
 			// setup
-			var msg = new messenger.Message('p2p:myapp/myuri', {"key" : "val"}, {"hops" : 11});
+			var msg = new messages.Message('p2p:myapp/myuri', {"key" : "val"}, {"hops" : 11});
 			var send = sinon.collection.stub(udpmgr, 'send', function(port, host, data) {
 				test.ok(data.indexOf('hops: 12') > -1);				
 			});
