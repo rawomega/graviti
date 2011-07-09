@@ -1,22 +1,26 @@
 var sinon = require('sinon');
 var assert = require('assert');
-var connmgr = require('core/connmgr');
+var udpmgr = require('core/udpmgr');
 var node = require('core/node');
 var messenger = require('core/messenger');
 var testCase = require('nodeunit').testCase;
 
 module.exports = {		
+//
+// TODO: we seem to have no tests for ACKs?
+//
+
 	"starting a node" : testCase({
 		setUp : function(done) {
 			var _this = this;
 
 			this.msg = {"uri" : "p2p:myapp/myresource", "key" : "val"};
 			this.msginfo = {};
-//			this.on = sinon.collection.stub(connmgr, 'on', function(evt, cbk) {
+//			this.on = sinon.collection.stub(udpmgr, 'on', function(evt, cbk) {
 //				if (evt === 'message')
 //					cbk(_this.msg, _this.msginfo);
 //			});
-			this.connmgrStart = sinon.collection.stub(connmgr, 'start', function(port, addr, opts) {
+			this.udpmgrStart = sinon.collection.stub(udpmgr, 'start', function(port, addr, opts) {
 				if (opts && opts.listeningCallback)
 					opts.listeningCallback();
 			});
@@ -31,7 +35,7 @@ module.exports = {
 		"should start normally" : function(test) {
 			node.start(1234, "127.0.0.1");
 	
-			test.ok(this.connmgrStart.called);
+			test.ok(this.udpmgrStart.called);
 			test.ok(node.nodeId !== undefined);
 			test.done();
 		},
@@ -59,32 +63,30 @@ module.exports = {
 		tearDown : function(done) {
 			sinon.collection.restore();
 			done();
-		},
+		},		
 		
 		"should send with hop zero" : function(test) {
 			// setup
 			var msg = new messenger.Message('p2p:myapp/myuri', {"key" : "val"});
 			sinon.stub(msg, 'stringify').returns('stringified');
-			connmgr.send = function() {};
-			var send = sinon.collection.stub(connmgr, 'send', function(port, host, data) {
+			var send = sinon.collection.stub(udpmgr, 'send', function(port, host, data) {
 				test.strictEqual('stringified', data);
 				test.strictEqual(2222, port);
 				test.strictEqual('1.1.1.1', host);
 			});
 	
-			// act
+			// // act
 			node.send("1.1.1.1", 2222, msg);
 	
-			// assert
+			// // assert
 			test.ok(send.called);
 			test.done();
 		},
-		
+
 		"should increment hop count when sending" : function(test) {
 			// setup
 			var msg = new messenger.Message('p2p:myapp/myuri', {"key" : "val"}, {"hops" : 11});
-			connmgr.send = function() {};
-			var send = sinon.collection.stub(connmgr, 'send', function(port, host, data) {
+			var send = sinon.collection.stub(udpmgr, 'send', function(port, host, data) {
 				test.ok(data.indexOf('hops: 12') > -1);				
 			});
 	
@@ -96,14 +98,19 @@ module.exports = {
 			test.done();
 		}
 	}),
-	
+
 	"receiving a message" : testCase({
 		setUp : function(done) {
+			sinon.collection.stub(udpmgr, 'send');
 			this.rawmsg = '{"uri" : "p2p:myapp/myresource", "key" : "val"}';
-						
 			done();
 		},
-		
+
+		tearDown : function(done) {
+			sinon.collection.restore();
+			done();
+		},
+
 		"should handle unparseable message through socket" : function(test) {
 			node.on('message', function() {test.fail('unexpected message');});			
 
@@ -225,8 +232,8 @@ module.exports = {
 		
 		"should stop" : function(test) {
 			// setup
-			var close = sinon.collection.stub(connmgr, "stop", function() {
-				connmgr.emit('close');
+			var close = sinon.collection.stub(udpmgr, "stop", function() {
+				udpmgr.emit('close');
 			});
 	
 			// act

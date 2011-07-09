@@ -42,7 +42,7 @@ module.exports = {
 			test.ok(msg.created > 0);			
 			test.done();
 		},
-		
+	
 		"creating a message with dest uri and content" : function(test) {
 			var msg = new messenger.Message('p2p:myuri/myres', {a : 'ay', b : 'bee'});
 		
@@ -286,7 +286,7 @@ module.exports = {
 				+ 'dest_id: AAAAABBBBBAAAAABBBBBAAAAABBBBBAAAAABBBBB\n'
 				+ 'content_length: 10\n'
 				+ '\n'
-				+ '{\n'
+					+ '{\n'
 				+ '\n\n'
 				+ '"a" : "0123456789"\n'
 				+ '}\n\n';

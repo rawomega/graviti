@@ -2,7 +2,8 @@
 	"console" :  {
 		"level" : "info",
 		"modules" : {
-			"core/connmgr" : "info"
+			"core/tcpmgr" : "info",
+			"core/udpmgr" : "info"
 		}
 	},
 	
@@ -15,6 +16,7 @@
 
 	"modules" : {
 		"core/overlay" : "info",
-		"core/connmgr" : "info"
+		"core/tcpmgr" : "info",
+		"core/udpmgr" : "info"
 	}
 }

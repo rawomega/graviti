@@ -9,7 +9,8 @@
 		"rotateGenerations" : 10,
 		"modules" : {
 			"core/node" : "info",
-			"core/connmgr" : "verbose"
+			"core/tcpmgr" : "verbose",
+			"core/udpmgr" : "verbose"
 		}		
 	}
 }

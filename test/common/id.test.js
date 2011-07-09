@@ -13,6 +13,7 @@ module.exports = {
 		"should generate uuid" : function(test) {
 			var res = id.generateUuid();
 	
+			test.ok(/[A-F]+/.test(res));
 			test.ok(res.replace(/-/g, '').length === 32);
 			test.ok(res.replace(/[^-]/g, '').length === 4);			
 			test.done();
