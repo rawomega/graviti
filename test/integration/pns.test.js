@@ -29,7 +29,7 @@ module.exports = {
 					];
 			
 			this.delaySendsByPortDistance = function() {
-				var udpmgr = require('core/udpmgr');
+				var udpmgr = require('messaging/udpmgr');
 				var node = require('core/node');
 				var oldSendFunc = udpmgr.send;
 				

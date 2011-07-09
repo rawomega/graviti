@@ -3,9 +3,9 @@ var assert = require('assert');
 var events = require('events');
 var dgram = require('dgram');
 var langutil = require('common/langutil');
-var udpmgr = require('core/udpmgr');
+var udpmgr = require('messaging/udpmgr');
 var testCase = require('nodeunit').testCase;
-var logger = require('logmgr').getLogger('core/udpmgr');
+var logger = require('logmgr').getLogger('messaging/udpmgr');
 
 module.exports = {		
 	"starting a listener" : testCase({

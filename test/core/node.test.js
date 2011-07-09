@@ -1,8 +1,8 @@
 var sinon = require('sinon');
 var assert = require('assert');
-var udpmgr = require('core/udpmgr');
+var udpmgr = require('messaging/udpmgr');
 var node = require('core/node');
-var messenger = require('core/messenger');
+var messenger = require('messaging/messenger');
 var testCase = require('nodeunit').testCase;
 
 module.exports = {		

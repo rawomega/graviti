@@ -179,7 +179,8 @@ module.exports = {
 			
 			var clearOutLeafset = function() {
 				require('core/leafset').reset();
-				require('core/udpmgr').stop();
+				require('messaging/udpmgr').stop();
+				require('messaging/tcpmgr').stop();
 			};
 			
 			var setShortHeartbeatTimeout = function() {

@@ -3,7 +3,7 @@ var assert = require('assert');
 var events = require('events');
 var net = require('net');
 var langutil = require('common/langutil');
-var tcpmgr = require('core/tcpmgr');
+var tcpmgr = require('messaging/tcpmgr');
 var testCase = require('nodeunit').testCase;
 
 module.exports = {		

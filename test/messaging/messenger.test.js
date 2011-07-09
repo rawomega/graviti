@@ -1,7 +1,7 @@
 var node = require('core/node');
 var assert = require('assert');
 var testCase = require('nodeunit').testCase;
-var messenger = require('core/messenger');
+var messenger = require('messaging/messenger');
 var myId = 'ABCDEF1234ABCDEF1234ABCDEF1234ABCDEF1234';
 	
 module.exports = {
