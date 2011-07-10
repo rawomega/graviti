@@ -11,8 +11,10 @@ module.exports = {
 		setUp : function(done) {
 			this.rawmsg = '{"uri" : "p2p:myapp/myresource", "key" : "val"}';
 			
-			this.server = langutil.extend(new events.EventEmitter(), {listen : function() {}, close : function() {}});
-			sinon.collection.stub(this.server, 'listen');
+			this.server = langutil.extend(new events.EventEmitter(), {listen : function() {}, close : function() {}, address : function() { return {address : 'addr', port : 1234} }});
+			sinon.collection.stub(this.server, 'listen', function(port, addr, cbk) {
+				if (cbk) cbk();
+			});
 
 			this.socket = langutil.extend(new events.EventEmitter(), {remoteAddress : '6.6.6.6'});
 						
@@ -34,6 +36,16 @@ module.exports = {
 			test.ok(on.calledWith('connection'));
 			test.ok(on.calledWith('close'));
 			test.ok(this.server.listen.called);
+			test.done();
+		},
+		
+		"should call ready callback when starting to listen normally" : function(test) {
+			var cbk = sinon.stub();
+			
+			tcptran.start(1234, "127.0.0.1", undefined, cbk);
+			this.server.emit('listening');
+	
+			test.ok(cbk.called);
 			test.done();
 		},
 		
@@ -141,7 +153,7 @@ module.exports = {
 		},
 		
 		"should delegate to callback to parse message" : function(test) {
-			tcptran.start('1111', '1.1.1.1', { receivedDataCallback : this.callback });
+			tcptran.start('1111', '1.1.1.1', this.callback);
 			
 			this.socket.emit('data', 'some_data');
 			
@@ -150,7 +162,7 @@ module.exports = {
 		},
 		
 		"should close socket on parsing if fully parsed" : function(test) {
-			tcptran.start('1111', '1.1.1.1', { receivedDataCallback : this.callback });
+			tcptran.start('1111', '1.1.1.1', this.callback);
 			
 			this.socket.emit('data', 'some_data');
 			
@@ -160,7 +172,7 @@ module.exports = {
 		
 		"should absorb exception from parsing" : function(test) {
 			this.callback = sinon.stub().throws(new Error());
-			tcptran.start('1111', '1.1.1.1', { receivedDataCallback : this.callback });
+			tcptran.start('1111', '1.1.1.1', this.callback);
 			
 			this.socket.emit('data', 'some_data');
 			
@@ -170,7 +182,7 @@ module.exports = {
 		
 		"should store partial parse state in socket" : function(test) {
 			this.callback = sinon.stub().returns({ partial : 'state' });
-			tcptran.start('1111', '1.1.1.1', { receivedDataCallback : this.callback });
+			tcptran.start('1111', '1.1.1.1', this.callback);
 			
 			this.socket.emit('data', 'some_data');
 			

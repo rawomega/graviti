@@ -8,8 +8,9 @@ var testCase = require('nodeunit').testCase;
 module.exports = {		
 	"starting transportts" : testCase({
 		setUp : function(done) {
-			this.tcpstart = sinon.collection.stub(tcptran, 'start');
-			this.udpstart = sinon.collection.stub(udptran, 'start');
+			this.receivedDataCallback = sinon.stub();
+			this.readyCallback = sinon.stub();
+						
 			done();
 		},
 		
@@ -19,16 +20,66 @@ module.exports = {
 		},
 		
 		"start tcp transport on start" : function(test) {
-			messagemgr.start(1111, '1.1.1.1', {'myopt' : 123});
+			this.tcpstart = sinon.collection.stub(tcptran, 'start');
+			this.udpstart = sinon.collection.stub(udptran, 'start');
 			
-			test.ok(this.tcpstart.calledWith(1111, '1.1.1.1', {'myopt' : 123}));
+			messagemgr.start(1111, '1.1.1.1', this.receivedDataCallback, this.readyCallback);
+			
+			test.strictEqual(this.tcpstart.args[0][0], 1111);
+			test.strictEqual(this.tcpstart.args[0][1], '1.1.1.1');
+			test.strictEqual(this.tcpstart.args[0][2], this.receivedDataCallback);
+			test.strictEqual(typeof(this.tcpstart.args[0][3]), 'function');
 			test.done();
 		},
 		
 		"start udp transport on start" : function(test) {
-			messagemgr.start(1111, '1.1.1.1', {'myopt' : 123});
+			this.tcpstart = sinon.collection.stub(tcptran, 'start');
+			this.udpstart = sinon.collection.stub(udptran, 'start');
 			
-			test.ok(this.udpstart.calledWith(1111, '1.1.1.1', {'myopt' : 123}));
+			messagemgr.start(1111, '1.1.1.1', this.receivedDataCallback, this.readyCallback);
+			
+			test.strictEqual(this.udpstart.args[0][0], 1111);
+			test.strictEqual(this.udpstart.args[0][1], '1.1.1.1');
+			test.strictEqual(this.udpstart.args[0][2], this.receivedDataCallback);
+			test.strictEqual(typeof(this.udpstart.args[0][3]), 'function');
+			test.done();
+		},
+		
+		"do not delegate ready event if only tcp ready but not udp" : function(test) {
+			this.tcpstart = sinon.collection.stub(tcptran, 'start', function(port, addr, dataCbk, readyCbk) {
+				readyCbk();
+			});
+			this.udpstart = sinon.collection.stub(udptran, 'start');
+			
+			messagemgr.start(1111, '1.1.1.1', this.receivedDataCallback, this.readyCallback);
+			
+			test.ok(!this.readyCallback.called);
+			test.done();
+		},
+		
+		"do not delegate ready event if only udp ready but not tcp" : function(test) {
+			this.tcpstart = sinon.collection.stub(tcptran, 'start');
+			this.udpstart = sinon.collection.stub(udptran, 'start', function(port, addr, dataCbk, readyCbk) {
+				readyCbk();
+			});
+			
+			messagemgr.start(1111, '1.1.1.1', this.receivedDataCallback, this.readyCallback);
+			
+			test.ok(!this.readyCallback.called);
+			test.done();
+		},
+		
+		"delegate ready event when both udp and tcp ready" : function(test) {
+			this.tcpstart = sinon.collection.stub(tcptran, 'start', function(port, addr, dataCbk, readyCbk) {
+				readyCbk();
+			});
+			this.udpstart = sinon.collection.stub(udptran, 'start', function(port, addr, dataCbk, readyCbk) {
+				readyCbk();
+			});
+			
+			messagemgr.start(1111, '1.1.1.1', this.receivedDataCallback, this.readyCallback);
+			
+			test.ok(this.readyCallback.called);
 			test.done();
 		}
 	}),

@@ -12,7 +12,7 @@ module.exports = {
 		setUp : function(done) {
 			this.rawmsg = '{"uri" : "p2p:myapp/myresource", "key" : "val"}';
 			
-			this.server = langutil.extend(new events.EventEmitter(), {bind : function() {}, close : function() {}});
+			this.server = langutil.extend(new events.EventEmitter(), {bind : function() {}, close : function() {}, address : function() { return {address : 'addr', port: 123}} });
 			sinon.collection.stub(this.server, 'bind');
 
 			sinon.collection.stub(dgram, 'createSocket').returns(this.server);
@@ -33,6 +33,16 @@ module.exports = {
 			test.ok(on.calledWith('message'));
 			test.ok(on.calledWith('listening'));
 			test.ok(this.server.bind.called);
+			test.done();
+		},
+		
+		"should call ready callback when starting to listen normally" : function(test) {
+			var cbk = sinon.stub();
+			
+			udptran.start(1234, "127.0.0.1", undefined, cbk);
+			this.server.emit('listening');
+	
+			test.ok(cbk.called);
 			test.done();
 		},
 		
@@ -129,7 +139,7 @@ module.exports = {
 		},
 		
 		"should delegate to callback to parse message" : function(test) {
-			udptran.start('1111', 'l1.1.1.1', { receivedDataCallback : this.callback });
+			udptran.start('1111', 'l1.1.1.1', this.callback);
 			
 			this.server.emit('message', 'some_data', this.rinfo);
 			
@@ -140,7 +150,7 @@ module.exports = {
 		"should absorb exception from parsing" : function(test) {
 			this.callback = sinon.stub().throws(new Error('baah'));
 			var infolog = sinon.collection.spy(logger, "info");
-			udptran.start('1111', '1.1.1.1', { receivedDataCallback : this.callback });
+			udptran.start('1111', '1.1.1.1', this.callback);
 			
 			this.server.emit('message', 'some_data', this.rinfo);
 
@@ -151,7 +161,7 @@ module.exports = {
 		"should log and throw away packet when content only partially parsed by message parser" : function(test) {
 			this.callback = sinon.stub().returns({ partial : 'state' });
 			var warnlog = sinon.collection.spy(logger, "warn");
-			udptran.start('1111', '1.1.1.1', { receivedDataCallback : this.callback });
+			udptran.start('1111', '1.1.1.1', this.callback);
 			
 			this.server.emit('message', 'some_data', this.rinfo);
 

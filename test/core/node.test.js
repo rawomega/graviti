@@ -16,13 +16,9 @@ module.exports = {
 
 			this.msg = {"uri" : "p2p:myapp/myresource", "key" : "val"};
 			this.msginfo = {};
-//			this.on = sinon.collection.stub(messagemgr, 'on', function(evt, cbk) {
-//				if (evt === 'message')
-//					cbk(_this.msg, _this.msginfo);
-//			});
-			this.messagemgrStart = sinon.collection.stub(messagemgr, 'start', function(port, addr, opts) {
-				if (opts && opts.listeningCallback)
-					opts.listeningCallback();
+
+			this.messagemgrStart = sinon.collection.stub(messagemgr, 'start', function(port, addr, dataCbk, readyCbk) {
+				if (readyCbk) readyCbk();
 			});
 			done();
 		},
