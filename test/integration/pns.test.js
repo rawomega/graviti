@@ -29,12 +29,12 @@ module.exports = {
 					];
 			
 			this.delaySendsByPortDistance = function() {
-				var udpmgr = require('messaging/udpmgr');
+				var messagemgr = require('messaging/messagemgr');
 				var node = require('core/node');
-				var oldSendFunc = udpmgr.send;
+				var oldSendFunc = messagemgr.send;
 				
 				require('util').log('TEST: Adding a delay to all sends that is proportional to distance');
-				udpmgr.send = function(port, host, data) {
+				messagemgr.send = function(port, host, data) {
 					var dist = Math.abs(node.port - port);
 					
 					setTimeout(function() {

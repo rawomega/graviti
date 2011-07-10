@@ -9,8 +9,8 @@
 		"rotateGenerations" : 10,
 		"modules" : {
 			"core/node" : "info",
-			"messaging/tcpmgr" : "verbose",
-			"messaging/udpmgr" : "verbose"
+			"messaging/tcptran" : "verbose",
+			"messaging/udptran" : "verbose"
 		}		
 	}
 }

@@ -1,6 +1,6 @@
 var sinon = require('sinon');
 var assert = require('assert');
-var udpmgr = require('messaging/udpmgr');
+var messagemgr = require('messaging/messagemgr');
 var node = require('core/node');
 var messages = require('messaging/messages');
 var testCase = require('nodeunit').testCase;
@@ -16,11 +16,11 @@ module.exports = {
 
 			this.msg = {"uri" : "p2p:myapp/myresource", "key" : "val"};
 			this.msginfo = {};
-//			this.on = sinon.collection.stub(udpmgr, 'on', function(evt, cbk) {
+//			this.on = sinon.collection.stub(messagemgr, 'on', function(evt, cbk) {
 //				if (evt === 'message')
 //					cbk(_this.msg, _this.msginfo);
 //			});
-			this.udpmgrStart = sinon.collection.stub(udpmgr, 'start', function(port, addr, opts) {
+			this.messagemgrStart = sinon.collection.stub(messagemgr, 'start', function(port, addr, opts) {
 				if (opts && opts.listeningCallback)
 					opts.listeningCallback();
 			});
@@ -35,7 +35,7 @@ module.exports = {
 		"should start normally" : function(test) {
 			node.start(1234, "127.0.0.1");
 	
-			test.ok(this.udpmgrStart.called);
+			test.ok(this.messagemgrStart.called);
 			test.ok(node.nodeId !== undefined);
 			test.done();
 		},
@@ -69,7 +69,7 @@ module.exports = {
 			// setup
 			var msg = new messages.Message('p2p:myapp/myuri', {"key" : "val"});
 			sinon.stub(msg, 'stringify').returns('stringified');
-			var send = sinon.collection.stub(udpmgr, 'send', function(port, host, data) {
+			var send = sinon.collection.stub(messagemgr, 'send', function(port, host, data) {
 				test.strictEqual('stringified', data);
 				test.strictEqual(2222, port);
 				test.strictEqual('1.1.1.1', host);
@@ -86,7 +86,7 @@ module.exports = {
 		"should increment hop count when sending" : function(test) {
 			// setup
 			var msg = new messages.Message('p2p:myapp/myuri', {"key" : "val"}, {"hops" : 11});
-			var send = sinon.collection.stub(udpmgr, 'send', function(port, host, data) {
+			var send = sinon.collection.stub(messagemgr, 'send', function(port, host, data) {
 				test.ok(data.indexOf('hops: 12') > -1);				
 			});
 	
@@ -101,7 +101,7 @@ module.exports = {
 
 	"receiving a message" : testCase({
 		setUp : function(done) {
-			sinon.collection.stub(udpmgr, 'send');
+			sinon.collection.stub(messagemgr, 'send');
 			this.rawmsg = '{"uri" : "p2p:myapp/myresource", "key" : "val"}';
 			done();
 		},
@@ -232,9 +232,7 @@ module.exports = {
 		
 		"should stop" : function(test) {
 			// setup
-			var close = sinon.collection.stub(udpmgr, "stop", function() {
-				udpmgr.emit('close');
-			});
+			var close = sinon.collection.stub(messagemgr, "stop");
 	
 			// act
 			node.stop();

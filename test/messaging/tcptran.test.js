@@ -3,7 +3,7 @@ var assert = require('assert');
 var events = require('events');
 var net = require('net');
 var langutil = require('common/langutil');
-var tcpmgr = require('messaging/tcpmgr');
+var tcptran = require('messaging/tcptran');
 var testCase = require('nodeunit').testCase;
 
 module.exports = {		
@@ -28,7 +28,7 @@ module.exports = {
 		"should start to listen normally" : function(test) {
 			var on = sinon.collection.stub(this.server, 'on');
 			
-			tcpmgr.start(1234, "127.0.0.1");
+			tcptran.start(1234, "127.0.0.1");
 	
 			test.ok(on.calledWith('error'));
 			test.ok(on.calledWith('connection'));
@@ -38,7 +38,7 @@ module.exports = {
 		},
 		
 		"should try again if address in use" : function(test) {
-			tcpmgr.addrInUseRetryMsec = 100;
+			tcptran.addrInUseRetryMsec = 100;
 			var failTimeoutId = undefined;
 			var listenCallCount = 0;			
 			this.server.listen = function(port, addr) {
@@ -51,7 +51,7 @@ module.exports = {
 				}
 			};
 			
-			tcpmgr.start(1234, "127.0.0.1");
+			tcptran.start(1234, "127.0.0.1");
 			this.server.emit("error", { code : 'EADDRINUSE' });
 			
 			failTimeoutId = setTimeout(function() {
@@ -59,7 +59,7 @@ module.exports = {
 		},
 		
 		"should handle close event on socket of a received connection" : function(test) {
-			tcpmgr.start(1234, "127.0.0.1");
+			tcptran.start(1234, "127.0.0.1");
 			this.server.emit('connection', this.socket);
 			
 			this.socket.emit('close');
@@ -91,7 +91,7 @@ module.exports = {
 			});
 			var end = sinon.collection.stub(this.client, 'end');
 			
-			tcpmgr.send(2222, "1.1.1.1", this.rawmsg);
+			tcptran.send(2222, "1.1.1.1", this.rawmsg);
 			this.client.emit('connect');
 	
 			test.ok(setEncoding.calledWith('UTF-8'));
@@ -101,7 +101,7 @@ module.exports = {
 		},
 	
 		"should handle close on connection used to send data" : function(test) {
-			tcpmgr.send(2222, "1.1.1.1", this.rawmsg);
+			tcptran.send(2222, "1.1.1.1", this.rawmsg);
 			this.client.emit('close');
 	
 			// for now we don't do anything
@@ -109,7 +109,7 @@ module.exports = {
 		},
 		
 		"should handle received data on connection used to send data" : function(test) {
-			tcpmgr.send(2222, "1.1.1.1", this.rawmsg);
+			tcptran.send(2222, "1.1.1.1", this.rawmsg);
 			this.client.emit('data', 'moo');
 	
 			// for now we just log
@@ -130,7 +130,7 @@ module.exports = {
 			sinon.collection.stub(this.server, 'listen');
 			sinon.collection.stub(net, 'createServer').returns(this.server);
 			
-			tcpmgr._initSocket(this.socket);
+			tcptran._initSocket(this.socket);
 			
 			done();
 		},
@@ -141,7 +141,7 @@ module.exports = {
 		},
 		
 		"should delegate to callback to parse message" : function(test) {
-			tcpmgr.start('1111', '1.1.1.1', { receivedDataCallback : this.callback });
+			tcptran.start('1111', '1.1.1.1', { receivedDataCallback : this.callback });
 			
 			this.socket.emit('data', 'some_data');
 			
@@ -150,7 +150,7 @@ module.exports = {
 		},
 		
 		"should close socket on parsing if fully parsed" : function(test) {
-			tcpmgr.start('1111', '1.1.1.1', { receivedDataCallback : this.callback });
+			tcptran.start('1111', '1.1.1.1', { receivedDataCallback : this.callback });
 			
 			this.socket.emit('data', 'some_data');
 			
@@ -160,7 +160,7 @@ module.exports = {
 		
 		"should absorb exception from parsing" : function(test) {
 			this.callback = sinon.stub().throws(new Error());
-			tcpmgr.start('1111', '1.1.1.1', { receivedDataCallback : this.callback });
+			tcptran.start('1111', '1.1.1.1', { receivedDataCallback : this.callback });
 			
 			this.socket.emit('data', 'some_data');
 			
@@ -170,7 +170,7 @@ module.exports = {
 		
 		"should store partial parse state in socket" : function(test) {
 			this.callback = sinon.stub().returns({ partial : 'state' });
-			tcpmgr.start('1111', '1.1.1.1', { receivedDataCallback : this.callback });
+			tcptran.start('1111', '1.1.1.1', { receivedDataCallback : this.callback });
 			
 			this.socket.emit('data', 'some_data');
 			
@@ -189,11 +189,11 @@ module.exports = {
 		
 		"should stop listening" : function(test) {
 			// setup
-			tcpmgr.server = {close : function() {}};
-			var close = sinon.collection.stub(tcpmgr.server, "close");
+			tcptran.server = {close : function() {}};
+			var close = sinon.collection.stub(tcptran.server, "close");
 	
 			// act
-			tcpmgr.stop();
+			tcptran.stop();
 	
 			// assert
 			test.ok(close.called);

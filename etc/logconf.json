@@ -2,8 +2,7 @@
 	"console" :  {
 		"level" : "info",
 		"modules" : {
-			"messaging/tcpmgr" : "info",
-			"messaging/udpmgr" : "info"
+			"messaging/messagemgr" : "verbose"
 		}
 	},
 	
@@ -16,7 +15,7 @@
 
 	"modules" : {
 		"core/overlay" : "info",
-		"messaging/tcpmgr" : "info",
-		"messaging/udpmgr" : "info"
+		"messaging/tcptran" : "info",
+		"messaging/udptran" : "info"
 	}
 }

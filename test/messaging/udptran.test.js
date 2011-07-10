@@ -3,9 +3,9 @@ var assert = require('assert');
 var events = require('events');
 var dgram = require('dgram');
 var langutil = require('common/langutil');
-var udpmgr = require('messaging/udpmgr');
+var udptran = require('messaging/udptran');
 var testCase = require('nodeunit').testCase;
-var logger = require('logmgr').getLogger('messaging/udpmgr');
+var logger = require('logmgr').getLogger('messaging/udptran');
 
 module.exports = {		
 	"starting a listener" : testCase({
@@ -27,7 +27,7 @@ module.exports = {
 		"should start to listen normally" : function(test) {
 			var on = sinon.collection.stub(this.server, 'on');
 			
-			udpmgr.start(1234, "127.0.0.1");
+			udptran.start(1234, "127.0.0.1");
 	
 			test.ok(on.calledWith('error'));
 			test.ok(on.calledWith('message'));
@@ -37,7 +37,7 @@ module.exports = {
 		},
 		
 		"should try again if address in use" : function(test) {
-			udpmgr.addrInUseRetryMsec = 100;
+			udptran.addrInUseRetryMsec = 100;
 			var failTimeoutId = undefined;
 			var listenCallCount = 0;			
 			this.server.bind = function(port, addr) {
@@ -50,7 +50,7 @@ module.exports = {
 				}
 			};
 			
-			udpmgr.start(1234, "127.0.0.1");
+			udptran.start(1234, "127.0.0.1");
 			this.server.emit("error", { code : 'EADDRINUSE' });
 			
 			failTimeoutId = setTimeout(function() {
@@ -58,7 +58,7 @@ module.exports = {
 		},
 		
 		"should handle close event on bound socket" : function(test) {
-			udpmgr.start(1234, "127.0.0.1");
+			udptran.start(1234, "127.0.0.1");
 
 			this.server.emit('close');
 			
@@ -82,9 +82,9 @@ module.exports = {
 		
 		"should wrap in buffer and send" : function(test) {
 			this.send = sinon.collection.stub(this.client, 'send');
-			udpmgr.start(1234, "127.0.0.1");
+			udptran.start(1234, "127.0.0.1");
 
-			udpmgr.send(2222, "1.1.1.1", this.rawmsg);
+			udptran.send(2222, "1.1.1.1", this.rawmsg);
 
 			test.strictEqual(this.send.args[0][0].toString(), this.rawmsg);
 			test.strictEqual(this.send.args[0][1], 0);
@@ -100,9 +100,9 @@ module.exports = {
 			this.send = sinon.collection.stub(this.client, 'send', function(buf, start, end, port, addr, cbk) {
 				cbk(new Error('moo'));
 			});
-			udpmgr.start(1234, "127.0.0.1");
+			udptran.start(1234, "127.0.0.1");
 
-			udpmgr.send(2222, "1.1.1.1", this.rawmsg);
+			udptran.send(2222, "1.1.1.1", this.rawmsg);
 	
 			test.ok(/moo/.test(errorlog.args[0][0]));
 			test.done();
@@ -118,7 +118,7 @@ module.exports = {
 			sinon.collection.stub(this.server, 'bind');
 			sinon.collection.stub(dgram, 'createSocket').returns(this.server);
 			
-			//udpmgr._initSocket(this.socket);
+			//udptran._initSocket(this.socket);
 			
 			done();
 		},
@@ -129,7 +129,7 @@ module.exports = {
 		},
 		
 		"should delegate to callback to parse message" : function(test) {
-			udpmgr.start('1111', 'l1.1.1.1', { receivedDataCallback : this.callback });
+			udptran.start('1111', 'l1.1.1.1', { receivedDataCallback : this.callback });
 			
 			this.server.emit('message', 'some_data', this.rinfo);
 			
@@ -140,7 +140,7 @@ module.exports = {
 		"should absorb exception from parsing" : function(test) {
 			this.callback = sinon.stub().throws(new Error('baah'));
 			var infolog = sinon.collection.spy(logger, "info");
-			udpmgr.start('1111', '1.1.1.1', { receivedDataCallback : this.callback });
+			udptran.start('1111', '1.1.1.1', { receivedDataCallback : this.callback });
 			
 			this.server.emit('message', 'some_data', this.rinfo);
 
@@ -151,7 +151,7 @@ module.exports = {
 		"should log and throw away packet when content only partially parsed by message parser" : function(test) {
 			this.callback = sinon.stub().returns({ partial : 'state' });
 			var warnlog = sinon.collection.spy(logger, "warn");
-			udpmgr.start('1111', '1.1.1.1', { receivedDataCallback : this.callback });
+			udptran.start('1111', '1.1.1.1', { receivedDataCallback : this.callback });
 			
 			this.server.emit('message', 'some_data', this.rinfo);
 
@@ -167,11 +167,11 @@ module.exports = {
 		},
 		
 		"should stop listening" : function(test) {
-			udpmgr.server = {close : function() {}};
-			var close = sinon.collection.stub(udpmgr.server, "close");
+			udptran.server = {close : function() {}};
+			var close = sinon.collection.stub(udptran.server, "close");
 	
 			// act
-			udpmgr.stop();
+			udptran.stop();
 	
 			// assert
 			test.ok(close.called);
