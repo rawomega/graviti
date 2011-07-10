@@ -61,7 +61,7 @@ module.exports = {
 			};
 			var sendLargeMessage = function() {
 				var content = '';
-				for (var i = 0; i < 15000; i++)
+				for (var i = 0; i < 50000; i++)
 					content += Math.round(9 * Math.random());
 
 				require('core/appmgr').apps[0].send(
