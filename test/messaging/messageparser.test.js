@@ -1,35 +1,35 @@
 var node = require('core/node');
 var assert = require('assert');
 var testCase = require('nodeunit').testCase;
-var messenger = require('messaging/messenger');
+var messageparser = require('messaging/messageparser');
 var messages = require('messaging/messages');
 var myId = 'ABCDEF1234ABCDEF1234ABCDEF1234ABCDEF1234';
 	
 module.exports = {
 	"parsing an ack" : testCase({
 		"should recognise a valid ack" : function(test) {
-			var res = messenger.parseAck('ACK 123');
+			var res = messageparser.parseAck('ACK 123');
 			
 			test.equal('123', res);
 			test.done();
 		},
 		
 		"should not parse ack with line break" : function(test) {
-			var res = messenger.parseAck('ACK 123\n');
+			var res = messageparser.parseAck('ACK 123\n');
 			
 			test.equal(undefined, res);
 			test.done();
 		},
 		
 		"should not parse non-ack" : function(test) {
-			var res = messenger.parseAck('BACK 123');
+			var res = messageparser.parseAck('BACK 123');
 			
 			test.equal(undefined, res);
 			test.done();
 		},
 		
 		"should not parse nothing" : function(test) {
-			var res = messenger.parseAck(undefined);
+			var res = messageparser.parseAck(undefined);
 			
 			test.equal(undefined, res);
 			test.done();
@@ -51,7 +51,7 @@ module.exports = {
 		"should parse simple message with uri and method only" : function(test) {
 			var str = 'GET p2p:myapp/myres\n\n';
 			
-			var msg = messenger.parse(str);
+			var msg = messageparser.parse(str);
 			
 			test.strictEqual('GET', msg.method);
 			test.strictEqual('p2p:myapp/myres', msg.uri);
@@ -63,7 +63,7 @@ module.exports = {
 				+ 'dest_id: AAAAABBBBBAAAAABBBBBAAAAABBBBBAAAAABBBBB\n'
 				+ '\n';
 			
-			var msg = messenger.parse(str);
+			var msg = messageparser.parse(str);
 			
 			test.strictEqual('GET', msg.method);
 			test.strictEqual('p2p:myapp/myres', msg.uri);
@@ -78,7 +78,7 @@ module.exports = {
 				+ '\n'
 				+ '{"a" : "0123456789"}';
 			
-			var msg = messenger.parse(str);
+			var msg = messageparser.parse(str);
 			
 			test.strictEqual('GET', msg.method);
 			test.strictEqual('p2p:myapp/myres', msg.uri);
@@ -97,7 +97,7 @@ module.exports = {
 				+ '"a" : "0123456789"\n'
 				+ '}\n\n';
 			
-			var msg = messenger.parse(str);
+			var msg = messageparser.parse(str);
 			
 			test.strictEqual('0123456789', msg.content.a);
 			test.done();
@@ -111,7 +111,7 @@ module.exports = {
 				+ '\n'
 				+ '{"ab" : 1}';
 			
-			var msg = messenger.parse(str);
+			var msg = messageparser.parse(str);
 			
 			test.strictEqual('AAAAABBBBBAAAAABBBBBAAAAABBBBBAAAAABBBBB', msg.dest_id);
 			test.strictEqual('my header value', msg['my header name']);
@@ -124,7 +124,7 @@ module.exports = {
 				+ '\n'
 				+ '{"ab" : 1}';
 			
-			var msg = messenger.parse(str);
+			var msg = messageparser.parse(str);
 			
 			test.strictEqual('GET', msg.method);
 			test.strictEqual('p2p:myapp/myres', msg.uri);
@@ -139,7 +139,7 @@ module.exports = {
 				+ '\n'
 				+ '123';
 			
-			var msg = messenger.parse(str);
+			var msg = messageparser.parse(str);
 			
 			test.strictEqual('GET', msg.method);
 			test.strictEqual('p2p:myapp/myres', msg.uri);
@@ -155,7 +155,7 @@ module.exports = {
 				+ '\n'
 				+ '{"a":123}';
 			
-			var msg = messenger.parse(str);
+			var msg = messageparser.parse(str);
 			
 			test.strictEqual('GET', msg.method);
 			test.strictEqual('p2p:myapp/myres', msg.uri);
@@ -171,7 +171,7 @@ module.exports = {
 				+ ' content_length      :10\n'
 				+ '\n';
 			
-			assert.throws(function() { messenger.parse(str); }, /unsupported method/i);
+			assert.throws(function() { messageparser.parse(str); }, /unsupported method/i);
 			test.done();
 		},
 		
@@ -182,7 +182,7 @@ module.exports = {
 				+ ' content_length      :10\n'
 				+ '\n';
 			
-			assert.throws(function() { messenger.parse(str); }, /missing destination uri/i);
+			assert.throws(function() { messageparser.parse(str); }, /missing destination uri/i);
 			test.done();
 		},
 		
@@ -191,7 +191,7 @@ module.exports = {
 				+ 'my header name my header value   \n'
 				+ '\n';
 			
-			assert.throws(function() { messenger.parse(str); }, /bad header/i);
+			assert.throws(function() { messageparser.parse(str); }, /bad header/i);
 			test.done();
 		},
 		
@@ -200,7 +200,7 @@ module.exports = {
 				+ ' : my header name my header value   \n'
 				+ '\n';
 			
-			assert.throws(function() { messenger.parse(str); }, /bad header/i);
+			assert.throws(function() { messageparser.parse(str); }, /bad header/i);
 			test.done();
 		},
 		
@@ -209,7 +209,7 @@ module.exports = {
 				+ 'my header name my header value : \n'
 				+ '\n';
 			
-			assert.throws(function() { messenger.parse(str); }, /bad header/i);
+			assert.throws(function() { messageparser.parse(str); }, /bad header/i);
 			test.done();
 		},
 		
@@ -217,7 +217,7 @@ module.exports = {
 			var str = 'GET p2p:myapp/myres\n'
 				+ 'dest_id:AAAAABBBBBAAAAABBBBBAAAAABBBBBAAAAABBBBB\n';
 			
-			assert.throws(function() { messenger.parse(str); }, /parse headers/i);
+			assert.throws(function() { messageparser.parse(str); }, /parse headers/i);
 			test.done();
 		},
 		
@@ -227,7 +227,7 @@ module.exports = {
 				+ ' content_length: 10\n'
 				+ '\n';
 			
-			assert.throws(function() { messenger.parse(str); }, /expected content/i);
+			assert.throws(function() { messageparser.parse(str); }, /expected content/i);
 			test.done();
 		},
 		
@@ -238,7 +238,7 @@ module.exports = {
 				+ '\n'
 				+ '{a:1}';
 			
-			assert.throws(function() { messenger.parse(str); }, /expected content/i);
+			assert.throws(function() { messageparser.parse(str); }, /expected content/i);
 			test.done();
 		},
 		
@@ -249,7 +249,7 @@ module.exports = {
 				+ '\n'
 				+ '{badjson';
 			
-			assert.throws(function() { messenger.parse(str); }, /parse json content/i);
+			assert.throws(function() { messageparser.parse(str); }, /parse json content/i);
 			test.done();
 		},
 		
@@ -258,7 +258,7 @@ module.exports = {
 				+ '\n';
 			messages.maxMessageSize = 5;
 			
-			assert.throws(function() { messenger.parse(str); }, /message size/i);
+			assert.throws(function() { messageparser.parse(str); }, /message size/i);
 			test.done();
 		}
 	}),
@@ -274,7 +274,7 @@ module.exports = {
 			var str = 'GET p2p:myapp/myres\n'
 				+ '\n';
 			
-			var res = messenger.progressiveParse(str);
+			var res = messageparser.progressiveParse(str);
 			
 			test.strictEqual(undefined, res.unparsed_part);
 			test.strictEqual(true, res.headers_processed);
@@ -290,7 +290,7 @@ module.exports = {
 				+ 'name: value\n'
 				+ '\n';
 			
-			var res = messenger.progressiveParse(str);
+			var res = messageparser.progressiveParse(str);
 			
 			test.strictEqual(undefined, res.unparsed_part);
 			test.strictEqual(true, res.headers_processed);
@@ -308,7 +308,7 @@ module.exports = {
 				+ 'moo: baah baah\n'
 				+ '\n';
 			
-			var res = messenger.progressiveParse(str);
+			var res = messageparser.progressiveParse(str);
 			
 			test.strictEqual(undefined, res.unparsed_part);
 			test.strictEqual(true, res.headers_processed);
@@ -325,7 +325,7 @@ module.exports = {
 				+ '\n'
 				+ '1234';
 			
-			var res = messenger.progressiveParse(str);
+			var res = messageparser.progressiveParse(str);
 			
 			test.strictEqual(undefined, res.unparsed_part);
 			test.strictEqual(true, res.headers_processed);
@@ -345,7 +345,7 @@ module.exports = {
 				+ '\n'
 				+ '1\n2\n3';
 			
-			var res = messenger.progressiveParse(str);
+			var res = messageparser.progressiveParse(str);
 			
 			test.strictEqual(undefined, res.unparsed_part);
 			test.strictEqual(true, res.headers_processed);
@@ -362,8 +362,8 @@ module.exports = {
 			var str2 = 'T p2p:myapp/myres\n'
 				+ '\n';
 			
-			var res1 = messenger.progressiveParse(str1);
-			var res2 = messenger.progressiveParse(str2, res1);
+			var res1 = messageparser.progressiveParse(str1);
+			var res2 = messageparser.progressiveParse(str2, res1);
 			
 			test.strictEqual('GE', res1.unparsed_part);
 			test.strictEqual(undefined, res2.unparsed_part);
@@ -384,8 +384,8 @@ module.exports = {
 			var str1 = 'GET p2p:myapp/myres\n'
 			var str2 = '\n';
 			
-			var res1 = messenger.progressiveParse(str1);
-			var res2 = messenger.progressiveParse(str2, res1);
+			var res1 = messageparser.progressiveParse(str1);
+			var res2 = messageparser.progressiveParse(str2, res1);
 			
 			test.strictEqual(undefined, res1.unparsed_part);
 			test.strictEqual(undefined, res2.unparsed_part);
@@ -408,8 +408,8 @@ module.exports = {
 			var str2 = 'value\n'
 				+ '\n';
 			
-			var res1 = messenger.progressiveParse(str1);
-			var res2 = messenger.progressiveParse(str2, res1);
+			var res1 = messageparser.progressiveParse(str1);
+			var res2 = messageparser.progressiveParse(str2, res1);
 			
 			test.strictEqual('name:', res1.unparsed_part);
 			test.strictEqual(undefined, res2.unparsed_part);
@@ -429,8 +429,8 @@ module.exports = {
 			var str2 = '\n'
 				+ '\n';
 			
-			var res1 = messenger.progressiveParse(str1);
-			var res2 = messenger.progressiveParse(str2, res1);
+			var res1 = messageparser.progressiveParse(str1);
+			var res2 = messageparser.progressiveParse(str2, res1);
 			
 			test.strictEqual('one: 1', res1.unparsed_part);
 			test.strictEqual(undefined, res2.unparsed_part);
@@ -451,8 +451,8 @@ module.exports = {
 				+ '\n';
 			var str2 = '12345';
 			
-			var res1 = messenger.progressiveParse(str1);
-			var res2 = messenger.progressiveParse(str2, res1);
+			var res1 = messageparser.progressiveParse(str1);
+			var res2 = messageparser.progressiveParse(str2, res1);
 			
 			test.strictEqual(undefined, res1.unparsed_part);
 			test.strictEqual(undefined, res2.unparsed_part);
@@ -475,8 +475,8 @@ module.exports = {
 				+ '12';
 			var str2 = '345';
 			
-			var res1 = messenger.progressiveParse(str1);
-			var res2 = messenger.progressiveParse(str2, res1);
+			var res1 = messageparser.progressiveParse(str1);
+			var res2 = messageparser.progressiveParse(str2, res1);
 			
 			test.strictEqual('12', res1.unparsed_part);
 			test.strictEqual(undefined, res2.unparsed_part);
@@ -495,7 +495,7 @@ module.exports = {
 				+ 'name: value : \n'
 				+ '\n';
 			
-			assert.throws(function() { messenger.progressiveParse(str); }, /unsupported method/i);
+			assert.throws(function() { messageparser.progressiveParse(str); }, /unsupported method/i);
 			test.done();
 		},
 		
@@ -504,7 +504,7 @@ module.exports = {
 				+ 'name: value : \n'
 				+ '\n';
 			
-			assert.throws(function() { messenger.progressiveParse(str); }, /missing destination uri/i);
+			assert.throws(function() { messageparser.progressiveParse(str); }, /missing destination uri/i);
 			test.done();
 		},
 		
@@ -514,9 +514,9 @@ module.exports = {
 			var str2 = 'value\n'
 				+ '\n';
 			
-			var res1 = messenger.progressiveParse(str1);
+			var res1 = messageparser.progressiveParse(str1);
 			
-			assert.throws(function() { messenger.progressiveParse(str2, res1); }, /bad header/i);
+			assert.throws(function() { messageparser.progressiveParse(str2, res1); }, /bad header/i);
 			test.done();
 		}
 	})
