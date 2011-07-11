@@ -10,6 +10,7 @@ var uri = require('common/uri');
 var bootstrapmgr = require('core/bootstrapmgr');
 var heartbeater = require('core/heartbeater');
 var overlay = require('core/overlay');
+var messagemgr = require('messaging/messagemgr');
 
 module.exports = {
 	"staring and joining an overlay" : testCase({
@@ -109,7 +110,7 @@ module.exports = {
 			
 			this.uri = 'p2p:myapp/myresource';
 			this.content = {my : 'content'};
-			this.send = sinon.collection.stub(node, 'send');
+			this.send = sinon.collection.stub(messagemgr, 'send');
 			this.appForwarding = sinon.stub();
 			this.appReceived = sinon.stub();
 			this.msginfo = {
@@ -134,8 +135,8 @@ module.exports = {
 			
 			overlay.send(this.uri, this.content, {method : 'POST'});
 			
-			test.strictEqual(this.send.args[0][0], '5.5.5.5');
-			test.strictEqual(this.send.args[0][1], 5555);			
+			test.strictEqual(this.send.args[0][0], 5555);			
+			test.strictEqual(this.send.args[0][1], '5.5.5.5');
 			test.strictEqual(this.send.args[0][2].uri, this.uri);
 			test.strictEqual(this.send.args[0][2].dest_id, destId);
 			test.strictEqual(this.send.args[0][2].method, 'POST');
@@ -167,8 +168,8 @@ module.exports = {
 
 			test.ok(!this.appForwarding.called);
 			test.ok(!this.appReceived.called);
-			test.strictEqual(this.send.args[0][0], '3.3.3.3');
-			test.strictEqual(this.send.args[0][1], 3333);			
+			test.strictEqual(this.send.args[0][0], 3333);			
+			test.strictEqual(this.send.args[0][1], '3.3.3.3');
 			test.strictEqual(this.send.args[0][2].uri, this.uri);
 			test.strictEqual(this.send.args[0][2].dest_id, undefined);
 			test.strictEqual(this.send.args[0][2].method, 'POST');
@@ -181,8 +182,8 @@ module.exports = {
 						
 			overlay.sendToId(this.uri, this.content, {method : 'POST'}, 'AAAA');
 
-			test.strictEqual(this.send.args[0][0], '5.5.5.5');
-			test.strictEqual(this.send.args[0][1], 5555);			
+			test.strictEqual(this.send.args[0][0], 5555);			
+			test.strictEqual(this.send.args[0][1], '5.5.5.5');
 			test.strictEqual(this.send.args[0][2].uri, this.uri);
 			test.strictEqual(this.send.args[0][2].dest_id, destId);
 			test.strictEqual(this.send.args[0][2].method, 'POST');
@@ -213,7 +214,7 @@ module.exports = {
 	"handling of received messages" : testCase({
 		setUp : function(done) {
 			node.nodeId = 'ABCD';
-			this.send = sinon.collection.stub(node, 'send');
+			this.send = sinon.collection.stub(messagemgr, 'send');
 			this.appForwarding = sinon.stub();
 			this.appReceived = sinon.stub();
 			this.gravitiForwarding = sinon.stub();
@@ -274,8 +275,8 @@ module.exports = {
 		"handle message destined for an app on another node" : function(test) {
 			overlay._processMessage(this.msg, this.msginfo);
 			
-			test.strictEqual(this.send.args[0][0], '5.5.5.5');
-			test.strictEqual(this.send.args[0][1], 5555);		
+			test.strictEqual(this.send.args[0][0], 5555);		
+			test.strictEqual(this.send.args[0][1], '5.5.5.5');
 			test.deepEqual(this.send.args[0][2], this.msg);
 			test.deepEqual(this.appForwarding.args[0][0], this.msg);
 			test.deepEqual(this.appForwarding.args[0][1], this.msginfo);
@@ -290,8 +291,8 @@ module.exports = {
 			
 			overlay._processMessage(this.msg, this.msginfo);
 			
-			test.strictEqual(this.send.args[0][0], '5.5.5.5');
-			test.strictEqual(this.send.args[0][1], 5555);		
+			test.strictEqual(this.send.args[0][0], 5555);		
+			test.strictEqual(this.send.args[0][1], '5.5.5.5');
 			test.deepEqual(this.send.args[0][2], this.msg);
 			test.deepEqual(this.gravitiForwarding.args[0][0], this.msg);
 			test.deepEqual(this.gravitiForwarding.args[0][1], this.msginfo);

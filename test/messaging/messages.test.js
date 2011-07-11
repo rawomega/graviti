@@ -197,5 +197,22 @@ module.exports = {
 			}, /size too big/i);
 			test.done();
 		},
+	}),
+	
+	"creating and stringifying an ACK " : testCase({
+		"creating an ACK message" : function(test) {
+			var ack = new messages.Ack('myid');;
+			
+			delete ack.stringify;
+			test.deepEqual({method : 'ACK', msg_id : 'myid'}, ack)		
+			test.done();
+		},
+	
+		"stringifying an ACK message" : function(test) {
+			var ack = new messages.Ack('myid');;
+			
+			test.strictEqual('ACK myid', ack.stringify());		
+			test.done();
+		}	
 	})
 };

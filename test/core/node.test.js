@@ -55,46 +55,6 @@ module.exports = {
 		}
 	}),
 
-	"message sending" : testCase({
-		tearDown : function(done) {
-			sinon.collection.restore();
-			done();
-		},		
-		
-		"should send with hop zero" : function(test) {
-			// setup
-			var msg = new messages.Message('p2p:myapp/myuri', {"key" : "val"});
-			sinon.stub(msg, 'stringify').returns('stringified');
-			var send = sinon.collection.stub(messagemgr, 'send', function(port, host, data) {
-				test.strictEqual('stringified', data);
-				test.strictEqual(2222, port);
-				test.strictEqual('1.1.1.1', host);
-			});
-	
-			// // act
-			node.send("1.1.1.1", 2222, msg);
-	
-			// // assert
-			test.ok(send.called);
-			test.done();
-		},
-
-		"should increment hop count when sending" : function(test) {
-			// setup
-			var msg = new messages.Message('p2p:myapp/myuri', {"key" : "val"}, {"hops" : 11});
-			var send = sinon.collection.stub(messagemgr, 'send', function(port, host, data) {
-				test.ok(data.indexOf('hops: 12') > -1);				
-			});
-	
-			// act
-			node.send("1.1.1.1", 2222, msg);
-	
-			// assert
-			test.ok(send.called);
-			test.done();
-		}
-	}),
-
 	"receiving a message" : testCase({
 		setUp : function(done) {
 			sinon.collection.stub(messagemgr, 'send');

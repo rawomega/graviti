@@ -9,8 +9,9 @@ module.exports = {
 	"parsing an ack" : testCase({
 		"should recognise a valid ack" : function(test) {
 			var res = messageparser.parseAck('ACK 123');
+			delete res.stringify;
 			
-			test.equal('123', res);
+			test.deepEqual({method : 'ACK', msg_id : '123'}, res);
 			test.done();
 		},
 		

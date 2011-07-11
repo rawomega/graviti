@@ -1,6 +1,7 @@
 var sinon = require('sinon');
 var langutil = require('common/langutil');
 var messagemgr = require('messaging/messagemgr');
+var messages = require('messaging/messages');
 var tcptran = require('messaging/tcptran');
 var udptran = require('messaging/udptran');
 var testCase = require('nodeunit').testCase;
@@ -113,8 +114,10 @@ module.exports = {
 	
 	"sending messages through given channels" : testCase({
 		setUp : function(done) {
-			this.tcpsend = sinon.collection.stub(tcptran, 'send');
+			messagemgr.port = 1234;
 			this.udpsend = sinon.collection.stub(udptran, 'send');
+			this.tcpsend = sinon.collection.stub(tcptran, 'send');
+			this.msg = new messages.Message('p2p:myapp/myuri', {"key" : "val"});			
 			done();
 		},
 		
@@ -123,10 +126,40 @@ module.exports = {
 			done();
 		},
 		
-		"send via udp if data size below datagram size threshold" : function(test) {
-			messagemgr.send(1111, '1.1.1.1', "{'myopt' : 123}");
+		"should send with hop zero" : function(test) {
+			sinon.stub(this.msg, 'stringify').returns('stringified');
 			
-			test.ok(this.udpsend.calledWith(1111, '1.1.1.1', "{'myopt' : 123}"));
+			messagemgr.send(2222, "1.1.1.1", this.msg);
+	
+			test.strictEqual(2222, this.udpsend.args[0][0]);
+			test.strictEqual('1.1.1.1', this.udpsend.args[0][1]);
+			test.strictEqual('stringified', this.udpsend.args[0][2]);
+			test.done();
+		},
+
+		"should increment hop count when sending" : function(test) {
+			this.msg = new messages.Message('p2p:myapp/myuri', {"key" : "val"}, {"hops" : 11});
+	
+			messagemgr.send("1.1.1.1", 2222, this.msg);
+
+			test.ok(/hops: 12/.test(this.udpsend.args[0][2]));
+			test.done();
+		},
+		
+		"should add port number when sending" : function(test) {
+			messagemgr.send("1.1.1.1", 2222, this.msg);
+
+			test.ok(/sender_port: 1234/.test(this.udpsend.args[0][2]));
+			test.ok(/source_port: 1234/.test(this.udpsend.args[0][2]));
+			test.done();
+		},
+		
+		"send via udp if data size below datagram size threshold" : function(test) {			
+			sinon.stub(this.msg, 'stringify').returns('stringified');
+			
+			messagemgr.send(1111, '1.1.1.1', this.msg);
+			
+			test.ok(this.udpsend.calledWith(1111, '1.1.1.1', "stringified"));
 			test.done();
 		},
 		
@@ -134,8 +167,9 @@ module.exports = {
 			var hundred = 'ABCDEFGHIJKLMNOPQRSTUVWXYABCDEFGHIJKLMNOPQRSTUVWXYABCDEFGHIJKLMNOPQRSTUVWXYABCDEFGHIJKLMNOPQRSTUVWXY\n';
 			var bigData = '';
 			for (var i = 0; i < 20; i++ && (bigData = bigData.concat(hundred)));
+			sinon.stub(this.msg, 'stringify').returns(bigData);			
 			
-			messagemgr.send(1111, '1.1.1.1', bigData);
+			messagemgr.send(1111, '1.1.1.1', this.msg);
 			
 			test.ok(this.tcpsend.calledWith(1111, '1.1.1.1', bigData));
 			test.done();
