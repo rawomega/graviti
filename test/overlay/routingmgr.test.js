@@ -1,9 +1,9 @@
 var assert = require('assert');
 var sinon = require('sinon');
-var routingmgr = require('core/routingmgr');
+var routingmgr = require('overlay/routingmgr');
 var node = require('core/node');
-var leafset = require('core/leafset');
-var routingtable = require('core/routingtable');
+var leafset = require('overlay/leafset');
+var routingtable = require('overlay/routingtable');
 var testCase = require("nodeunit").testCase;
 
 var anId = 'F45A18416DD849ACAA55D926C2D7946064A69EF2';

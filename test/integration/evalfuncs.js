@@ -2,28 +2,28 @@ var nodeunit = require('nodeunit');
 
 module.exports = {
 	getLeafsetSize : function() {
-		return Object.keys(require('core/leafset').compressedLeafset()).length;
+		return Object.keys(require('overlay/leafset').compressedLeafset()).length;
 	},
 	
 	clearDeadPeersListInLeafset : function() {
-		require('core/leafset')._deadset = {};
+		require('overlay/leafset')._deadset = {};
 	},
 	
 	getLeafset : function() {
-		return require('core/leafset').compressedLeafset();
+		return require('overlay/leafset').compressedLeafset();
 	},
 	
 	smallLeafsetSize : function() {
-		require('core/leafset').leafsetSize = 6;	
+		require('overlay/leafset').leafsetSize = 6;	
 	},
 	
 	getRoutingTable : function() {
-		return require('core/routingtable')._table;
+		return require('overlay/routingtable')._table;
 	},
 	
 	getRoutingTableSize : function() {
 		var res = 0;
-		require('core/routingtable').each(function() {
+		require('overlay/routingtable').each(function() {
 			res++
 		});
 		return res;

@@ -2,11 +2,11 @@ var sinon = require('sinon');
 var bootstrapmgr = require('overlay/bootstrapmgr');
 var langutil = require('common/langutil');
 var node = require('core/node');
-var leafset = require('core/leafset');
-var routingtable = require('core/routingtable');
+var leafset = require('overlay/leafset');
+var routingtable = require('overlay/routingtable');
 var testCase = require('nodeunit').testCase;
 var heartbeater = require('overlay/heartbeater');
-var pnsrunner = require('core/pnsrunner');
+var pnsrunner = require('overlay/pnsrunner');
 
 module.exports = {
 	"bootstrap manager startup" : testCase({

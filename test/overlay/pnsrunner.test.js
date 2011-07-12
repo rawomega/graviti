@@ -1,5 +1,5 @@
-var pnsrunner = require('core/pnsrunner');
-var pns = require('core/pns');
+var pnsrunner = require('overlay/pnsrunner');
+var pns = require('overlay/pns');
 var testCase = require('nodeunit').testCase;
 var sinon = require('sinon');
 var node = require('core/node');

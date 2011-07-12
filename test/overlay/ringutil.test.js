@@ -1,5 +1,5 @@
 var assert = require('assert');
-var ringutil = require('core/ringutil');
+var ringutil = require('overlay/ringutil');
 var bigint = require('thirdparty/bigint');
 var testCase = require('nodeunit').testCase;
 

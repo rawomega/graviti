@@ -178,13 +178,13 @@ module.exports = {
 			var _this = this;
 			
 			var clearOutLeafset = function() {
-				require('core/leafset').reset();
+				require('overlay/leafset').reset();
 				require('messaging/messagemgr').stop();
 			};
 			
 			var setShortHeartbeatTimeout = function() {
 				var heartbeater = require('overlay/heartbeater');
-				var leafset = require('core/leafset');
+				var leafset = require('overlay/leafset');
 				leafset.timedOutPeerIntervalMsec = 3000;
 				heartbeater.timedOutPeerCheckIntervalMsec = 500;
 				heartbeater.stop(false);

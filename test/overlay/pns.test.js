@@ -1,9 +1,9 @@
 var sinon = require('sinon');
 var testCase = require('nodeunit').testCase;
-var pns = require('core/pns');
+var pns = require('overlay/pns');
 var langutil = require('common/langutil');
-var leafset = require('core/leafset');
-var routingtable = require('core/routingtable');
+var leafset = require('overlay/leafset');
+var routingtable = require('overlay/routingtable');
 var node = require('core/node');
 var id = require('common/id');
 

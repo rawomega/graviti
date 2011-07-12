@@ -1,5 +1,5 @@
 var assert = require('assert');
-var leafset = require('core/leafset');
+var leafset = require('overlay/leafset');
 var node = require('core/node');
 var sinon = require('sinon');
 var testCase = require('nodeunit').testCase;
