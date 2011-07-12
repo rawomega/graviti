@@ -1,9 +1,7 @@
 var sinon = require('sinon');
-var assert = require('assert');
-var messagemgr = require('messaging/messagemgr');
 var node = require('core/node');
-var messages = require('messaging/messages');
 var testCase = require('nodeunit').testCase;
+var messagemgr = require('messaging/messagemgr');
 
 module.exports = {		
 //
@@ -17,7 +15,7 @@ module.exports = {
 			this.msg = {"uri" : "p2p:myapp/myresource", "key" : "val"};
 			this.msginfo = {};
 
-			this.messagemgrStart = sinon.collection.stub(messagemgr, 'start', function(port, addr, dataCbk, readyCbk) {
+			this.messagemgrStart = sinon.collection.stub(messagemgr, 'start', function(port, addr, readyCbk) {
 				if (readyCbk) readyCbk();
 			});
 			done();
@@ -51,131 +49,6 @@ module.exports = {
 			node.start(1234, "127.0.0.1");
 
 			test.ok(node.nodeId === 'FACE');
-			test.done();
-		}
-	}),
-
-	"receiving a message" : testCase({
-		setUp : function(done) {
-			sinon.collection.stub(messagemgr, 'send');
-			this.rawmsg = '{"uri" : "p2p:myapp/myresource", "key" : "val"}';
-			done();
-		},
-
-		tearDown : function(done) {
-			sinon.collection.restore();
-			done();
-		},
-
-		"should handle unparseable message through socket" : function(test) {
-			node.on('message', function() {test.fail('unexpected message');});			
-
-			node.receiveData('badmsg', '127.0.0.1');
-			
-			test.done();
-		},
-
-		"should not process if no uri in message" : function(test) {
-			node.on('message', function() {test.fail('unexpected message');});
-			
-			assert.throws(function() {
-				node.receiveData('GET\n\n{"key" : "val"}', '127.0.0.1');
-			}, /destination uri/i);	
-			test.done();
-		},
-		
-		"should throw if hop count over 100" : function(test) {
-			node.on('message', function() {test.fail('unexpected message');});
-			
-			assert.throws(function() {
-				node.receiveData('GET p2p:graviti/something\n' +
-						'source_port : 123\n' +
-						'hops : 101\n\n', '127.0.0.1');
-			}, /too many hops/i);			
-			test.done();
-		},
-
-		"should throw if no source port in message" : function(test) {
-			// setup
-			node.on('message', function() {test.fail('unexpected message');});
-			
-			assert.throws(function() {
-				node.receiveData('GET p2p:graviti/something\n\n', '1.2.3.4');
-			}, /source port/i);
-			test.done();
-		},
-
-		"should throw if no sender port in message" : function(test) {
-			node.on('message', function() {test.fail('unexpected message');});
-			
-			assert.throws(function() {
-				node.receiveData('GET p2p:graviti/something\n'
-						+ 'source_port: 123\n\n', '1.2.3.4');
-			}, /sender port/i);
-			test.done();
-		},
-
-		"should handle parseable message callback" : function(test) {
-			// setup
-			var rcvdmsg = undefined;
-			var rcvdmsginfo = undefined;
-			node.on("message", function(msg, msginfo) {
-				rcvdmsg = msg;
-				rcvdmsginfo = msginfo
-			});
-	
-			// act
-			node.receiveData('GET p2p:myapp/something\n' +
-					'source_port : 1111\n' +
-					'sender_port : 2222\n' +
-					'key: val\n\n',
-				'6.6.6.6');
-			
-			// assert
-			test.strictEqual('val', rcvdmsg.key);
-			test.strictEqual('6.6.6.6:2222', rcvdmsginfo.sender_ap);
-			test.strictEqual('6.6.6.6:1111', rcvdmsginfo.source_ap);			
-			test.strictEqual('myapp', rcvdmsginfo.app_name);
-			test.done();
-		},
-		
-		"should handle parseable message in two parts" : function(test) {
-			var rcvdmsg = undefined;
-			var rcvdmsginfo = undefined;
-			node.on("message", function(msg, msginfo) {
-				rcvdmsg = msg;
-				rcvdmsginfo = msginfo
-			});
-	
-			var inProgressState = node.receiveData('GET p2p:myapp/something\n', '6.6.6.6');
-			node.receiveData('source_port : 1111\n' +
-					'sender_port : 2222\n' +
-					'key: val\n\n',
-				'6.6.6.6', inProgressState
-			);
-			
-			test.strictEqual('val', rcvdmsg.key);
-			test.strictEqual('6.6.6.6:2222', rcvdmsginfo.sender_ap);
-			test.strictEqual('6.6.6.6:1111', rcvdmsginfo.source_ap);
-			test.strictEqual('myapp', rcvdmsginfo.app_name);
-			test.done();
-		},
-		
-		"should add source addr to message if not present" : function(test) {
-			var rcvdmsg = undefined;
-			var rcvdmsginfo = undefined;
-			node.on("message", function(msg, msginfo) {
-				rcvdmsg = msg;
-				rcvdmsginfo = msginfo
-			});
-	
-			node.receiveData('GET p2p:myapp/something\n' +
-					'source_port : 1111\n' +
-					'sender_port : 2222\n\n',
-				'6.6.6.6'
-			);
-			
-			test.strictEqual('6.6.6.6', rcvdmsg.source_addr);
 			test.done();
 		}
 	}),
