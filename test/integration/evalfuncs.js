@@ -30,8 +30,8 @@ module.exports = {
 	},
 	
 	heartbeatFrequently : function() {
-		var heartbeater = require('core/heartbeater');
-		var overlay = require('core/overlay');
+		var heartbeater = require('overlay/heartbeater');
+		var overlay = require('overlay/overlay');
 		
 		heartbeater.heartbeatIntervalMsec = 1000;
 		heartbeater.stop(false);
@@ -40,7 +40,7 @@ module.exports = {
 	
 	trackReceivedMessages : function() {
 		var app = require('core/appmgr').apps[0];
-		require('core/overlay').on(app.name + '-app-message-received', function(msg, msginfo) {
+		require('overlay/overlay').on(app.name + '-app-message-received', function(msg, msginfo) {
 			if (!app.receivedMessages)
 				app.receivedMessages = [];
 			if (msg.content.subject === 'test' || msg.content_type === 'text/plain')
@@ -59,13 +59,13 @@ module.exports = {
 	},
 	
 	sendMessageToId : function() {
-		require('core/overlay').sendToId('p2p:echoapp/departednodetest',
+		require('overlay/overlay').sendToId('p2p:echoapp/departednodetest',
 				{subject : 'test'}, {method : 'POST'}, 'B111111111111111111111111111111111111111');
 	},
 	
 	sendMessageToRandomId : function() {
 		var randomId = require('common/id').generateNodeId();
-		require('core/overlay').sendToId('p2p:echoapp/departednodetest',
+		require('overlay/overlay').sendToId('p2p:echoapp/departednodetest',
 				{subject : 'test'}, {method : 'POST'}, randomId);
 		return randomId;
 	},

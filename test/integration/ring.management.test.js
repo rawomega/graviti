@@ -83,7 +83,7 @@ module.exports = {
 			var _this = this;
 			
 			var trackReceivedHeartbeats = function() {
-				var overlay = require('core/overlay');				
+				var overlay = require('overlay/overlay');				
 				overlay.on('graviti-message-received', function(msg, msginfo) {		
 					if (!overlay.receivedHeartbeats)
 						overlay.receivedHeartbeats = {};
@@ -96,7 +96,7 @@ module.exports = {
 			};			
 			
 			var countReceivedHeartbeatsPerSender = function() {
-				var coll = require('core/overlay').receivedHeartbeats;
+				var coll = require('overlay/overlay').receivedHeartbeats;
 				var res = {};
 				if (!coll)
 					return res;
@@ -108,7 +108,7 @@ module.exports = {
 			};
 			
 			var countReceivedHeartbeats = function() {
-				var coll = require('core/overlay').receivedHeartbeats;
+				var coll = require('overlay/overlay').receivedHeartbeats;
 				var res = 0;
 				if (!coll)
 					return res;
@@ -183,12 +183,12 @@ module.exports = {
 			};
 			
 			var setShortHeartbeatTimeout = function() {
-				var heartbeater = require('core/heartbeater');
+				var heartbeater = require('overlay/heartbeater');
 				var leafset = require('core/leafset');
 				leafset.timedOutPeerIntervalMsec = 3000;
 				heartbeater.timedOutPeerCheckIntervalMsec = 500;
 				heartbeater.stop(false);
-				heartbeater.start(require('core/overlay'));
+				heartbeater.start(require('overlay/overlay'));
 			};
 			
 			// initialisation stuff

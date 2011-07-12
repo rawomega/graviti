@@ -14,7 +14,7 @@
 	},
 
 	"modules" : {
-		"core/overlay" : "info",
+		"overlay/overlay" : "info",
 		"messaging/tcptran" : "info",
 		"messaging/udptran" : "info"
 	}
