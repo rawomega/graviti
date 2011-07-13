@@ -15,10 +15,10 @@ var messagemgr = require('messaging/messagemgr');
 module.exports = {
 	"staring and joining an overlay" : testCase({
 		setUp : function(done) {
-			this.nodeStart = sinon.collection.stub(node, 'start', function(a, b, opt) {
-				opt.success();
+			this.nodeStart = sinon.collection.stub(messagemgr, 'start', function(a, b, cbk) {
+				cbk();
 			});
-			this.nodeOn = sinon.collection.stub(node, 'on');
+			this.messagemgrOn = sinon.collection.stub(messagemgr, 'on');
 			this.bootstrapStart = sinon.collection.stub(bootstrapmgr, 'start');
 			this.heartbeatStart = sinon.collection.stub(heartbeater, 'start');
 			this.callback = sinon.stub();
@@ -34,7 +34,7 @@ module.exports = {
 			overlay.init(1234, "127.0.0.1", this.callback);
 				
 			test.ok(this.nodeStart.calledWith(1234, "127.0.0.1"));
-			test.ok(this.nodeOn.calledWith('message', overlay._processMessage));
+			test.ok(this.messagemgrOn.calledWith('message', overlay._processMessage));
 			test.ok(this.bootstrapStart.calledWith(overlay));
 			test.ok(this.heartbeatStart.calledWith(overlay));
 			test.ok(this.callback.called);
@@ -46,7 +46,7 @@ module.exports = {
 			overlay.emit('bootstrap-completed');
 			
 			test.ok(this.nodeStart.calledWith(1234, "127.0.0.1"));
-			test.ok(this.nodeOn.calledWith('message', overlay._processMessage));
+			test.ok(this.messagemgrOn.calledWith('message', overlay._processMessage));
 			test.ok(this.bootstrapStart.calledWith(overlay, '127.0.0.1:4567'));
 			test.ok(this.heartbeatStart.calledWith(overlay));
 			test.ok(this.callback.called);
@@ -320,7 +320,7 @@ module.exports = {
 	
 	"leaving a ring" : testCase({
 		setUp : function(done) {
-			this.nodeStop = sinon.collection.stub(node, 'stop');
+			this.messagemgrStop = sinon.collection.stub(messagemgr, 'stop');
 			this.heartbeaterStop = sinon.collection.stub(heartbeater, 'stop');
 			this.bootstrapmgrStop = sinon.collection.stub(bootstrapmgr, 'stop');
 			done();
@@ -340,7 +340,7 @@ module.exports = {
 			// assert
 			test.ok(this.bootstrapmgrStop.called);
 			test.ok(this.heartbeaterStop.called);
-			test.ok(this.nodeStop.called);
+			test.ok(this.messagemgrStop.called);
 			test.done();
 		}
 	})
