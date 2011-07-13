@@ -18,7 +18,7 @@ module.exports = {
 			this.nodeStart = sinon.collection.stub(node, 'start', function(a, b, opt) {
 				opt.success();
 			});
-			this.messagemgrOn = sinon.collection.stub(messagemgr, 'on');
+			this.nodeOn = sinon.collection.stub(node, 'on');
 			this.bootstrapStart = sinon.collection.stub(bootstrapmgr, 'start');
 			this.heartbeatStart = sinon.collection.stub(heartbeater, 'start');
 			this.callback = sinon.stub();
@@ -34,7 +34,7 @@ module.exports = {
 			overlay.init(1234, "127.0.0.1", this.callback);
 				
 			test.ok(this.nodeStart.calledWith(1234, "127.0.0.1"));
-			test.ok(this.messagemgrOn.calledWith('message', overlay._processMessage));
+			test.ok(this.nodeOn.calledWith('message', overlay._processMessage));
 			test.ok(this.bootstrapStart.calledWith(overlay));
 			test.ok(this.heartbeatStart.calledWith(overlay));
 			test.ok(this.callback.called);
@@ -46,7 +46,7 @@ module.exports = {
 			overlay.emit('bootstrap-completed');
 			
 			test.ok(this.nodeStart.calledWith(1234, "127.0.0.1"));
-			test.ok(this.messagemgrOn.calledWith('message', overlay._processMessage));
+			test.ok(this.nodeOn.calledWith('message', overlay._processMessage));
 			test.ok(this.bootstrapStart.calledWith(overlay, '127.0.0.1:4567'));
 			test.ok(this.heartbeatStart.calledWith(overlay));
 			test.ok(this.callback.called);

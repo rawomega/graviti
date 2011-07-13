@@ -34,6 +34,17 @@ module.exports = {
 			test.done();
 		},
 		
+		"should listen to messages and re-emit them" : function(test) {
+			var cbk = sinon.stub();
+			node.on('message', cbk);
+			
+			node.start(1234, "127.0.0.1");
+			messagemgr.emit('message', 'msg', 'msginfo');
+			
+			test.ok(cbk.calledWith('msg', 'msginfo'));
+			test.done();
+		},
+		
 		"should be able to pass in success callback and have it invoked when node ready" : function(test) {
 			var cbk = sinon.stub();
 			
