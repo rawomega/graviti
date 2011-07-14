@@ -1,8 +1,8 @@
 var assert = require('assert');
 var sinon = require('sinon');
-var routingmgr = require('overlay/routingmgr');
+var routingmgr = require('overlay/pastry/routingmgr');
 var node = require('core/node');
-var leafset = require('overlay/leafset');
+var leafset = require('overlay/pastry/leafset');
 var routingtable = require('overlay/routingtable');
 var testCase = require("nodeunit").testCase;
 

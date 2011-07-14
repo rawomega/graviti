@@ -2,7 +2,7 @@ var logger = require('logmgr').getDefaultLogger();
 var multinode = require('testability/multinode');
 var nodeunit = require('nodeunit');
 var evalfuncs = require('./evalfuncs');
-var ringutil = require('overlay/ringutil');
+var ringutil = require('overlay/pastry/ringutil');
 
 module.exports = {
 	"message routing" : nodeunit.testCase({
