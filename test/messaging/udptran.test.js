@@ -7,9 +7,10 @@ var udptran = require('messaging/udptran');
 var testCase = require('nodeunit').testCase;
 var logger = require('logmgr').getLogger('messaging/udptran');
 
-module.exports = {		
+module.exports = {
 	"starting a listener" : testCase({
 		setUp : function(done) {
+			this.udptran = new udptran.UdpTran(1234, "127.0.0.1");
 			this.rawmsg = '{"uri" : "p2p:myapp/myresource", "key" : "val"}';
 			
 			this.server = langutil.extend(new events.EventEmitter(), {bind : function() {}, close : function() {}, address : function() { return {address : 'addr', port: 123}} });
@@ -27,7 +28,7 @@ module.exports = {
 		"should start to listen normally" : function(test) {
 			var on = sinon.collection.stub(this.server, 'on');
 			
-			udptran.start(1234, "127.0.0.1");
+			this.udptran.start();
 	
 			test.ok(on.calledWith('error'));
 			test.ok(on.calledWith('message'));
@@ -39,7 +40,7 @@ module.exports = {
 		"should call ready callback when starting to listen normally" : function(test) {
 			var cbk = sinon.stub();
 			
-			udptran.start(1234, "127.0.0.1", undefined, cbk);
+			this.udptran.start(undefined, cbk);
 			this.server.emit('listening');
 	
 			test.ok(cbk.called);
@@ -47,7 +48,7 @@ module.exports = {
 		},
 		
 		"should try again if address in use" : function(test) {
-			udptran.addrInUseRetryMsec = 100;
+			this.udptran.addrInUseRetryMsec = 100;
 			var failTimeoutId = undefined;
 			var listenCallCount = 0;			
 			this.server.bind = function(port, addr) {
@@ -60,7 +61,7 @@ module.exports = {
 				}
 			};
 			
-			udptran.start(1234, "127.0.0.1");
+			this.udptran.start();
 			this.server.emit("error", { code : 'EADDRINUSE' });
 			
 			failTimeoutId = setTimeout(function() {
@@ -68,7 +69,7 @@ module.exports = {
 		},
 		
 		"should handle close event on bound socket" : function(test) {
-			udptran.start(1234, "127.0.0.1");
+			this.udptran.start();
 
 			this.server.emit('close');
 			
@@ -79,6 +80,7 @@ module.exports = {
 	
 	"message sending" : testCase({
 		setUp : function(done) {
+			this.udptran = new udptran.UdpTran(1234, "127.0.0.1");
 			this.rawmsg = '{"key" : "val"}';
 			this.client = langutil.extend(new events.EventEmitter(), { send : function() {}, bind : function() {} } )
 			sinon.collection.stub(dgram, 'createSocket').returns(this.client);
@@ -92,9 +94,9 @@ module.exports = {
 		
 		"should wrap in buffer and send" : function(test) {
 			this.send = sinon.collection.stub(this.client, 'send');
-			udptran.start(1234, "127.0.0.1");
+			this.udptran.start();
 
-			udptran.send(2222, "1.1.1.1", this.rawmsg);
+			this.udptran.send(2222, "1.1.1.1", this.rawmsg);
 
 			test.strictEqual(this.send.args[0][0].toString(), this.rawmsg);
 			test.strictEqual(this.send.args[0][1], 0);
@@ -110,9 +112,9 @@ module.exports = {
 			this.send = sinon.collection.stub(this.client, 'send', function(buf, start, end, port, addr, cbk) {
 				cbk(new Error('moo'));
 			});
-			udptran.start(1234, "127.0.0.1");
+			this.udptran.start();
 
-			udptran.send(2222, "1.1.1.1", this.rawmsg);
+			this.udptran.send(2222, "1.1.1.1", this.rawmsg);
 	
 			test.ok(/moo/.test(errorlog.args[0][0]));
 			test.done();
@@ -121,14 +123,13 @@ module.exports = {
 
 	"message receiving" : testCase ({
 		setUp : function(done) {			
+			this.udptran = new udptran.UdpTran(1111, 'l1.1.1.1');
 			this.rinfo = { address : '2.2.2.2', port : 2222};
 			
 			this.callback = sinon.stub();
 			this.server = langutil.extend(new events.EventEmitter(), {bind : function() {}});
 			sinon.collection.stub(this.server, 'bind');
 			sinon.collection.stub(dgram, 'createSocket').returns(this.server);
-			
-			//udptran._initSocket(this.socket);
 			
 			done();
 		},
@@ -139,7 +140,7 @@ module.exports = {
 		},
 		
 		"should delegate to callback to parse message" : function(test) {
-			udptran.start('1111', 'l1.1.1.1', this.callback);
+			this.udptran.start(this.callback);
 			
 			this.server.emit('message', 'some_data', this.rinfo);
 			
@@ -150,7 +151,7 @@ module.exports = {
 		"should absorb exception from parsing" : function(test) {
 			this.callback = sinon.stub().throws(new Error('baah'));
 			var infolog = sinon.collection.spy(logger, "info");
-			udptran.start('1111', '1.1.1.1', this.callback);
+			this.udptran.start(this.callback);
 			
 			this.server.emit('message', 'some_data', this.rinfo);
 
@@ -161,7 +162,7 @@ module.exports = {
 		"should log and throw away packet when content only partially parsed by message parser" : function(test) {
 			this.callback = sinon.stub().returns({ partial : 'state' });
 			var warnlog = sinon.collection.spy(logger, "warn");
-			udptran.start('1111', '1.1.1.1', this.callback);
+			this.udptran.start(this.callback);
 			
 			this.server.emit('message', 'some_data', this.rinfo);
 
@@ -170,18 +171,23 @@ module.exports = {
 		},
 	}),
 
-	"stopping the listener" : testCase ({		
+	"stopping the listener" : testCase ({
+		setUp : function(done) {
+			this.udptran = new udptran.UdpTran();
+			done();
+		},
+		
 		tearDown : function(done) {
 			sinon.collection.restore();
 			done();
 		},
 		
 		"should stop listening" : function(test) {
-			udptran.server = {close : function() {}};
-			var close = sinon.collection.stub(udptran.server, "close");
+			this.udptran.server = {close : function() {}};
+			var close = sinon.collection.stub(this.udptran.server, "close");
 	
 			// act
-			udptran.stop();
+			this.udptran.stop();
 	
 			// assert
 			test.ok(close.called);

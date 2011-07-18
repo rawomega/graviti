@@ -29,12 +29,12 @@ module.exports = {
 					];
 			
 			this.delaySendsByPortDistance = function() {
-				var messagemgr = require('messaging/messagemgr');
-				var oldSendFunc = messagemgr.send;
+				var transportmgr = require('messaging/transportmgr');
+				var oldSendFunc = transportmgr.send;
 				
 				require('util').log('TEST: Adding a delay to all sends that is proportional to distance');
-				messagemgr.send = function(port, host, data) {
-					var dist = Math.abs(messagemgr.port - port);
+				transportmgr.send = function(port, host, data) {
+					var dist = Math.abs(transportmgr.port - port);
 					
 					setTimeout(function() {
 						oldSendFunc(port, host, data);

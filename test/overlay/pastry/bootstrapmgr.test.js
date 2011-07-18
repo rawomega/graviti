@@ -1,5 +1,6 @@
 var sinon = require('sinon');
 var bootstrapmgr = require('overlay/pastry/bootstrapmgr');
+var messagemgr = require('messaging/messagemgr');
 var langutil = require('common/langutil');
 var node = require('core/node');
 var leafset = require('overlay/pastry/leafset');
@@ -7,6 +8,7 @@ var routingtable = require('overlay/routingtable');
 var testCase = require('nodeunit').testCase;
 var heartbeater = require('overlay/pastry/heartbeater');
 var pnsrunner = require('overlay/pastry/pnsrunner');
+var mockutil = require('testability/mockutil');
 
 module.exports = {
 	"bootstrap manager startup" : testCase({
@@ -14,11 +16,15 @@ module.exports = {
 			node.nodeId = '1234567890123456789012345678901234567890';
 			this.overlayCallback = { on : function() {}, sendToAddr : function() {} };
 			this.on = sinon.collection.stub(this.overlayCallback, 'on');
+			this.pnsrunner = { run : function() {} };
+			this.bootstrapmgr = new bootstrapmgr.BootstrapMgr(this.overlayCallback, this.pnsrunner);
 			done();
 		},
 		
 		tearDown : function(done) {
 			bootstrapmgr.usePns = true;
+			bootstrapmgr.pendingRequestCheckIntervalMsec = 1000;
+			bootstrapmgr.bootstrapRetryIntervalMsec = 30000;
 			sinon.collection.restore();
 			routingtable._table = {};
 			routingtable._candidatePeers = {};
@@ -26,10 +32,10 @@ module.exports = {
 		},
 		
 		"should start bootstrap manager for node starting a new ring" : function(test) {			
-			bootstrapmgr.start(this.overlayCallback);
+			this.bootstrapmgr.start();
 			
-			test.ok(this.on.calledWith('graviti-message-received', bootstrapmgr._handleReceivedGravitiMessage));
-			test.ok(this.on.calledWith('graviti-message-forwarding', bootstrapmgr._handleForwardingGravitiMessage));
+			test.ok(this.on.calledWith('graviti-message-received'));
+			test.ok(this.on.calledWith('graviti-message-forwarding'));
 			test.done();
 		},
 		
@@ -38,10 +44,10 @@ module.exports = {
 			bootstrapmgr.pendingRequestCheckIntervalMsec = 50;
 			bootstrapmgr.usePns = false;
 			
-			bootstrapmgr.start(this.overlayCallback, '1.2.3.4:1234,5.6.7.8:5678,myhost:8888');
+			this.bootstrapmgr.start('1.2.3.4:1234,5.6.7.8:5678,myhost:8888');
 			
-			test.ok(this.on.calledWith('graviti-message-received', bootstrapmgr._handleReceivedGravitiMessage));
-			test.ok(this.on.calledWith('graviti-message-forwarding', bootstrapmgr._handleForwardingGravitiMessage));
+			test.ok(this.on.calledWith('graviti-message-received'));
+			test.ok(this.on.calledWith('graviti-message-forwarding'));
 			setTimeout(function() {
 				test.ok(sendToAddr.calledWith('p2p:graviti/peers', {joining_node_id : node.nodeId}, {method : 'GET'}, '1.2.3.4', '1234'));
 				test.ok(sendToAddr.calledWith('p2p:graviti/peers', {joining_node_id : node.nodeId}, {method : 'GET'}, '5.6.7.8', '5678'));
@@ -53,14 +59,14 @@ module.exports = {
 		"bootstrap manager for node joining a ring should initiate sending of bootstrap requests with PNS when PNS on" : function(test) {
 			var sendToAddr = sinon.collection.stub(this.overlayCallback, 'sendToAddr');
 			bootstrapmgr.pendingRequestCheckIntervalMsec = 50;
-			sinon.collection.stub(pnsrunner, 'run', function(endpoint, success) {
+			sinon.collection.stub(this.pnsrunner, 'run', function(endpoint, success) {
 				success('6.6.6.6:6666');
 			});
 			
-			bootstrapmgr.start(this.overlayCallback, '1.2.3.4:1234,5.6.7.8:5678,myhost:8888');
+			this.bootstrapmgr.start('1.2.3.4:1234,5.6.7.8:5678,myhost:8888');
 			
-			test.ok(this.on.calledWith('graviti-message-received', bootstrapmgr._handleReceivedGravitiMessage));
-			test.ok(this.on.calledWith('graviti-message-forwarding', bootstrapmgr._handleForwardingGravitiMessage));
+			test.ok(this.on.calledWith('graviti-message-received'));
+			test.ok(this.on.calledWith('graviti-message-forwarding'));
 			setTimeout(function() {
 				test.equal(3, sendToAddr.callCount);
 				test.ok(sendToAddr.calledWith('p2p:graviti/peers', {joining_node_id : node.nodeId}, {method : 'GET'}, '6.6.6.6', '6666'));
@@ -77,7 +83,7 @@ module.exports = {
 				callCount++;
 			});
 			
-			bootstrapmgr.start(this.overlayCallback, '1.2.3.4:1234,5.6.7.8:5678,myhost:8888');
+			this.bootstrapmgr.start('1.2.3.4:1234,5.6.7.8:5678,myhost:8888');
 			
 			setTimeout(function() {
 				test.ok(callCount >= 6);
@@ -85,10 +91,12 @@ module.exports = {
 			}, 200);
 		}
 	}),
-	
-	"bootstrap manager startup" : testCase({
+
+	"bootstrap manager shutdown" : testCase({
 		setUp : function(done) {
-			this.cancelAll = sinon.collection.stub(pnsrunner, 'cancelAll');
+			this.pnsrunner = { cancelAll : function() {}};
+			this.cancelAll = sinon.collection.stub(this.pnsrunner, 'cancelAll');
+			this.bootstrapmgr = new bootstrapmgr.BootstrapMgr(undefined, this.pnsrunner);
 			done();
 		},
 		
@@ -98,7 +106,7 @@ module.exports = {
 		},
 		
 		"should stop pns on stop" : function(test) {
-			bootstrapmgr.stop();
+			this.bootstrapmgr.stop();
 			
 			test.ok(this.cancelAll.called);
 			test.done();
@@ -123,7 +131,7 @@ module.exports = {
 			this.sendToAddr = sinon.collection.stub(this.overlayCallback, 'sendToAddr');
 			this.send = sinon.collection.stub(this.overlayCallback, 'send');
 			this.sendToId = sinon.collection.stub(this.overlayCallback, 'sendToId');
-			bootstrapmgr.overlayCallback = this.overlayCallback;
+			this.bootstrapmgr = new bootstrapmgr.BootstrapMgr(this.overlayCallback);
 		
 			done();
 		},
@@ -146,7 +154,7 @@ module.exports = {
 				}
 			};			
 			
-			bootstrapmgr.start(this.overlayCallback);
+			this.bootstrapmgr.start();
 			this.overlayCallback.emit("graviti-message-received", msg, this.msginfo);
 
 			test.ok(!this.send.called);
@@ -178,7 +186,7 @@ module.exports = {
 				}
 			};
 			
-			bootstrapmgr.start(this.overlayCallback);
+			this.bootstrapmgr.start();
 			this.overlayCallback.emit("graviti-message-received", msg, this.msginfo);
 
 			test.ok(!this.send.called);
@@ -208,7 +216,7 @@ module.exports = {
 				}
 			};
 				
-			bootstrapmgr.start(this.overlayCallback);
+			this.bootstrapmgr.start();
 			this.overlayCallback.emit("graviti-message-forwarding", msg, this.msginfo);
 			
 			test.ok(!this.send.called);
@@ -264,7 +272,7 @@ module.exports = {
 	
 			this.overlayCallback = langutil.extend(new events.EventEmitter(), { sendToAddr : function() {}, send : function() {} });
 			this.sendHeartbeatToAddr = sinon.collection.stub(heartbeater, 'sendHeartbeatToAddr');
-			bootstrapmgr.overlayCallback = this.overlayCallback;
+			this.bootstrapmgr = new bootstrapmgr.BootstrapMgr(this.overlayCallback);
 			
 			done();
 		},
@@ -279,7 +287,7 @@ module.exports = {
 		
 		"should emit bootstrap complete event when last bootstrap response received" : function(test) {
 			var bootstrapCompletedCalled = false;
-			this.overlayCallback.on('bootstrap-completed', function() {
+			this.bootstrapmgr.on('bootstrap-completed', function() {
 				bootstrapCompletedCalled = true;
 			});
 			var _this = this;
@@ -294,10 +302,10 @@ module.exports = {
 				}
 			};
 					
-			bootstrapmgr.start(this.overlayCallback, 'cool-bootstrap');			
+			this.bootstrapmgr.start('cool-bootstrap');			
 			this.overlayCallback.emit("graviti-message-received", msg, this.msginfo);
 			
-			test.ok(!bootstrapmgr.bootstrapping);
+			test.ok(!this.bootstrapmgr.bootstrapping);
 			test.ok(bootstrapCompletedCalled);
 			test.done();
 		},		
@@ -314,9 +322,9 @@ module.exports = {
 					last_bootstrap_hop : true
 				}
 			};
-			bootstrapmgr.bootstrapping = true;
+			this.bootstrapmgr.bootstrapping = true;
 
-			bootstrapmgr.start(this.overlayCallback);
+			this.bootstrapmgr.start();
 			this.overlayCallback.emit("graviti-message-received", msg, this.msginfo);
 	
 			test.ok(this.sendHeartbeatToAddr.callCount === 4);

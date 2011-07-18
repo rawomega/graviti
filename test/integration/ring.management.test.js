@@ -179,7 +179,7 @@ module.exports = {
 			
 			var clearOutLeafset = function() {
 				require('overlay/pastry/leafset').reset();
-				require('messaging/messagemgr').stop();
+				require('messaging/transportmgr').stop();
 			};
 			
 			var setShortHeartbeatTimeout = function() {

@@ -7,8 +7,13 @@ var myId = 'ABCDEF1234ABCDEF1234ABCDEF1234ABCDEF1234';
 	
 module.exports = {
 	"parsing an ack" : testCase({
+		setUp : function(done) {
+			this.messageparser = new messageparser.MessageParser();
+			done();
+		},
+		
 		"should recognise a valid ack" : function(test) {
-			var res = messageparser.parseAck('ACK 123');
+			var res = this.messageparser.parseAck('ACK 123');			
 			delete res.stringify;
 			
 			test.deepEqual({method : 'ACK', msg_id : '123'}, res);
@@ -16,21 +21,21 @@ module.exports = {
 		},
 		
 		"should not parse ack with line break" : function(test) {
-			var res = messageparser.parseAck('ACK 123\n');
+			var res = this.messageparser.parseAck('ACK 123\n');
 			
 			test.equal(undefined, res);
 			test.done();
 		},
 		
 		"should not parse non-ack" : function(test) {
-			var res = messageparser.parseAck('BACK 123');
+			var res = this.messageparser.parseAck('BACK 123');
 			
 			test.equal(undefined, res);
 			test.done();
 		},
 		
 		"should not parse nothing" : function(test) {
-			var res = messageparser.parseAck(undefined);
+			var res = this.messageparser.parseAck(undefined);
 			
 			test.equal(undefined, res);
 			test.done();
@@ -39,6 +44,7 @@ module.exports = {
 	
 	"parsing a message" : testCase({
 		setUp : function(done) {
+			this.messageparser = new messageparser.MessageParser();
 			node.nodeId = myId;
 			this.content = {a : 'ay', b : 'bee'}; 
 			done();
@@ -52,7 +58,7 @@ module.exports = {
 		"should parse simple message with uri and method only" : function(test) {
 			var str = 'GET p2p:myapp/myres\n\n';
 			
-			var msg = messageparser.parse(str);
+			var msg = this.messageparser.parse(str);
 			
 			test.strictEqual('GET', msg.method);
 			test.strictEqual('p2p:myapp/myres', msg.uri);
@@ -64,7 +70,7 @@ module.exports = {
 				+ 'dest_id: AAAAABBBBBAAAAABBBBBAAAAABBBBBAAAAABBBBB\n'
 				+ '\n';
 			
-			var msg = messageparser.parse(str);
+			var msg = this.messageparser.parse(str);
 			
 			test.strictEqual('GET', msg.method);
 			test.strictEqual('p2p:myapp/myres', msg.uri);
@@ -79,7 +85,7 @@ module.exports = {
 				+ '\n'
 				+ '{"a" : "0123456789"}';
 			
-			var msg = messageparser.parse(str);
+			var msg = this.messageparser.parse(str);
 			
 			test.strictEqual('GET', msg.method);
 			test.strictEqual('p2p:myapp/myres', msg.uri);
@@ -98,7 +104,7 @@ module.exports = {
 				+ '"a" : "0123456789"\n'
 				+ '}\n\n';
 			
-			var msg = messageparser.parse(str);
+			var msg = this.messageparser.parse(str);
 			
 			test.strictEqual('0123456789', msg.content.a);
 			test.done();
@@ -112,7 +118,7 @@ module.exports = {
 				+ '\n'
 				+ '{"ab" : 1}';
 			
-			var msg = messageparser.parse(str);
+			var msg = this.messageparser.parse(str);
 			
 			test.strictEqual('AAAAABBBBBAAAAABBBBBAAAAABBBBBAAAAABBBBB', msg.dest_id);
 			test.strictEqual('my header value', msg['my header name']);
@@ -125,7 +131,7 @@ module.exports = {
 				+ '\n'
 				+ '{"ab" : 1}';
 			
-			var msg = messageparser.parse(str);
+			var msg = this.messageparser.parse(str);
 			
 			test.strictEqual('GET', msg.method);
 			test.strictEqual('p2p:myapp/myres', msg.uri);
@@ -140,7 +146,7 @@ module.exports = {
 				+ '\n'
 				+ '123';
 			
-			var msg = messageparser.parse(str);
+			var msg = this.messageparser.parse(str);
 			
 			test.strictEqual('GET', msg.method);
 			test.strictEqual('p2p:myapp/myres', msg.uri);
@@ -156,7 +162,7 @@ module.exports = {
 				+ '\n'
 				+ '{"a":123}';
 			
-			var msg = messageparser.parse(str);
+			var msg = this.messageparser.parse(str);
 			
 			test.strictEqual('GET', msg.method);
 			test.strictEqual('p2p:myapp/myres', msg.uri);
@@ -166,106 +172,117 @@ module.exports = {
 		},
 		
 		"should throw on parsing if bad method" : function(test) {
+			var self = this;
 			var str = 'BAD p2p:myapp/myres\n'
 				+ '  dest_id:AAAAABBBBBAAAAABBBBBAAAAABBBBBAAAAABBBBB   \n'
 				+ 'my header name :  my header value   \n'
 				+ ' content_length      :10\n'
 				+ '\n';
 			
-			assert.throws(function() { messageparser.parse(str); }, /unsupported method/i);
+			assert.throws(function() { self.messageparser.parse(str); }, /unsupported method/i);
 			test.done();
 		},
 		
 		"should throw on parsing if missing uri" : function(test) {
+			var self = this;
 			var str = 'GET \n'
 				+ '  dest_id:AAAAABBBBBAAAAABBBBBAAAAABBBBBAAAAABBBBB   \n'
 				+ 'my header name :  my header value   \n'
 				+ ' content_length      :10\n'
 				+ '\n';
 			
-			assert.throws(function() { messageparser.parse(str); }, /missing destination uri/i);
+			assert.throws(function() { self.messageparser.parse(str); }, /missing destination uri/i);
 			test.done();
 		},
 		
 		"should throw on parsing if header with no colon" : function(test) {
+			var self = this;
 			var str = 'POST p2p:myapp/myres\n'
 				+ 'my header name my header value   \n'
 				+ '\n';
 			
-			assert.throws(function() { messageparser.parse(str); }, /bad header/i);
+			assert.throws(function() { self.messageparser.parse(str); }, /bad header/i);
 			test.done();
 		},
 		
 		"should throw on parsing if header with no name" : function(test) {
+			var self = this;
 			var str = 'POST p2p:myapp/myres\n'
 				+ ' : my header name my header value   \n'
 				+ '\n';
 			
-			assert.throws(function() { messageparser.parse(str); }, /bad header/i);
+			assert.throws(function() { self.messageparser.parse(str); }, /bad header/i);
 			test.done();
 		},
 		
 		"should throw on parsing if header with no value" : function(test) {
+			var self = this;
 			var str = 'POST p2p:myapp/myres\n'
 				+ 'my header name my header value : \n'
 				+ '\n';
 			
-			assert.throws(function() { messageparser.parse(str); }, /bad header/i);
+			assert.throws(function() { self.messageparser.parse(str); }, /bad header/i);
 			test.done();
 		},
 		
 		"should throw on parsing if headers not done" : function(test) {
+			var self = this;
 			var str = 'GET p2p:myapp/myres\n'
 				+ 'dest_id:AAAAABBBBBAAAAABBBBBAAAAABBBBBAAAAABBBBB\n';
 			
-			assert.throws(function() { messageparser.parse(str); }, /parse headers/i);
+			assert.throws(function() { self.messageparser.parse(str); }, /parse headers/i);
 			test.done();
 		},
 		
 		"should throw on parsing if no content" : function(test) {
+			var self = this;
 			var str = 'GET p2p:myapp/myres\n'
 				+ 'dest_id:AAAAABBBBBAAAAABBBBBAAAAABBBBBAAAAABBBBB\n'
 				+ ' content_length: 10\n'
 				+ '\n';
 			
-			assert.throws(function() { messageparser.parse(str); }, /expected content/i);
+			assert.throws(function() { self.messageparser.parse(str); }, /expected content/i);
 			test.done();
 		},
 		
 		"should throw on parsing if partial content" : function(test) {
+			var self = this;
 			var str = 'GET p2p:myapp/myres\n'
 				+ 'dest_id:AAAAABBBBBAAAAABBBBBAAAAABBBBBAAAAABBBBB\n'
 				+ ' content_length: 10\n'
 				+ '\n'
 				+ '{a:1}';
 			
-			assert.throws(function() { messageparser.parse(str); }, /expected content/i);
+			assert.throws(function() { self.messageparser.parse(str); }, /expected content/i);
 			test.done();
 		},
 		
 		"should throw on parsing if json content invalid" : function(test) {
+			var self = this;
 			var str = 'POST p2p:myapp/myres\n'
 				+ 'content_type: application/json\n'
 				+ 'content_length: 8\n'
 				+ '\n'
 				+ '{badjson';
 			
-			assert.throws(function() { messageparser.parse(str); }, /parse json content/i);
+			assert.throws(function() { self.messageparser.parse(str); }, /parse json content/i);
 			test.done();
 		},
 		
 		"should throw on parsing if message size exceeded" : function(test) {
+			var self = this;
 			var str = 'POST p2p:myapp/myres\n'
 				+ '\n';
 			messages.maxMessageSize = 5;
 			
-			assert.throws(function() { messageparser.parse(str); }, /message size/i);
+			assert.throws(function() { self.messageparser.parse(str); }, /message size/i);
 			test.done();
 		}
 	}),
 	
 	"parsing a partial message" : testCase({
 		setUp : function(done) {
+			this.messageparser = new messageparser.MessageParser();
 			node.nodeId = myId;
 			this.content = {a : 'ay', b : 'bee'}; 
 			done();
@@ -275,7 +292,7 @@ module.exports = {
 			var str = 'GET p2p:myapp/myres\n'
 				+ '\n';
 			
-			var res = messageparser.progressiveParse(str);
+			var res = this.messageparser.progressiveParse(str);
 			
 			test.strictEqual(undefined, res.unparsed_part);
 			test.strictEqual(true, res.headers_processed);
@@ -291,7 +308,7 @@ module.exports = {
 				+ 'name: value\n'
 				+ '\n';
 			
-			var res = messageparser.progressiveParse(str);
+			var res = this.messageparser.progressiveParse(str);
 			
 			test.strictEqual(undefined, res.unparsed_part);
 			test.strictEqual(true, res.headers_processed);
@@ -309,7 +326,7 @@ module.exports = {
 				+ 'moo: baah baah\n'
 				+ '\n';
 			
-			var res = messageparser.progressiveParse(str);
+			var res = this.messageparser.progressiveParse(str);
 			
 			test.strictEqual(undefined, res.unparsed_part);
 			test.strictEqual(true, res.headers_processed);
@@ -326,7 +343,7 @@ module.exports = {
 				+ '\n'
 				+ '1234';
 			
-			var res = messageparser.progressiveParse(str);
+			var res = this.messageparser.progressiveParse(str);
 			
 			test.strictEqual(undefined, res.unparsed_part);
 			test.strictEqual(true, res.headers_processed);
@@ -346,7 +363,7 @@ module.exports = {
 				+ '\n'
 				+ '1\n2\n3';
 			
-			var res = messageparser.progressiveParse(str);
+			var res = this.messageparser.progressiveParse(str);
 			
 			test.strictEqual(undefined, res.unparsed_part);
 			test.strictEqual(true, res.headers_processed);
@@ -363,8 +380,8 @@ module.exports = {
 			var str2 = 'T p2p:myapp/myres\n'
 				+ '\n';
 			
-			var res1 = messageparser.progressiveParse(str1);
-			var res2 = messageparser.progressiveParse(str2, res1);
+			var res1 = this.messageparser.progressiveParse(str1);
+			var res2 = this.messageparser.progressiveParse(str2, res1);
 			
 			test.strictEqual('GE', res1.unparsed_part);
 			test.strictEqual(undefined, res2.unparsed_part);
@@ -385,8 +402,8 @@ module.exports = {
 			var str1 = 'GET p2p:myapp/myres\n'
 			var str2 = '\n';
 			
-			var res1 = messageparser.progressiveParse(str1);
-			var res2 = messageparser.progressiveParse(str2, res1);
+			var res1 = this.messageparser.progressiveParse(str1);
+			var res2 = this.messageparser.progressiveParse(str2, res1);
 			
 			test.strictEqual(undefined, res1.unparsed_part);
 			test.strictEqual(undefined, res2.unparsed_part);
@@ -409,8 +426,8 @@ module.exports = {
 			var str2 = 'value\n'
 				+ '\n';
 			
-			var res1 = messageparser.progressiveParse(str1);
-			var res2 = messageparser.progressiveParse(str2, res1);
+			var res1 = this.messageparser.progressiveParse(str1);
+			var res2 = this.messageparser.progressiveParse(str2, res1);
 			
 			test.strictEqual('name:', res1.unparsed_part);
 			test.strictEqual(undefined, res2.unparsed_part);
@@ -430,8 +447,8 @@ module.exports = {
 			var str2 = '\n'
 				+ '\n';
 			
-			var res1 = messageparser.progressiveParse(str1);
-			var res2 = messageparser.progressiveParse(str2, res1);
+			var res1 = this.messageparser.progressiveParse(str1);
+			var res2 = this.messageparser.progressiveParse(str2, res1);
 			
 			test.strictEqual('one: 1', res1.unparsed_part);
 			test.strictEqual(undefined, res2.unparsed_part);
@@ -452,8 +469,8 @@ module.exports = {
 				+ '\n';
 			var str2 = '12345';
 			
-			var res1 = messageparser.progressiveParse(str1);
-			var res2 = messageparser.progressiveParse(str2, res1);
+			var res1 = this.messageparser.progressiveParse(str1);
+			var res2 = this.messageparser.progressiveParse(str2, res1);
 			
 			test.strictEqual(undefined, res1.unparsed_part);
 			test.strictEqual(undefined, res2.unparsed_part);
@@ -476,8 +493,8 @@ module.exports = {
 				+ '12';
 			var str2 = '345';
 			
-			var res1 = messageparser.progressiveParse(str1);
-			var res2 = messageparser.progressiveParse(str2, res1);
+			var res1 = this.messageparser.progressiveParse(str1);
+			var res2 = this.messageparser.progressiveParse(str2, res1);
 			
 			test.strictEqual('12', res1.unparsed_part);
 			test.strictEqual(undefined, res2.unparsed_part);
@@ -492,32 +509,35 @@ module.exports = {
 		},
 		
 		"should throw on parsing if bad method" : function(test) {
+			var self = this;
 			var str = 'MOO p2p:myapp/myres\n'
 				+ 'name: value : \n'
 				+ '\n';
 			
-			assert.throws(function() { messageparser.progressiveParse(str); }, /unsupported method/i);
+			assert.throws(function() { self.messageparser.progressiveParse(str); }, /unsupported method/i);
 			test.done();
 		},
 		
 		"should throw on parsing if no uri" : function(test) {
+			var self = this;
 			var str = 'GET\n'
 				+ 'name: value : \n'
 				+ '\n';
 			
-			assert.throws(function() { messageparser.progressiveParse(str); }, /missing destination uri/i);
+			assert.throws(function() { self.messageparser.progressiveParse(str); }, /missing destination uri/i);
 			test.done();
 		},
 		
 		"should throw on missing header value in 2 parts" : function(test) {
+			var self = this;
 			var str1 = 'GET p2p:myapp/myres\n'
 				+ 'name no';
 			var str2 = 'value\n'
 				+ '\n';
 			
-			var res1 = messageparser.progressiveParse(str1);
+			var res1 = this.messageparser.progressiveParse(str1);
 			
-			assert.throws(function() { messageparser.progressiveParse(str2, res1); }, /bad header/i);
+			assert.throws(function() { self.messageparser.progressiveParse(str2, res1); }, /bad header/i);
 			test.done();
 		}
 	})

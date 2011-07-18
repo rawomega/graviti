@@ -14,14 +14,13 @@ module.exports = {
 		setUp : function(done) {
 			this.overlayCallback = { sendToAddr : function() {}, on : function() {} };
 			this.sendToAddr = sinon.stub(this.overlayCallback, 'sendToAddr');
-			pns.init(this.overlayCallback);
+			this.pns = new pns.Pns(this.overlayCallback);
 			
 			done();
 		},
 		
 		tearDown : function(done) {
 			pns.nearestNodeSearchTimeoutMsec = 20000;
-			pns._inProgress = {};
 			sinon.collection.restore();
 			done();
 		},
@@ -30,29 +29,30 @@ module.exports = {
 			var success = sinon.stub();
 			var error = sinon.stub();
 
-			var res = pns.findNearestNode('2.2.2.2:2222', joiningNodeId, success, error);
+			var res = this.pns.findNearestNode('2.2.2.2:2222', joiningNodeId, success, error);
 			
-			test.equal('2.2.2.2', pns._inProgress[res].addr);
-			test.equal('2222', pns._inProgress[res].port);
-			test.equal(success, pns._inProgress[res].success);
-			test.equal(error, pns._inProgress[res].error);
+			test.equal('2.2.2.2', this.pns._inProgress[res].addr);
+			test.equal('2222', this.pns._inProgress[res].port);
+			test.equal(success, this.pns._inProgress[res].success);
+			test.equal(error, this.pns._inProgress[res].error);
 			test.done();
 		},
 		
 		"sholud initiate search for nearest node by sending a requrest for leafset" : function(test) {			
-			var res = pns.findNearestNode('2.2.2.2:2222');
+			var res = this.pns.findNearestNode('2.2.2.2:2222');
 			
 			test.ok(this.sendToAddr.calledWith('p2p:graviti/pns/leafset', {req_id : res}, {method : 'GET'}, '2.2.2.2', '2222'));
 			test.done();
 		},
 		
 		"should cancel search for nearest node if not completed within given interval" : function(test) {
+			var self = this;
 			var error = sinon.stub();
 			pns.nearestNodeSearchTimeoutMsec = 100;
 			
-			var res = pns.findNearestNode('2.2.2.2:2222', joiningNodeId, undefined, error);
+			var res = self.pns.findNearestNode('2.2.2.2:2222', joiningNodeId, undefined, error);
 			setTimeout(function() {
-				test.equal(0, Object.keys(pns._inProgress).length);
+				test.equal(0, Object.keys(self.pns._inProgress).length);
 				test.ok(error.called);
 				test.done();
 			}, 200);
@@ -62,32 +62,31 @@ module.exports = {
 	"cancelling all pns node searches" : testCase({
 		setUp : function(done) {
 			this.overlayCallback = { sendToAddr : function() {}, on : function() {} };			
-			pns.init(this.overlayCallback);
+			this.pns = new pns.Pns(this.overlayCallback);
 			
 			done();
 		},
 		
 		tearDown : function(done) {
-			pns._inProgress = {};
 			pns.nearestNodeSearchTimeoutMsec = 20000;
 			done();
 		},
 		
 		"should throw away all state when PNS search cancelled" : function(test) {			
-			var res = pns.findNearestNode('2.2.2.2:2222');
+			var res = this.pns.findNearestNode('2.2.2.2:2222');
 			
-			pns.cancelAll();
+			this.pns.cancelAll();
 			
-			test.equal(0, Object.keys(pns._inProgress).length);
+			test.equal(0, Object.keys(this.pns._inProgress).length);
 			test.done();
 		},
 		
 		"should stop all timers when PNS search cancelled" : function(test) {
 			pns.nearestNodeSearchTimeoutMsec = 100;
 			var error = sinon.stub();
-			var res = pns.findNearestNode('2.2.2.2:2222', joiningNodeId, undefined, error);
+			var res = this.pns.findNearestNode('2.2.2.2:2222', joiningNodeId, undefined, error);
 			
-			pns.cancelAll();
+			this.pns.cancelAll();
 			
 			setTimeout(function() {
 				test.ok(!error.called);
@@ -109,13 +108,12 @@ module.exports = {
 			this.msginfo = {
 					source_ap : '1.1.1.1:1111'
 			}
-			pns.init(this.overlayCallback);
+			this.pns = new pns.Pns(this.overlayCallback);
 			
 			done();
 		},
 		
 		tearDown : function(done) {
-			pns._inProgress = {};
 			sinon.collection.restore();
 			done();
 		},
@@ -148,19 +146,18 @@ module.exports = {
 			this.msginfo = {
 					source_ap : '2.2.2.2:2222'
 			}
-			pns.init(this.overlayCallback);
+			this.pns = new pns.Pns(this.overlayCallback);
 			
 			done();
 		},
 		
 		tearDown : function(done) {
-			pns._inProgress = {};
 			sinon.collection.restore();
 			done();
 		},
 		
 		"when req id in response not known, do nothing" : function(test) {			
-			var reqId = pns.findNearestNode('2.2.2.2:2222', joiningNodeId, this.success);
+			var reqId = this.pns.findNearestNode('2.2.2.2:2222', joiningNodeId, this.success);
 			this.msg.content = {
 					req_id : 'some-other-req-id',
 					leafset : {}
@@ -175,7 +172,7 @@ module.exports = {
 		},
 		
 		"when no leafset is returned in pns leafset response, mark pns search as done and return node" : function(test) {			
-			var reqId = pns.findNearestNode('2.2.2.2:2222', joiningNodeId, this.success);
+			var reqId = this.pns.findNearestNode('2.2.2.2:2222', joiningNodeId, this.success);
 			this.msg.content = {
 					req_id : reqId,
 					leafset : {}
@@ -191,12 +188,12 @@ module.exports = {
 				discovered_peers : [],
 				public_seed_ap : '2.2.2.2:2222'
 			}));
-			test.equal(0, Object.keys(pns._inProgress).length);
+			test.equal(0, Object.keys(this.pns._inProgress).length);
 			test.done();
 		},
 		
 		"when leafset contains joining node id, disregard that entry" : function(test) {			
-			var reqId = pns.findNearestNode('2.2.2.2:2222', joiningNodeId, this.success);
+			var reqId = this.pns.findNearestNode('2.2.2.2:2222', joiningNodeId, this.success);
 			this.msg.content = {
 					req_id : reqId,
 					leafset : {
@@ -214,7 +211,7 @@ module.exports = {
 		},
 		
 		"track leafset nodes as discovered nodes for current request, without duplicates" : function(test) {			
-			var reqId = pns.findNearestNode('2.2.2.2:2222', joiningNodeId, this.success);
+			var reqId = this.pns.findNearestNode('2.2.2.2:2222', joiningNodeId, this.success);
 			this.msg.content = {
 					req_id : reqId,
 					leafset : {
@@ -224,17 +221,17 @@ module.exports = {
 					}
 			};
 			this.msg.source_id = '1EAF5E7';
-			pns._inProgress[reqId].discoveredPeers.push('5.5.5.5:5555');
+			this.pns._inProgress[reqId].discoveredPeers.push('5.5.5.5:5555');
 			
 			this.overlayCallback.emit('graviti-message-received', this.msg, this.msginfo);
 			
 			test.deepEqual(['3.3.3.3:3333', '4.4.4.4:4444', '5.5.5.5:5555'].sort(),
-					pns._inProgress[reqId].discoveredPeers.sort());
+					this.pns._inProgress[reqId].discoveredPeers.sort());
 			test.done();
 		},
 		
 		"when leafset is not empty in pns leafset response, should initiate round trip probes" : function(test) {						
-			var reqId = pns.findNearestNode('2.2.2.2:2222', joiningNodeId, this.success);
+			var reqId = this.pns.findNearestNode('2.2.2.2:2222', joiningNodeId, this.success);
 			this.msg.content = {
 					req_id : reqId,
 					leafset : {
@@ -250,8 +247,8 @@ module.exports = {
 			test.equal(3, this.sendToAddr.callCount);
 			test.ok(this.sendToAddr.calledWith('p2p:graviti/pns/rttprobe', {req_id : reqId}, {method : 'GET'}, '3.3.3.3', '3333'));
 			test.ok(this.sendToAddr.calledWith('p2p:graviti/pns/rttprobe', {req_id : reqId}, {method : 'GET'}, '4.4.4.4', '4444'));
-			test.ok(0 < pns._inProgress[reqId].leafset_probes['ABCDEF']);
-			test.ok(0 < pns._inProgress[reqId].leafset_probes['123456']);
+			test.ok(0 < this.pns._inProgress[reqId].leafset_probes['ABCDEF']);
+			test.ok(0 < this.pns._inProgress[reqId].leafset_probes['123456']);
 			test.done();
 		}
 	}),
@@ -270,13 +267,12 @@ module.exports = {
 			this.msginfo = {
 					source_ap : '1.1.1.1:1111'
 			}
-			pns.init(this.overlayCallback);
+			this.pns = new pns.Pns(this.overlayCallback);
 			
 			done();
 		},
 		
 		tearDown : function(done) {
-			pns._inProgress = {};
 			sinon.collection.restore();
 			done();
 		},
@@ -315,13 +311,12 @@ module.exports = {
 			this.msginfo = {
 					source_ap : '3.3.3.3:3333'
 			}
-			pns.init(this.overlayCallback);
+			this.pns = new pns.Pns(this.overlayCallback);
 			
 			done();
 		},
 		
 		tearDown : function(done) {
-			pns._inProgress = {};
 			sinon.collection.restore();
 			done();
 		},
@@ -336,16 +331,16 @@ module.exports = {
 		},
 		
 		"when the first of a series of rtt probe responses is received, store as nearest node and initiate routing table traversal" : function(test) {
-			var reqId = pns.findNearestNode('2.2.2.2:2222');
-			pns._sendLeafsetProbes(reqId, { '734F' : '9.9.9.9:9999', 'C105357' : '3.3.3.3:3333' });
+			var reqId = this.pns.findNearestNode('2.2.2.2:2222');
+			this.pns._sendLeafsetProbes(reqId, { '734F' : '9.9.9.9:9999', 'C105357' : '3.3.3.3:3333' });
 			this.msg.content.req_id = reqId;
 			
 			this.overlayCallback.emit('graviti-message-received', this.msg, this.msginfo);
 			
-			test.equal(undefined, pns._inProgress[reqId].leafset_probes);
-			test.equal('C105357', pns._inProgress[reqId].nearest.id);
-			test.equal('3.3.3.3:3333', pns._inProgress[reqId].nearest.ap);
-			test.ok(0 <= pns._inProgress[reqId].nearest.rtt);
+			test.equal(undefined, this.pns._inProgress[reqId].leafset_probes);
+			test.equal('C105357', this.pns._inProgress[reqId].nearest.id);
+			test.equal('3.3.3.3:3333', this.pns._inProgress[reqId].nearest.ap);
+			test.ok(0 <= this.pns._inProgress[reqId].nearest.rtt);
 			test.equal(4, this.sendToAddr.callCount);
 			test.ok(this.sendToAddr.calledWith('p2p:graviti/pns/routingrow', {
 					req_id : reqId,
@@ -356,9 +351,9 @@ module.exports = {
 		
 		"when the first rtt probe response is further than current best, report it and finish up" : function(test) {
 			var success = sinon.stub();
-			var reqId = pns.findNearestNode('2.2.2.2:2222', joiningNodeId, success);
-			pns._sendLeafsetProbes(reqId, { '734F' : '9.9.9.9:9999', 'C105357' : '3.3.3.3:3333' });
-			pns._inProgress[reqId].nearest = {
+			var reqId = this.pns.findNearestNode('2.2.2.2:2222', joiningNodeId, success);
+			this.pns._sendLeafsetProbes(reqId, { '734F' : '9.9.9.9:9999', 'C105357' : '3.3.3.3:3333' });
+			this.pns._inProgress[reqId].nearest = {
 				id : '8377371D',
 				ap : '2.2.2.2:2222',
 				rtt : -1
@@ -375,13 +370,13 @@ module.exports = {
 				discovered_peers : ['9.9.9.9:9999', '3.3.3.3:3333'],
 				public_seed_ap: undefined
 			});
-			test.equal(0, Object.keys(pns._inProgress).length);						
+			test.equal(0, Object.keys(this.pns._inProgress).length);						
 			test.done();
 		},
 		
 		"when an unexpected or later leafset rtt probe response is received, throw it away" : function(test) {
-			var reqId = pns.findNearestNode('2.2.2.2:2222');
-			pns._sendLeafsetProbes(reqId, { '734F' : '9.9.9.9:9999', 'C105357' : '3.3.3.3:3333' });
+			var reqId = this.pns.findNearestNode('2.2.2.2:2222');
+			this.pns._sendLeafsetProbes(reqId, { '734F' : '9.9.9.9:9999', 'C105357' : '3.3.3.3:3333' });
 			this.msg.content.req_id = reqId;			
 			this.overlayCallback.emit('graviti-message-received', this.msg, this.msginfo);
 
@@ -389,8 +384,8 @@ module.exports = {
 			this.msginfo.source_ap = '9.9.9.9';
 			this.overlayCallback.emit('graviti-message-received', this.msg, this.msginfo);
 			
-			test.equal(undefined, pns._inProgress[reqId].leafset_probes);
-			test.equal('C105357', pns._inProgress[reqId].nearest.id);
+			test.equal(undefined, this.pns._inProgress[reqId].leafset_probes);
+			test.equal('C105357', this.pns._inProgress[reqId].nearest.id);
 			test.ok(4, this.sendToAddr.callCount);
 			test.ok(this.sendToAddr.calledWith('p2p:graviti/pns/routingrow', {
 					req_id : reqId,
@@ -421,13 +416,12 @@ module.exports = {
 			this.msginfo = {
 					source_ap : '3.3.3.3:3333'
 			}
-			pns.init(this.overlayCallback);
+			this.pns = new pns.Pns(this.overlayCallback);
 			
 			done();
 		},
 		
 		tearDown : function(done) {
-			pns._inProgress = {};
 			routingtable._table = {};
 			sinon.collection.restore();
 			done();
@@ -522,13 +516,12 @@ module.exports = {
 			this.msginfo = {
 					source_ap : '4.4.4.4:4444'
 			}
-			pns.init(this.overlayCallback);
+			this.pns = new pns.Pns(this.overlayCallback);
 			
 			done();
 		},
 		
 		tearDown : function(done) {
-			pns._inProgress = {};
 			routingtable._table = {};
 			sinon.collection.restore();
 			done();
@@ -536,8 +529,8 @@ module.exports = {
 		
 		"when no routing row is returned in pns leafset response, mark pns search as done and return node" : function(test) {			
 			var success = sinon.stub();
-			var reqId = pns.findNearestNode('2.2.2.2:2222', joiningNodeId, success);
-			pns._inProgress[reqId].nearest = { id : '1EAF5E7', ap : '2.2.2.2:2222'	};
+			var reqId = this.pns.findNearestNode('2.2.2.2:2222', joiningNodeId, success);
+			this.pns._inProgress[reqId].nearest = { id : '1EAF5E7', ap : '2.2.2.2:2222'	};
 			this.msg.content.req_id = reqId;
 			delete this.msg.content.routing_row;
 			
@@ -550,14 +543,14 @@ module.exports = {
 				discovered_peers : [],
 				public_seed_ap: undefined
 			});
-			test.equal(0, Object.keys(pns._inProgress).length);
+			test.equal(0, Object.keys(this.pns._inProgress).length);
 			test.done();
 		},
 		
 		"when empty routing row is returned in pns leafset response, mark pns search as done and return node" : function(test) {			
 			var success = sinon.stub();
-			var reqId = pns.findNearestNode('2.2.2.2:2222', joiningNodeId, success);
-			pns._inProgress[reqId].nearest = { id : '1EAF5E7', ap : '2.2.2.2:2222'	};
+			var reqId = this.pns.findNearestNode('2.2.2.2:2222', joiningNodeId, success);
+			this.pns._inProgress[reqId].nearest = { id : '1EAF5E7', ap : '2.2.2.2:2222'	};
 			this.msg.content.req_id = reqId;
 			this.msg.content.routing_row = {};
 			
@@ -570,12 +563,12 @@ module.exports = {
 				discovered_peers : [],
 				public_seed_ap: undefined
 			});
-			test.equal(0, Object.keys(pns._inProgress).length);
+			test.equal(0, Object.keys(this.pns._inProgress).length);
 			test.done();
 		},
 		
 		"when routing row contains the joining node, disregard that peer" : function(test) {			
-			var reqId = pns.findNearestNode('2.2.2.2:2222', joiningNodeId);
+			var reqId = this.pns.findNearestNode('2.2.2.2:2222', joiningNodeId);
 			this.msg.content.req_id = reqId;
 			this.msg.content.routing_row = {
 				'1' : {id : joiningNodeId, ap : '5.5.5.5:5555'},
@@ -584,45 +577,45 @@ module.exports = {
 			
 			this.overlayCallback.emit('graviti-message-received', this.msg, this.msginfo);
 			
-			test.equal(6, pns._inProgress[reqId].depth);
+			test.equal(6, this.pns._inProgress[reqId].depth);
 			test.equal(2, this.sendToAddr.callCount);
 			test.ok(this.sendToAddr.calledWith('p2p:graviti/pns/rttprobe', {req_id : reqId, probe_id : 'generated-uuid'}, {method : 'GET'}, '6.6.6.6', '6666'));
-			test.ok(0 < pns._inProgress[reqId].routing_row_probes['generated-uuid']['FEDCBA9876FEDCBA9876FEDCBA9876FEDCBA9876']);
+			test.ok(0 < this.pns._inProgress[reqId].routing_row_probes['generated-uuid']['FEDCBA9876FEDCBA9876FEDCBA9876FEDCBA9876']);
 			test.done();
 		},
 		
 		"when routing row is not empty in pns leafset response, should initiate round trip probes" : function(test) {			
-			var reqId = pns.findNearestNode('2.2.2.2:2222');
+			var reqId = this.pns.findNearestNode('2.2.2.2:2222');
 			this.msg.content.req_id = reqId;
 			
 			this.overlayCallback.emit('graviti-message-received', this.msg, this.msginfo);
 			
-			test.equal(6, pns._inProgress[reqId].depth);
+			test.equal(6, this.pns._inProgress[reqId].depth);
 			test.equal(3, this.sendToAddr.callCount);
 			test.ok(this.sendToAddr.calledWith('p2p:graviti/pns/rttprobe', {req_id : reqId, probe_id : 'generated-uuid'}, {method : 'GET'}, '5.5.5.5', '5555'));
 			test.ok(this.sendToAddr.calledWith('p2p:graviti/pns/rttprobe', {req_id : reqId, probe_id : 'generated-uuid'}, {method : 'GET'}, '6.6.6.6', '6666'));
-			test.ok(0 < pns._inProgress[reqId].routing_row_probes['generated-uuid']['6789ABCDEF6789ABCDEF6789ABCDEF6789ABCDEF']);
-			test.ok(0 < pns._inProgress[reqId].routing_row_probes['generated-uuid']['FEDCBA9876FEDCBA9876FEDCBA9876FEDCBA9876']);
+			test.ok(0 < this.pns._inProgress[reqId].routing_row_probes['generated-uuid']['6789ABCDEF6789ABCDEF6789ABCDEF6789ABCDEF']);
+			test.ok(0 < this.pns._inProgress[reqId].routing_row_probes['generated-uuid']['FEDCBA9876FEDCBA9876FEDCBA9876FEDCBA9876']);
 			test.done();
 		},
 		
 		"when zeroth routing row received in pns leafset response, should initiate round trip probes without decrementing depth" : function(test) {			
-			var reqId = pns.findNearestNode('2.2.2.2:2222');
+			var reqId = this.pns.findNearestNode('2.2.2.2:2222');
 			this.msg.content.req_id = reqId;
 			this.msg.content.depth = 0;
 			
 			this.overlayCallback.emit('graviti-message-received', this.msg, this.msginfo);
 			
-			test.equal(0, pns._inProgress[reqId].depth);
+			test.equal(0, this.pns._inProgress[reqId].depth);
 			test.ok(this.sendToAddr.calledWith('p2p:graviti/pns/rttprobe', {req_id : reqId, probe_id : 'generated-uuid'}, {method : 'GET'}, '5.5.5.5', '5555'));
 			test.ok(this.sendToAddr.calledWith('p2p:graviti/pns/rttprobe', {req_id : reqId, probe_id : 'generated-uuid'}, {method : 'GET'}, '6.6.6.6', '6666'));
-			test.ok(0 < pns._inProgress[reqId].routing_row_probes['generated-uuid']['6789ABCDEF6789ABCDEF6789ABCDEF6789ABCDEF']);
-			test.ok(0 < pns._inProgress[reqId].routing_row_probes['generated-uuid']['FEDCBA9876FEDCBA9876FEDCBA9876FEDCBA9876']);
+			test.ok(0 < this.pns._inProgress[reqId].routing_row_probes['generated-uuid']['6789ABCDEF6789ABCDEF6789ABCDEF6789ABCDEF']);
+			test.ok(0 < this.pns._inProgress[reqId].routing_row_probes['generated-uuid']['FEDCBA9876FEDCBA9876FEDCBA9876FEDCBA9876']);
 			test.done();
 		},
 		
 		"track routing row nodes as discovered nodes for current request, eliminating duplicates and seed node" : function(test) {			
-			var reqId = pns.findNearestNode('2.2.2.2:2222');
+			var reqId = this.pns.findNearestNode('2.2.2.2:2222');
 			this.msg.content.req_id = reqId;			
 			this.msg.content.routing_row = {
 				'6' : {id : '6789ABCDEF6789ABCDEF6789ABCDEF6789ABCDEF', ap : '5.5.5.5:5555'},
@@ -630,17 +623,17 @@ module.exports = {
 				'F' : {id : 'EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE', ap : '6.6.6.6:6666'},
 				'F' : {id : 'FEDCBA9876FEDCBA9876FEDCBA9876FEDCBA9876', ap : '7.7.7.7:7777'}	// expect this one to also be discarded as it is seeds public ip
 			};
-			pns._inProgress[reqId].discoveredPeers.push('6.6.6.6:6666');
-			pns._inProgress[reqId].publicSeedAp = '7.7.7.7:7777';
+			this.pns._inProgress[reqId].discoveredPeers.push('6.6.6.6:6666');
+			this.pns._inProgress[reqId].publicSeedAp = '7.7.7.7:7777';
 			
 			this.overlayCallback.emit('graviti-message-received', this.msg, this.msginfo);
 			
 			test.deepEqual(['5.5.5.5:5555', '6.6.6.6:6666'].sort(),
-					pns._inProgress[reqId].discoveredPeers.sort());
+					this.pns._inProgress[reqId].discoveredPeers.sort());
 			test.done();
 		},
 	}),
-	
+
 	"handling routing row round trip probe response message" : testCase({
 		setUp : function(done) {
 			sinon.collection.stub(id, 'generateUuid').returns('generated-uuid');
@@ -648,9 +641,9 @@ module.exports = {
 			this.sendToAddr = sinon.stub(this.overlayCallback, 'sendToAddr');
 			this.success = sinon.stub();
 			
-			pns.init(this.overlayCallback);			
-			this.reqId = pns.findNearestNode('2.2.2.2:2222', joiningNodeId, this.success);
-			pns._sendRoutingRowProbes(this.reqId, {
+			this.pns = new pns.Pns(this.overlayCallback);			
+			this.reqId = this.pns.findNearestNode('2.2.2.2:2222', joiningNodeId, this.success);
+			this.pns._sendRoutingRowProbes(this.reqId, {
 					'7' : { id :'734F', ap : '9.9.9.9:9999'},
 					'C' : { id : 'C105357', ap : '3.3.3.3:3333' }
 			});
@@ -671,7 +664,6 @@ module.exports = {
 		},
 		
 		tearDown : function(done) {
-			pns._inProgress = {};
 			sinon.collection.restore();
 			done();
 		},
@@ -687,7 +679,7 @@ module.exports = {
 		},
 		
 		"when the routing row rtt probe response is further than current best, report it and finish up" : function(test) {			
-			pns._inProgress[this.reqId].nearest = {
+			this.pns._inProgress[this.reqId].nearest = {
 				id : '8377371D',
 				ap : '2.2.2.2:2222',
 				rtt : -1
@@ -703,12 +695,12 @@ module.exports = {
 				discovered_peers : ['9.9.9.9:9999', '3.3.3.3:3333'],
 				public_seed_ap: undefined
 			});
-			test.equal(0, Object.keys(pns._inProgress).length);						
+			test.equal(0, Object.keys(this.pns._inProgress).length);						
 			test.done();
 		},
 		
 		"when the routing row rtt probe response is nearer than current best, store it and initiate another cycle" : function(test) {			
-			pns._inProgress[this.reqId].nearest = {
+			this.pns._inProgress[this.reqId].nearest = {
 				id : '8377371D',
 				ap : '2.2.2.2:2222',
 				rtt : 100000
@@ -716,8 +708,8 @@ module.exports = {
 			
 			this.overlayCallback.emit('graviti-message-received', this.msg, this.msginfo);
 			
-			test.equal(undefined, pns._inProgress[this.reqId].routing_row_probes['generated-uuid']);
-			test.equal('C105357', pns._inProgress[this.reqId].nearest.id);
+			test.equal(undefined, this.pns._inProgress[this.reqId].routing_row_probes['generated-uuid']);
+			test.equal('C105357', this.pns._inProgress[this.reqId].nearest.id);
 			test.equal(4, this.sendToAddr.callCount);
 			test.ok(this.sendToAddr.calledWith('p2p:graviti/pns/routingrow', {
 				req_id : this.reqId,
@@ -733,8 +725,8 @@ module.exports = {
 			this.msg.content.probe_id = 'generated-uuid';
 			this.overlayCallback.emit('graviti-message-received', this.msg, this.msginfo);
 			
-			test.equal(undefined, pns._inProgress[this.reqId].routing_row_probes['generated-uuid']);
-			test.equal('C105357', pns._inProgress[this.reqId].nearest.id);
+			test.equal(undefined, this.pns._inProgress[this.reqId].routing_row_probes['generated-uuid']);
+			test.equal('C105357', this.pns._inProgress[this.reqId].nearest.id);
 			test.ok(4, this.sendToAddr.callCount);
 			test.ok(this.sendToAddr.calledWith('p2p:graviti/pns/routingrow', {
 					req_id : this.reqId,
@@ -750,8 +742,8 @@ module.exports = {
 			this.msginfo.source_ap = '9.9.9.9';
 			this.overlayCallback.emit('graviti-message-received', this.msg, this.msginfo);
 			
-			test.equal(undefined, pns._inProgress[this.reqId].routing_row_probes['generated-uuid']);
-			test.equal('C105357', pns._inProgress[this.reqId].nearest.id);
+			test.equal(undefined, this.pns._inProgress[this.reqId].routing_row_probes['generated-uuid']);
+			test.equal('C105357', this.pns._inProgress[this.reqId].nearest.id);
 			test.ok(4, this.sendToAddr.callCount);
 			test.ok(this.sendToAddr.calledWith('p2p:graviti/pns/routingrow', {
 					req_id : this.reqId,
@@ -765,24 +757,23 @@ module.exports = {
 		setUp : function(done) {
 			this.overlayCallback = langutil.extend(new events.EventEmitter(), { sendToAddr : function() {} });
 			pns.nearestNodeSearchTimeoutMsec = 50;
-			pns.init(this.overlayCallback);
+			this.pns = new pns.Pns(this.overlayCallback);
 			this.success = sinon.stub();
 			this.error = sinon.stub();
-			this.reqId = pns.findNearestNode('2.2.2.2:2222', joiningNodeId, this.success, this.error);
+			this.reqId = this.pns.findNearestNode('2.2.2.2:2222', joiningNodeId, this.success, this.error);
 			
 			done();
 		},
 		
 		tearDown : function(done) {
 			pns.nearestNodeSearchTimeoutMsec = 20000;
-			pns._inProgress = {};
 			done();
 		},
 		
 		"on success, cancel timeout timer" : function(test) {
 			var _this = this;
 			
-			pns._reportSuccess(this.reqId, 'nodeid', 'nodeaddrport', 123);
+			this.pns._reportSuccess(this.reqId, 'nodeid', 'nodeaddrport', 123);
 			
 			setTimeout(function() {
 				test.deepEqual(_this.success.args[0][0], {

@@ -5,12 +5,14 @@ var net = require('net');
 var langutil = require('common/langutil');
 var tcptran = require('messaging/tcptran');
 var testCase = require('nodeunit').testCase;
+var mockutil = require('testability/mockutil');
 
 module.exports = {		
 	"starting a listener" : testCase({
 		setUp : function(done) {
+			this.tcptran = new tcptran.TcpTran(1234, "127.0.0.1");
 			this.rawmsg = '{"uri" : "p2p:myapp/myresource", "key" : "val"}';
-			
+
 			this.server = langutil.extend(new events.EventEmitter(), {listen : function() {}, close : function() {}, address : function() { return {address : 'addr', port : 1234} }});
 			sinon.collection.stub(this.server, 'listen', function(port, addr, cbk) {
 				if (cbk) cbk();
@@ -30,7 +32,7 @@ module.exports = {
 		"should start to listen normally" : function(test) {
 			var on = sinon.collection.stub(this.server, 'on');
 			
-			tcptran.start(1234, "127.0.0.1");
+			this.tcptran.start();
 	
 			test.ok(on.calledWith('error'));
 			test.ok(on.calledWith('connection'));
@@ -42,7 +44,7 @@ module.exports = {
 		"should call ready callback when starting to listen normally" : function(test) {
 			var cbk = sinon.stub();
 			
-			tcptran.start(1234, "127.0.0.1", undefined, cbk);
+			this.tcptran.start(undefined, cbk);
 			this.server.emit('listening');
 	
 			test.ok(cbk.called);
@@ -50,7 +52,7 @@ module.exports = {
 		},
 		
 		"should try again if address in use" : function(test) {
-			tcptran.addrInUseRetryMsec = 100;
+			this.tcptran.addrInUseRetryMsec = 100;
 			var failTimeoutId = undefined;
 			var listenCallCount = 0;			
 			this.server.listen = function(port, addr) {
@@ -63,7 +65,7 @@ module.exports = {
 				}
 			};
 			
-			tcptran.start(1234, "127.0.0.1");
+			this.tcptran.start();
 			this.server.emit("error", { code : 'EADDRINUSE' });
 			
 			failTimeoutId = setTimeout(function() {
@@ -71,7 +73,7 @@ module.exports = {
 		},
 		
 		"should handle close event on socket of a received connection" : function(test) {
-			tcptran.start(1234, "127.0.0.1");
+			this.tcptran.start();
 			this.server.emit('connection', this.socket);
 			
 			this.socket.emit('close');
@@ -83,6 +85,7 @@ module.exports = {
 	
 	"message sending" : testCase({
 		setUp : function(done) {
+			this.tcptran = new tcptran.TcpTran();
 			this.rawmsg = '{"key" : "val"}';
 			this.client = langutil.extend(new events.EventEmitter(), { write : function() {}, end : function() {}, setEncoding : function() {} } );
 			
@@ -103,7 +106,7 @@ module.exports = {
 			});
 			var end = sinon.collection.stub(this.client, 'end');
 			
-			tcptran.send(2222, "1.1.1.1", this.rawmsg);
+			this.tcptran.send(2222, "1.1.1.1", this.rawmsg);
 			this.client.emit('connect');
 	
 			test.ok(setEncoding.calledWith('UTF-8'));
@@ -113,7 +116,7 @@ module.exports = {
 		},
 	
 		"should handle close on connection used to send data" : function(test) {
-			tcptran.send(2222, "1.1.1.1", this.rawmsg);
+			this.tcptran.send(2222, "1.1.1.1", this.rawmsg);
 			this.client.emit('close');
 	
 			// for now we don't do anything
@@ -121,7 +124,7 @@ module.exports = {
 		},
 		
 		"should handle received data on connection used to send data" : function(test) {
-			tcptran.send(2222, "1.1.1.1", this.rawmsg);
+			this.tcptran.send(2222, "1.1.1.1", this.rawmsg);
 			this.client.emit('data', 'moo');
 	
 			// for now we just log
@@ -131,6 +134,7 @@ module.exports = {
 
 	"message receiving" : testCase ({
 		setUp : function(done) {
+			this.tcptran = new tcptran.TcpTran('1111', '1.1.1.1');
 			this.socket = langutil.extend(new events.EventEmitter(), {end : function() {}});
 			this.existingParsed = { existing : 'parsed'};
 			this.socketEnd = sinon.stub(this.socket, 'end');
@@ -142,7 +146,7 @@ module.exports = {
 			sinon.collection.stub(this.server, 'listen');
 			sinon.collection.stub(net, 'createServer').returns(this.server);
 			
-			tcptran._initSocket(this.socket);
+			this.tcptran._initSocket(this.socket);
 			
 			done();
 		},
@@ -153,7 +157,7 @@ module.exports = {
 		},
 		
 		"should delegate to callback to parse message" : function(test) {
-			tcptran.start('1111', '1.1.1.1', this.callback);
+			this.tcptran.start(this.callback);
 			
 			this.socket.emit('data', 'some_data');
 			
@@ -162,7 +166,7 @@ module.exports = {
 		},
 		
 		"should close socket on parsing if fully parsed" : function(test) {
-			tcptran.start('1111', '1.1.1.1', this.callback);
+			this.tcptran.start(this.callback);
 			
 			this.socket.emit('data', 'some_data');
 			
@@ -172,7 +176,7 @@ module.exports = {
 		
 		"should absorb exception from parsing" : function(test) {
 			this.callback = sinon.stub().throws(new Error());
-			tcptran.start('1111', '1.1.1.1', this.callback);
+			this.tcptran.start(this.callback);
 			
 			this.socket.emit('data', 'some_data');
 			
@@ -182,7 +186,7 @@ module.exports = {
 		
 		"should store partial parse state in socket" : function(test) {
 			this.callback = sinon.stub().returns({ partial : 'state' });
-			tcptran.start('1111', '1.1.1.1', this.callback);
+			this.tcptran.start(this.callback);
 			
 			this.socket.emit('data', 'some_data');
 			
@@ -193,7 +197,12 @@ module.exports = {
 		}
 	}),
 	
-	"stopping the listener" : testCase ({		
+	"stopping the listener" : testCase ({
+		setUp : function(done) {
+			this.tcptran = new tcptran.TcpTran();
+			done();
+		},
+		
 		tearDown : function(done) {
 			sinon.collection.restore();
 			done();
@@ -201,11 +210,11 @@ module.exports = {
 		
 		"should stop listening" : function(test) {
 			// setup
-			tcptran.server = {close : function() {}};
-			var close = sinon.collection.stub(tcptran.server, "close");
+			this.tcptran.server = {close : function() {}};
+			var close = sinon.collection.stub(this.tcptran.server, "close");
 	
 			// act
-			tcptran.stop();
+			this.tcptran.stop();
 	
 			// assert
 			test.ok(close.called);

@@ -3,28 +3,26 @@ var pns = require('overlay/pastry/pns');
 var testCase = require('nodeunit').testCase;
 var sinon = require('sinon');
 var node = require('core/node');
+var events = require('events');
+var mockutil = require('testability/mockutil');
 
 module.exports = {
 	"lifecycle events aka initialisation and cancellation" : testCase({
+		setUp : function(done) {
+			this.pns = mockutil.stubProto(pns.Pns);
+			this.pnsrunner = new pnsrunner.PnsRunner(this.pns);
+			done();
+		},
+		
 		tearDown : function(done) {
 			sinon.collection.restore();
 			done();
 		},
 		
-		"should delegate initialisation to pns" : function(test) {
-			var pnsInit = sinon.collection.stub(pns, 'init');
-			var arg = sinon.stub();
-			
-			pnsrunner.init(arg);
-			
-			test.ok(pnsInit.calledWith(arg));
-			test.done();
-		},
-		
 		"should delegate cancellation to pns" : function(test) {
-			var pnsCancelAll = sinon.collection.stub(pns, 'cancelAll');
+			var pnsCancelAll = sinon.collection.stub(this.pns, 'cancelAll');
 			
-			pnsrunner.cancelAll();
+			this.pnsrunner.cancelAll();
 			
 			test.ok(pnsCancelAll.called);
 			test.done();
@@ -43,7 +41,9 @@ module.exports = {
 					discovered_peers : ['other', 'peers']
 				};
 			this.success = sinon.stub();
-			this.pnsFind = sinon.collection.stub(pns, 'findNearestNode', function(seed, nodeId, success) {
+			this.pns = mockutil.stubProto(pns.Pns);
+			this.pnsrunner = new pnsrunner.PnsRunner(this.pns);
+			this.pnsFind = sinon.collection.stub(this.pns, 'findNearestNode', function(seed, nodeId, success) {
 				success(_this.res);
 			});
 			done();
@@ -55,14 +55,14 @@ module.exports = {
 		},
 		
 		"should initiate pns by starting the first pns run" : function(test) {
-			pnsrunner.run('seed', this.success);
+			this.pnsrunner.run('seed', this.success);
 			
 			test.ok(this.pnsFind.calledWith('seed', 'ABCDEF'));
 			test.done();
 		},
 		
 		"should do no more than max allowed num of finds in a pns run" : function(test) {
-			pnsrunner.run('seed', this.success);
+			this.pnsrunner.run('seed', this.success);
 			
 			test.equal(3, this.pnsFind.callCount);
 			test.ok(this.success.calledWith('1.1.1.0:1111'));
@@ -72,7 +72,7 @@ module.exports = {
 		"should only run once if no discovered peers" : function(test) {
 			this.res.discovered_peers = [];
 			
-			pnsrunner.run('seed', this.success);
+			this.pnsrunner.run('seed', this.success);
 			
 			test.equal(1, this.pnsFind.callCount);
 			test.ok(this.success.calledWith('1.1.1.0:1111'));
@@ -82,7 +82,7 @@ module.exports = {
 		"should only run once if discovered empty" : function(test) {
 			this.res.discovered_peers = undefined;
 			
-			pnsrunner.run('seed', this.success);
+			this.pnsrunner.run('seed', this.success);
 			
 			test.equal(1, this.pnsFind.callCount);
 			test.ok(this.success.calledWith('1.1.1.0:1111'));
@@ -90,7 +90,7 @@ module.exports = {
 		},
 		
 		"should use up discovered peers only once" : function(test) {
-			pnsrunner.run('seed', this.success);
+			this.pnsrunner.run('seed', this.success);
 
 			test.ok(this.pnsFind.calledWith('other', 'ABCDEF'));
 			test.ok(this.pnsFind.calledWith('peers', 'ABCDEF'));	
@@ -103,7 +103,7 @@ module.exports = {
 			while (!this.pnsFind.calledWith('a', 'ABCDEF') ||
 					!this.pnsFind.calledWith('b', 'ABCDEF') ||
 					!this.pnsFind.calledWith('c', 'ABCDEF'))
-				pnsrunner.run('seed', this.success);
+				this.pnsrunner.run('seed', this.success);
 			
 			test.done();
 		}

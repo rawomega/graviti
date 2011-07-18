@@ -10,15 +10,15 @@ var uri = require('common/uri');
 var bootstrapmgr = require('overlay/pastry/bootstrapmgr');
 var heartbeater = require('overlay/pastry/heartbeater');
 var overlay = require('overlay/pastry/overlay');
-var messagemgr = require('messaging/messagemgr');
+var transportmgr = require('messaging/transportmgr');
 
 module.exports = {
 	"staring and joining an overlay" : testCase({
 		setUp : function(done) {
-			this.nodeStart = sinon.collection.stub(messagemgr, 'start', function(a, b, cbk) {
+			this.nodeStart = sinon.collection.stub(transportmgr, 'start', function(a, b, cbk) {
 				cbk();
 			});
-			this.messagemgrOn = sinon.collection.stub(messagemgr, 'on');
+			this.transportmgrOn = sinon.collection.stub(transportmgr, 'on');
 			this.bootstrapStart = sinon.collection.stub(bootstrapmgr, 'start');
 			this.heartbeatStart = sinon.collection.stub(heartbeater, 'start');
 			this.callback = sinon.stub();
@@ -34,7 +34,7 @@ module.exports = {
 			overlay.init(1234, "127.0.0.1", this.callback);
 				
 			test.ok(this.nodeStart.calledWith(1234, "127.0.0.1"));
-			test.ok(this.messagemgrOn.calledWith('message', overlay._processMessage));
+			test.ok(this.transportmgrOn.calledWith('message', overlay._processMessage));
 			test.ok(this.bootstrapStart.calledWith(overlay));
 			test.ok(this.heartbeatStart.calledWith(overlay));
 			test.ok(this.callback.called);
@@ -46,7 +46,7 @@ module.exports = {
 			overlay.emit('bootstrap-completed');
 			
 			test.ok(this.nodeStart.calledWith(1234, "127.0.0.1"));
-			test.ok(this.messagemgrOn.calledWith('message', overlay._processMessage));
+			test.ok(this.transportmgrOn.calledWith('message', overlay._processMessage));
 			test.ok(this.bootstrapStart.calledWith(overlay, '127.0.0.1:4567'));
 			test.ok(this.heartbeatStart.calledWith(overlay));
 			test.ok(this.callback.called);
@@ -110,7 +110,7 @@ module.exports = {
 			
 			this.uri = 'p2p:myapp/myresource';
 			this.content = {my : 'content'};
-			this.send = sinon.collection.stub(messagemgr, 'send');
+			this.send = sinon.collection.stub(transportmgr, 'send');
 			this.appForwarding = sinon.stub();
 			this.appReceived = sinon.stub();
 			this.msginfo = {
@@ -214,7 +214,7 @@ module.exports = {
 	"handling of received messages" : testCase({
 		setUp : function(done) {
 			node.nodeId = 'ABCD';
-			this.send = sinon.collection.stub(messagemgr, 'send');
+			this.send = sinon.collection.stub(transportmgr, 'send');
 			this.appForwarding = sinon.stub();
 			this.appReceived = sinon.stub();
 			this.gravitiForwarding = sinon.stub();
@@ -320,7 +320,7 @@ module.exports = {
 	
 	"leaving a ring" : testCase({
 		setUp : function(done) {
-			this.messagemgrStop = sinon.collection.stub(messagemgr, 'stop');
+			this.transportmgrStop = sinon.collection.stub(transportmgr, 'stop');
 			this.heartbeaterStop = sinon.collection.stub(heartbeater, 'stop');
 			this.bootstrapmgrStop = sinon.collection.stub(bootstrapmgr, 'stop');
 			done();
@@ -340,7 +340,7 @@ module.exports = {
 			// assert
 			test.ok(this.bootstrapmgrStop.called);
 			test.ok(this.heartbeaterStop.called);
-			test.ok(this.messagemgrStop.called);
+			test.ok(this.transportmgrStop.called);
 			test.done();
 		}
 	})
