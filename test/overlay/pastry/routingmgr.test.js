@@ -3,6 +3,7 @@ var sinon = require('sinon');
 var routingmgr = require('overlay/pastry/routingmgr');
 var routingtable = require('overlay/routingtable');
 var leafset = require('overlay/pastry/leafset');
+var heartbeater = require('overlay/pastry/heartbeater');
 var node = require('core/node');
 var testCase = require("nodeunit").testCase;
 var mockutil = require('testability/mockutil');
@@ -178,5 +179,41 @@ module.exports = {
 			test.strictEqual('1111', res.port);
 			test.done();
 		}
-	})	
+	}),
+	
+	"suggesting a better routing hop" : testCase({
+		setUp : function(done) {
+			node.nodeId = anId;
+			this.msg = { dest_id : 'FEED', he : 'llo'};
+			this.msginfo = {
+					source_ap : '3.3.3.3:3333',
+					app_name : 'myapp'					
+			};
+			this.leafset = new leafset.Leafset();
+			this.routingtable = new routingtable.RoutingTable();
+			this.heartbeater = mockutil.stubProto(heartbeater.Heartbeater);
+			this.routingmgr = new routingmgr.RoutingMgr(this.leafset, this.routingtable, this.heartbeater);
+			done();
+		},
+	
+		tearDown : function(done) {
+			sinon.collection.restore();
+			done();
+		},
+		
+		"tell upstream node if we have a better route for the message being routed than ourselves" : function(test) {
+			var sendHeartbeat = sinon.collection.stub(this.heartbeater, 'sendHeartbeatToAddr');
+			var rtFindBetterRoutingHop = sinon.collection.stub(this.routingtable, 'findBetterRoutingHop').returns({
+				row : 'some row'
+			});
+			
+			this.routingmgr.suggestBetterHop(this.msg, this.msginfo);
+					
+			test.ok(sendHeartbeat.calledOnce);
+			test.equal('3.3.3.3', sendHeartbeat.args[0][0]);
+			test.equal('3333', sendHeartbeat.args[0][1]);
+			test.deepEqual({routing_table : 'some row'}, sendHeartbeat.args[0][2]);			
+			test.done();
+		}
+	})
 };

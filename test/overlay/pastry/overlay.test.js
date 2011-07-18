@@ -300,21 +300,6 @@ module.exports = {
 			test.ok(!this.appForwarding.called);
 			test.ok(!this.gravitiReceived.called);
 			test.done();
-		},
-		
-		"tell upstream node if we have a better route for the message being routed than ourselves" : function(test) {
-			var sendHeartbeat = sinon.collection.stub(heartbeater, 'sendHeartbeatToAddr');
-			var rtFindBetterRoutingHop = sinon.collection.stub(routingtable, 'findBetterRoutingHop').returns({
-				row : 'some row'
-			});
-			
-			overlay._processMessage(this.msg, this.msginfo);
-					
-			test.ok(sendHeartbeat.calledOnce);
-			test.equal('3.3.3.3', sendHeartbeat.args[0][0]);
-			test.equal('3333', sendHeartbeat.args[0][1]);
-			test.deepEqual({routing_table : 'some row'}, sendHeartbeat.args[0][2]);			
-			test.done();
 		}
 	}),
 	
