@@ -1,5 +1,5 @@
-var langutil = require('../lib/common/langutil')
-var app = require('../lib/api/app');
+var langutil = require('common/langutil')
+var app = require('api/app');
 
 var self = module.exports = langutil.extend(new app.GravitiApp('echoapp'), {
 	intervalId : undefined,

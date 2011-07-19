@@ -13,11 +13,14 @@ var mockutil = require('testability/mockutil');
 module.exports = {
 	"bootstrap manager startup" : testCase({
 		setUp : function(done) {
+			this.processOn = sinon.collection.stub(process, 'on');
+			
+			this.messagemgr = mockutil.stubProto(messagemgr.MessageMgr);
+			this.pnsrunner = mockutil.stubProto(pnsrunner.PnsRunner);
+			this.bootstrapmgr = new bootstrapmgr.BootstrapMgr(this.messagemgr, undefined, undefined, undefined, this.pnsrunner);
+			
 			node.nodeId = '1234567890123456789012345678901234567890';
-			this.overlayCallback = { on : function() {}, sendToAddr : function() {} };
-			this.on = sinon.collection.stub(this.overlayCallback, 'on');
-			this.pnsrunner = { run : function() {} };
-			this.bootstrapmgr = new bootstrapmgr.BootstrapMgr(this.overlayCallback, this.pnsrunner);
+			this.on = sinon.stub(this.messagemgr, 'on');
 			done();
 		},
 		
@@ -26,9 +29,12 @@ module.exports = {
 			bootstrapmgr.pendingRequestCheckIntervalMsec = 1000;
 			bootstrapmgr.bootstrapRetryIntervalMsec = 30000;
 			sinon.collection.restore();
-			routingtable._table = {};
-			routingtable._candidatePeers = {};
 			done();
+		},
+		
+		"should set up exit hook on start" : function(test) {
+			test.ok(this.processOn.calledWith('exit', this.bootstrapmgr.stop));
+			test.done();
 		},
 		
 		"should start bootstrap manager for node starting a new ring" : function(test) {			
@@ -40,7 +46,7 @@ module.exports = {
 		},
 		
 		"bootstrap manager for node joining a ring should initiate sending of bootstrap requests without PNS when PNS off" : function(test) {
-			var sendToAddr = sinon.collection.stub(this.overlayCallback, 'sendToAddr');
+			var sendToAddr = sinon.stub(this.messagemgr, 'sendToAddr');
 			bootstrapmgr.pendingRequestCheckIntervalMsec = 50;
 			bootstrapmgr.usePns = false;
 			
@@ -57,7 +63,7 @@ module.exports = {
 		},
 		
 		"bootstrap manager for node joining a ring should initiate sending of bootstrap requests with PNS when PNS on" : function(test) {
-			var sendToAddr = sinon.collection.stub(this.overlayCallback, 'sendToAddr');
+			var sendToAddr = sinon.collection.stub(this.messagemgr, 'sendToAddr');
 			bootstrapmgr.pendingRequestCheckIntervalMsec = 50;
 			sinon.collection.stub(this.pnsrunner, 'run', function(endpoint, success) {
 				success('6.6.6.6:6666');
@@ -79,7 +85,7 @@ module.exports = {
 			bootstrapmgr.bootstrapRetryIntervalMsec = 50;
 			bootstrapmgr.usePns = false;
 			var callCount = 0;
-			var sendToAddr = sinon.stub(this.overlayCallback, 'sendToAddr', function() {
+			var sendToAddr = sinon.stub(this.messagemgr, 'sendToAddr', function() {
 				callCount++;
 			});
 			
@@ -94,9 +100,9 @@ module.exports = {
 
 	"bootstrap manager shutdown" : testCase({
 		setUp : function(done) {
-			this.pnsrunner = { cancelAll : function() {}};
+			this.pnsrunner = mockutil.stubProto(pnsrunner.PnsRunner);
 			this.cancelAll = sinon.collection.stub(this.pnsrunner, 'cancelAll');
-			this.bootstrapmgr = new bootstrapmgr.BootstrapMgr(undefined, this.pnsrunner);
+			this.bootstrapmgr = new bootstrapmgr.BootstrapMgr(undefined, undefined, undefined, undefined, this.pnsrunner);
 			done();
 		},
 		
@@ -115,33 +121,32 @@ module.exports = {
 
 	"handling bootstrap requests" : testCase ({
 		setUp : function(done) {
+			this.messagemgr = mockutil.stubProto(messagemgr.MessageMgr);
+			this.leafset = new leafset.Leafset();
+			this.routingtable = new routingtable.RoutingTable();
+			this.bootstrapmgr = new bootstrapmgr.BootstrapMgr(this.messagemgr, this.leafset, this.routingtable);
+		
 			node.nodeId = '1234567890123456789012345678901234567890';
 			this.msginfo = {
 				sender_ap : '2.2.2.2:2222'
 			};
 			this.sharedRow = {'2' : {'A' : {id :'00A'}}};
 			
-			leafset.reset();
-			this.updateWithProvisional = sinon.collection.stub(leafset, 'updateWithProvisional');
+			this.updateWithProvisional = sinon.collection.stub(this.leafset, 'updateWithProvisional');
 			
-			this.rtUpdateWithKnownGood= sinon.collection.stub(routingtable, 'updateWithKnownGood');
-			this.getSharedRow = sinon.collection.stub(routingtable, 'getSharedRow').returns(this.sharedRow);
+			this.rtUpdateWithKnownGood= sinon.stub(this.routingtable, 'updateWithKnownGood');
+			this.getSharedRow = sinon.stub(this.routingtable, 'getSharedRow').returns(this.sharedRow);
 			
-			this.overlayCallback = langutil.extend(new events.EventEmitter(), { sendToAddr : function() {}, send : function() {}, sendToId : function() {} });
-			this.sendToAddr = sinon.collection.stub(this.overlayCallback, 'sendToAddr');
-			this.send = sinon.collection.stub(this.overlayCallback, 'send');
-			this.sendToId = sinon.collection.stub(this.overlayCallback, 'sendToId');
-			this.bootstrapmgr = new bootstrapmgr.BootstrapMgr(this.overlayCallback);
+			this.sendToAddr = sinon.collection.stub(this.messagemgr, 'sendToAddr');
+			this.send = sinon.collection.stub(this.messagemgr, 'send');
+			this.sendToId = sinon.collection.stub(this.messagemgr, 'sendToId');
 		
 			done();
 		},
 		
 		tearDown : function(done) {
 			sinon.collection.restore();
-			leafset.reset();
 			bootstrapmgr.usePns = true;
-			routingtable._table = {};
-			routingtable._candidatePeers = {};
 			done();
 		},
 		
@@ -155,14 +160,14 @@ module.exports = {
 			};			
 			
 			this.bootstrapmgr.start();
-			this.overlayCallback.emit("graviti-message-received", msg, this.msginfo);
+			this.bootstrapmgr._handleReceivedGravitiMessage(msg, this.msginfo);
 
 			test.ok(!this.send.called);
 			test.ok(!this.sendToId.called);
 			test.ok(this.sendToAddr.calledOnce);
 			test.strictEqual(this.sendToAddr.args[0][0], 'p2p:graviti/peers');
 			test.deepEqual(this.sendToAddr.args[0][1], 	{
-					leafset : leafset.compressedLeafset(),
+					leafset : this.leafset.compressedLeafset(),
 					routing_table : this.sharedRow,
 					bootstrap_request_hops : ['1234567890123456789012345678901234567890'],
 					last_bootstrap_hop : true
@@ -176,7 +181,7 @@ module.exports = {
 		},
 		
 		"when we are not nearest to joining node's node id, should rebroadcast request into ring" : function(test) {			
-			sinon.collection.stub(leafset, 'isThisNodeNearestTo').returns(false);
+			sinon.stub(this.leafset, 'isThisNodeNearestTo').returns(false);
 			var msg = {
 				uri : 'p2p:graviti/peers',
 				method : 'GET',
@@ -187,7 +192,7 @@ module.exports = {
 			};
 			
 			this.bootstrapmgr.start();
-			this.overlayCallback.emit("graviti-message-received", msg, this.msginfo);
+			this.bootstrapmgr._handleReceivedGravitiMessage(msg, this.msginfo);
 
 			test.ok(!this.send.called);
 			test.ok(!this.sendToAddr.called);
@@ -217,7 +222,7 @@ module.exports = {
 			};
 				
 			this.bootstrapmgr.start();
-			this.overlayCallback.emit("graviti-message-forwarding", msg, this.msginfo);
+			this.bootstrapmgr._handleForwardingGravitiMessage(msg, this.msginfo);
 			
 			test.ok(!this.send.called);
 			test.ok(!this.sendToId.called);
@@ -238,16 +243,23 @@ module.exports = {
 	"handling bootstrap responses" : testCase ({
 		setUp : function(done) {
 			var _this = this;
+			
+			this.messagemgr = mockutil.stubProto(messagemgr.MessageMgr);
+			this.leafset = new leafset.Leafset();
+			this.routingtable = new routingtable.RoutingTable();
+			this.heartbeater = mockutil.stubProto(heartbeater.Heartbeater);
+			this.bootstrapmgr = new bootstrapmgr.BootstrapMgr(this.messagemgr, this.leafset, this.routingtable, this.heartbeater);
+			
 			node.nodeId = '1234567890123456789012345678901234567890';
-			this.leafset = {'LS' : '5.5.5.5:5555'};
-			this.routingTable = {'RT' : '5.5.5.5:5555'};
+			this.leafsetContent = {'LS' : '5.5.5.5:5555'};
+			this.routingTableContent = {'RT' : '5.5.5.5:5555'};
 			this.msginfo = {
 				sender_ap : '2.2.2.2:2222'
 			};
 	
-			this.updateWithProvisional = sinon.collection.stub(leafset, 'updateWithProvisional');
-			this.updateWithKnownGood = sinon.collection.stub(leafset, 'updateWithKnownGood');
-			this.mergeProvisional = sinon.collection.stub(routingtable, 'mergeProvisional');
+			this.updateWithProvisional = sinon.stub(this.leafset, 'updateWithProvisional');
+			this.updateWithKnownGood = sinon.stub(this.leafset, 'updateWithKnownGood');
+			this.mergeProvisional = sinon.stub(this.routingtable, 'mergeProvisional');
 			
 			this.leafsetPeers = [{ap:"1.1.1.1:1111"}, {ap:"2.2.2.2:2222"}];
 			this.routingTableRows = {
@@ -259,20 +271,18 @@ module.exports = {
 			    	'6' : {id : '6789', ap:"6.6.6.6:6666"}
 			    }
 			};
-			this.leafsetEach = sinon.collection.stub(leafset, 'each', function(cbk) {
+			this.leafsetEach = sinon.stub(this.leafset, 'each', function(cbk) {
 				for (var i = 0; i < _this.leafsetPeers.length; i++) {
 					cbk('someid', _this.leafsetPeers[i]);
 				}
 			});
-			this.routingTableEachRow = sinon.collection.stub(routingtable, 'eachRow', function(cbk) {
+			this.routingTableEachRow = sinon.stub(this.routingtable, 'eachRow', function(cbk) {
 				Object.keys(_this.routingTableRows).forEach(function(row) {					
 					cbk(row, _this.routingTableRows[row]);					
 				});
 			});
 	
-			this.overlayCallback = langutil.extend(new events.EventEmitter(), { sendToAddr : function() {}, send : function() {} });
-			this.sendHeartbeatToAddr = sinon.collection.stub(heartbeater, 'sendHeartbeatToAddr');
-			this.bootstrapmgr = new bootstrapmgr.BootstrapMgr(this.overlayCallback);
+			this.sendHeartbeatToAddr = sinon.collection.stub(this.heartbeater, 'sendHeartbeatToAddr');
 			
 			done();
 		},
@@ -280,8 +290,6 @@ module.exports = {
 		tearDown : function(done) {
 			sinon.collection.restore();
 			bootstrapmgr.usePns = true;
-			routingtable._table = {};
-			routingtable._candidatePeers = {};
 			done();
 		},
 		
@@ -296,14 +304,14 @@ module.exports = {
 				method : 'POST',
 				source_id : 'ABCDEF1234ABCDEF1234ABCDEF1234ABCDEF1234',
 				content : {
-					leafset : _this.leafset,
-					routing_table : _this.routingTable,
+					leafset : this.leafsetContent,
+					routing_table : this.routingTableContent,
 					last_bootstrap_hop : true
 				}
 			};
 					
 			this.bootstrapmgr.start('cool-bootstrap');			
-			this.overlayCallback.emit("graviti-message-received", msg, this.msginfo);
+			this.bootstrapmgr._handleReceivedGravitiMessage(msg, this.msginfo);
 			
 			test.ok(!this.bootstrapmgr.bootstrapping);
 			test.ok(bootstrapCompletedCalled);
@@ -317,22 +325,22 @@ module.exports = {
 				method : 'POST',
 				content : {
 					id : 'ABCDEF1234ABCDEF1234ABCDEF1234ABCDEF1234',
-					leafset : _this.leafset,
-					routing_table : _this.routingTable,
+					leafset : this.leafsetContent,
+					routing_table : this.routingTableContent,
 					last_bootstrap_hop : true
 				}
 			};
 			this.bootstrapmgr.bootstrapping = true;
 
 			this.bootstrapmgr.start();
-			this.overlayCallback.emit("graviti-message-received", msg, this.msginfo);
+			this.bootstrapmgr._handleReceivedGravitiMessage(msg, this.msginfo);
 	
 			test.ok(this.sendHeartbeatToAddr.callCount === 4);
 			test.ok(this.sendHeartbeatToAddr.calledWith ('1.1.1.1', '1111', {
-				leafset : leafset.compressedLeafset()
+				leafset : this.leafset.compressedLeafset()
 			}));
 			test.ok(this.sendHeartbeatToAddr.calledWith ('2.2.2.2', '2222', {
-				leafset : leafset.compressedLeafset(),
+				leafset : this.leafset.compressedLeafset(),
 				routing_table : { '0' : this.routingTableRows['0']}
 			}));
 			test.ok(this.sendHeartbeatToAddr.calledWith ('5.5.5.5', '5555', {
