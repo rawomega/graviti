@@ -1,4 +1,5 @@
 var sinon = require('sinon');
+var assert = require('assert');
 var bootstrapmgr = require('overlay/pastry/bootstrapmgr');
 var messagemgr = require('messaging/messagemgr');
 var langutil = require('common/langutil');
@@ -37,8 +38,17 @@ module.exports = {
 			test.done();
 		},
 		
+		"should throw on startup when no completed callback given" : function(test) {			
+			var _this = this;
+			
+			assert.throws(function() {
+				_this.bootstrapmgr.start();
+			}, /no bootstrap completed/i);			
+			test.done();
+		},
+		
 		"should start bootstrap manager for node starting a new ring" : function(test) {			
-			this.bootstrapmgr.start();
+			this.bootstrapmgr.start('mybootstraps', sinon.stub());
 			
 			test.ok(this.on.calledWith('graviti-message-received'));
 			test.ok(this.on.calledWith('graviti-message-forwarding'));
@@ -50,7 +60,7 @@ module.exports = {
 			bootstrapmgr.pendingRequestCheckIntervalMsec = 50;
 			bootstrapmgr.usePns = false;
 			
-			this.bootstrapmgr.start('1.2.3.4:1234,5.6.7.8:5678,myhost:8888');
+			this.bootstrapmgr.start('1.2.3.4:1234,5.6.7.8:5678,myhost:8888', sinon.stub());
 			
 			test.ok(this.on.calledWith('graviti-message-received'));
 			test.ok(this.on.calledWith('graviti-message-forwarding'));
@@ -69,7 +79,7 @@ module.exports = {
 				success('6.6.6.6:6666');
 			});
 			
-			this.bootstrapmgr.start('1.2.3.4:1234,5.6.7.8:5678,myhost:8888');
+			this.bootstrapmgr.start('1.2.3.4:1234,5.6.7.8:5678,myhost:8888', sinon.stub());
 			
 			test.ok(this.on.calledWith('graviti-message-received'));
 			test.ok(this.on.calledWith('graviti-message-forwarding'));
@@ -89,7 +99,7 @@ module.exports = {
 				callCount++;
 			});
 			
-			this.bootstrapmgr.start('1.2.3.4:1234,5.6.7.8:5678,myhost:8888');
+			this.bootstrapmgr.start('1.2.3.4:1234,5.6.7.8:5678,myhost:8888', sinon.stub());
 			
 			setTimeout(function() {
 				test.ok(callCount >= 6);
@@ -159,7 +169,7 @@ module.exports = {
 				}
 			};			
 			
-			this.bootstrapmgr.start();
+			this.bootstrapmgr.start('mybootstraps', sinon.stub);
 			this.bootstrapmgr._handleReceivedGravitiMessage(msg, this.msginfo);
 
 			test.ok(!this.send.called);
@@ -191,7 +201,7 @@ module.exports = {
 				}
 			};
 			
-			this.bootstrapmgr.start();
+			this.bootstrapmgr.start('', sinon.stub);
 			this.bootstrapmgr._handleReceivedGravitiMessage(msg, this.msginfo);
 
 			test.ok(!this.send.called);
@@ -221,7 +231,7 @@ module.exports = {
 				}
 			};
 				
-			this.bootstrapmgr.start();
+			this.bootstrapmgr.start('', sinon.stub);
 			this.bootstrapmgr._handleForwardingGravitiMessage(msg, this.msginfo);
 			
 			test.ok(!this.send.called);
@@ -294,10 +304,7 @@ module.exports = {
 		},
 		
 		"should emit bootstrap complete event when last bootstrap response received" : function(test) {
-			var bootstrapCompletedCalled = false;
-			this.bootstrapmgr.on('bootstrap-completed', function() {
-				bootstrapCompletedCalled = true;
-			});
+			var bootstrapCompletedCallback = sinon.stub();
 			var _this = this;
 			var msg = {
 				uri : 'p2p:graviti/peers',
@@ -310,11 +317,11 @@ module.exports = {
 				}
 			};
 					
-			this.bootstrapmgr.start('cool-bootstrap');			
+			this.bootstrapmgr.start('cool-bootstrap', bootstrapCompletedCallback);			
 			this.bootstrapmgr._handleReceivedGravitiMessage(msg, this.msginfo);
 			
 			test.ok(!this.bootstrapmgr.bootstrapping);
-			test.ok(bootstrapCompletedCalled);
+			test.ok(bootstrapCompletedCallback.called);
 			test.done();
 		},		
 		
@@ -332,7 +339,7 @@ module.exports = {
 			};
 			this.bootstrapmgr.bootstrapping = true;
 
-			this.bootstrapmgr.start();
+			this.bootstrapmgr.start('mybootstrap', sinon.stub());
 			this.bootstrapmgr._handleReceivedGravitiMessage(msg, this.msginfo);
 	
 			test.ok(this.sendHeartbeatToAddr.callCount === 4);

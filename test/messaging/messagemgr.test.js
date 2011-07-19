@@ -1,4 +1,3 @@
-var assert = require('assert');
 var sinon = require('sinon');
 var testCase = require('nodeunit').testCase;
 var node = require('core/node');

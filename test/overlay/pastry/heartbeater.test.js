@@ -13,6 +13,8 @@ var util = require('util');
 module.exports = {
 	"creation" : testCase({
 		setUp : function(done) {
+			this.processOn = sinon.collection.stub(process, 'on');
+			
 			this.messagemgr = mockutil.stubProto(messagemgr.MessageMgr);			
 			this.on = sinon.stub(this.messagemgr, 'on').returns(undefined);			
 			this.leafset = new leafset.Leafset();
@@ -20,6 +22,16 @@ module.exports = {
 			this.heartbeater = new heartbeater.Heartbeater(this.messagemgr, this.leafset, this.routingtable);
 			
 			done();
+		},
+		
+		tearDown : function(done) {
+			sinon.collection.restore();
+			done();
+		},
+
+		"should set up exit hook on start" : function(test) {
+			test.ok(this.processOn.calledWith('exit', this.heartbeater.stop));
+			test.done();
 		},
 		
 		"should set up received message listening when created" : function(test) {			
