@@ -10,6 +10,8 @@ var mockutil = require('testability/mockutil');
 module.exports = {		
 	"starting a listener" : testCase({
 		setUp : function(done) {
+			this.processOn = sinon.collection.stub(process, 'on');
+			
 			this.tcptran = new tcptran.TcpTran(1234, "127.0.0.1");
 			this.rawmsg = '{"uri" : "p2p:myapp/myresource", "key" : "val"}';
 
@@ -27,6 +29,11 @@ module.exports = {
 		tearDown : function(done) {
 			sinon.collection.restore();
 			done();
+		},
+
+		"should set up exit hook on start" : function(test) {
+			test.ok(this.processOn.calledWith('exit', this.tcptran.stop));
+			test.done();
 		},
 	
 		"should start to listen normally" : function(test) {

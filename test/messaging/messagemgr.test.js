@@ -233,22 +233,5 @@ module.exports = {
 			test.ok(!this.gravitiReceived.called);
 			test.done();
 		}
-	}),
-
-	"leaving a ring" : testCase({
-		setUp : function(done) {
-			this.transportmgr = mockutil.stubProto(transportmgr.TransportMgr);
-			this.messagemgr = new messagemgr.MessageMgr(this.transportmgr);
-
-			this.transportmgrStop = sinon.stub(this.transportmgr, 'stop');
-			done();
-		},
-		
-		"should stop node, bootstrapper and heartbeater when leaving ring" : function(test) {	
-			this.messagemgr.stop();
-			
-			test.ok(this.transportmgrStop.called);
-			test.done();
-		}
 	})
 };

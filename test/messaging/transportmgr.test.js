@@ -12,6 +12,8 @@ var assert = require('assert');
 module.exports = {		
 	"starting transports" : testCase({
 		setUp : function(done) {
+			this.processOn = sinon.collection.stub(process, 'on');
+			
 			this.udptran = mockutil.stubProto(udptran.UdpTran);			
 			this.tcptran = mockutil.stubProto(tcptran.TcpTran);
 			this.messageparser = new messageparser.MessageParser();
@@ -24,6 +26,11 @@ module.exports = {
 		tearDown : function(done) {
 			sinon.collection.restore();
 			done();
+		},
+		
+		"should set up exit hook on start" : function(test) {
+			test.ok(this.processOn.calledWith('exit', this.transportmgr.stop));
+			test.done();
 		},
 		
 		"start tcp transport on start" : function(test) {

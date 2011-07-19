@@ -10,19 +10,26 @@ var logger = require('logmgr').getLogger('messaging/udptran');
 module.exports = {
 	"starting a listener" : testCase({
 		setUp : function(done) {
+			this.processOn = sinon.collection.stub(process, 'on');		
+		
 			this.udptran = new udptran.UdpTran(1234, "127.0.0.1");
 			this.rawmsg = '{"uri" : "p2p:myapp/myresource", "key" : "val"}';
 			
 			this.server = langutil.extend(new events.EventEmitter(), {bind : function() {}, close : function() {}, address : function() { return {address : 'addr', port: 123}} });
 			sinon.collection.stub(this.server, 'bind');
 
-			sinon.collection.stub(dgram, 'createSocket').returns(this.server);
+			sinon.collection.stub(dgram, 'createSocket').returns(this.server);			
 			done();
 		},
 		
 		tearDown : function(done) {
 			sinon.collection.restore();
 			done();
+		},
+		
+		"should set up exit hook on start" : function(test) {
+			test.ok(this.processOn.calledWith('exit', this.udptran.stop));
+			test.done();
 		},
 	
 		"should start to listen normally" : function(test) {
