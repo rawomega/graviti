@@ -1,20 +1,22 @@
 var sinon = require('sinon');
 var testCase = require('nodeunit').testCase;
 var pns = require('overlay/pastry/pns');
-var langutil = require('common/langutil');
 var leafset = require('overlay/pastry/leafset');
 var routingtable = require('overlay/routingtable');
 var node = require('core/node');
 var id = require('common/id');
+var messagemgr = require('messaging/messagemgr');
+var langutil = require('common/langutil');
+var mockutil = require('testability/mockutil');
 
 var joiningNodeId = '1014149403101414940310141494031014149403';
 
 module.exports = {
 	"initiating pns nearest node search" : testCase({
 		setUp : function(done) {
-			this.overlayCallback = { sendToAddr : function() {}, on : function() {} };
-			this.sendToAddr = sinon.stub(this.overlayCallback, 'sendToAddr');
-			this.pns = new pns.Pns(this.overlayCallback);
+			this.messagemgr = mockutil.stubProto(messagemgr.MessageMgr);
+			this.sendToAddr = sinon.stub(this.messagemgr, 'sendToAddr');
+			this.pns = new pns.Pns(this.messagemgr);
 			
 			done();
 		},
@@ -58,11 +60,11 @@ module.exports = {
 			}, 200);
 		}
 	}),
-	
+
 	"cancelling all pns node searches" : testCase({
 		setUp : function(done) {
-			this.overlayCallback = { sendToAddr : function() {}, on : function() {} };			
-			this.pns = new pns.Pns(this.overlayCallback);
+			this.messagemgr = mockutil.stubProto(messagemgr.MessageMgr);			
+			this.pns = new pns.Pns(this.messagemgr);
 			
 			done();
 		},
@@ -94,12 +96,13 @@ module.exports = {
 			}, 200);
 		}
 	}),
-	
+
 	"handling leafset request message" : testCase({
 		setUp : function(done) {
-			this.overlayCallback = langutil.extend(new events.EventEmitter(), { sendToAddr : function() {} });
-			this.sendToAddr = sinon.stub(this.overlayCallback, 'sendToAddr');
-			sinon.collection.stub(leafset, 'compressedLeafset').returns({ dummy : 'leafset'});
+			this.messagemgr = langutil.extend(new events.EventEmitter(), { sendToAddr : function() {} });
+			this.sendToAddr = sinon.stub(this.messagemgr, 'sendToAddr');
+			this.leafset = mockutil.stubProto(leafset.Leafset);
+			sinon.collection.stub(this.leafset, 'compressedLeafset').returns({ dummy : 'leafset'});
 			this.msg = {
 					method : 'GET',
 					uri : 'p2p:graviti/pns/leafset',
@@ -108,7 +111,7 @@ module.exports = {
 			this.msginfo = {
 					source_ap : '1.1.1.1:1111'
 			}
-			this.pns = new pns.Pns(this.overlayCallback);
+			this.pns = new pns.Pns(this.messagemgr, this.leafset);
 			
 			done();
 		},
@@ -119,7 +122,7 @@ module.exports = {
 		},
 		
 		"sholud respond with leafset upon receipt of pns leafset request" : function(test) {			
-			this.overlayCallback.emit('graviti-message-received', this.msg, this.msginfo);
+			this.messagemgr.emit('graviti-message-received', this.msg, this.msginfo);
 			
 			test.ok(this.sendToAddr.calledWith('p2p:graviti/pns/leafset', {
 					req_id : 'moo',
@@ -128,12 +131,13 @@ module.exports = {
 			test.done();
 		}
 	}),
-	
+
 	"handling leafset response message" : testCase({
 		setUp : function(done) {
-			this.overlayCallback = langutil.extend(new events.EventEmitter(), { sendToAddr : function() {} });
-			this.sendToAddr = sinon.stub(this.overlayCallback, 'sendToAddr');
-			sinon.collection.stub(leafset, 'compressedLeafset').returns({ dummy : 'leafset'});
+			this.messagemgr = langutil.extend(new events.EventEmitter(), { sendToAddr : function() {} });
+			this.sendToAddr = sinon.stub(this.messagemgr, 'sendToAddr');
+			this.leafset = new leafset.Leafset();
+			sinon.collection.stub(this.leafset, 'compressedLeafset').returns({ dummy : 'leafset'});
 			this.success = sinon.stub();
 			this.msg = {
 					method : 'POST',
@@ -146,7 +150,7 @@ module.exports = {
 			this.msginfo = {
 					source_ap : '2.2.2.2:2222'
 			}
-			this.pns = new pns.Pns(this.overlayCallback);
+			this.pns = new pns.Pns(this.messagemgr, this.leafset);
 			
 			done();
 		},
@@ -164,7 +168,7 @@ module.exports = {
 			};
 			this.msg.source_id = '1EAF5E7';
 			
-			this.overlayCallback.emit('graviti-message-received', this.msg, this.msginfo);
+			this.messagemgr.emit('graviti-message-received', this.msg, this.msginfo);
 			
 			test.equal(1, this.sendToAddr.callCount);
 			test.ok(!this.success.called);
@@ -179,7 +183,7 @@ module.exports = {
 			};
 			this.msg.source_id = '1EAF5E7';
 			
-			this.overlayCallback.emit('graviti-message-received', this.msg, this.msginfo);
+			this.messagemgr.emit('graviti-message-received', this.msg, this.msginfo);
 			
 			test.ok(this.success.calledWith({
 				id : '1EAF5E7',
@@ -203,7 +207,7 @@ module.exports = {
 			this.msg.content.leafset[joiningNodeId] = '4.4.4.4:4444';
 			this.msg.source_id = '1EAF5E7';
 			
-			this.overlayCallback.emit('graviti-message-received', this.msg, this.msginfo);
+			this.messagemgr.emit('graviti-message-received', this.msg, this.msginfo);
 			
 			test.equal(2, this.sendToAddr.callCount);
 			test.ok(this.sendToAddr.calledWith('p2p:graviti/pns/rttprobe', {req_id : reqId}, {method : 'GET'}, '3.3.3.3', '3333'));
@@ -223,7 +227,7 @@ module.exports = {
 			this.msg.source_id = '1EAF5E7';
 			this.pns._inProgress[reqId].discoveredPeers.push('5.5.5.5:5555');
 			
-			this.overlayCallback.emit('graviti-message-received', this.msg, this.msginfo);
+			this.messagemgr.emit('graviti-message-received', this.msg, this.msginfo);
 			
 			test.deepEqual(['3.3.3.3:3333', '4.4.4.4:4444', '5.5.5.5:5555'].sort(),
 					this.pns._inProgress[reqId].discoveredPeers.sort());
@@ -241,7 +245,7 @@ module.exports = {
 			};
 			this.msg.source_id = '1EAF5E7';
 			
-			this.overlayCallback.emit('graviti-message-received', this.msg, this.msginfo);
+			this.messagemgr.emit('graviti-message-received', this.msg, this.msginfo);
 			
 			test.ok(!this.success.called);
 			test.equal(3, this.sendToAddr.callCount);
@@ -255,8 +259,8 @@ module.exports = {
 	
 	"handling leafset round trip probe message" : testCase({
 		setUp : function(done) {
-			this.overlayCallback = langutil.extend(new events.EventEmitter(), { sendToAddr : function() {} });
-			this.sendToAddr = sinon.stub(this.overlayCallback, 'sendToAddr');
+			this.messagemgr = langutil.extend(new events.EventEmitter(), { sendToAddr : function() {} });
+			this.sendToAddr = sinon.stub(this.messagemgr, 'sendToAddr');
 			this.msg = {
 					method : 'GET',
 					uri : 'p2p:graviti/pns/rttprobe',
@@ -267,7 +271,7 @@ module.exports = {
 			this.msginfo = {
 					source_ap : '1.1.1.1:1111'
 			}
-			this.pns = new pns.Pns(this.overlayCallback);
+			this.pns = new pns.Pns(this.messagemgr);
 			
 			done();
 		},
@@ -278,7 +282,7 @@ module.exports = {
 		},
 
 		"when a rtt probe request is received, respond with a simple echo" : function(test) {
-			this.overlayCallback.emit('graviti-message-received', this.msg, this.msginfo);
+			this.messagemgr.emit('graviti-message-received', this.msg, this.msginfo);
 			
 			test.ok(this.sendToAddr.calledOnce);
 			test.ok(this.sendToAddr.calledWith('p2p:graviti/pns/rttprobe', {req_id : 'reqid'}, {method : 'POST'}, '1.1.1.1', '1111'));			
@@ -288,7 +292,7 @@ module.exports = {
 		"when a rtt probe request is received and contains probe_id, resonse content should contain that probe_id" : function(test) {
 			this.msg.content.probe_id = 'moo';
 
-			this.overlayCallback.emit('graviti-message-received', this.msg, this.msginfo);
+			this.messagemgr.emit('graviti-message-received', this.msg, this.msginfo);
 			
 			test.ok(this.sendToAddr.calledOnce);
 			test.ok(this.sendToAddr.calledWith('p2p:graviti/pns/rttprobe', {req_id : 'reqid', probe_id : 'moo'}, {method : 'POST'}, '1.1.1.1', '1111'));			
@@ -298,8 +302,8 @@ module.exports = {
 	
 	"handling leafset round trip probe response message" : testCase({
 		setUp : function(done) {
-			this.overlayCallback = langutil.extend(new events.EventEmitter(), { sendToAddr : function() {} });
-			this.sendToAddr = sinon.stub(this.overlayCallback, 'sendToAddr');
+			this.messagemgr = langutil.extend(new events.EventEmitter(), { sendToAddr : function() {} });
+			this.sendToAddr = sinon.stub(this.messagemgr, 'sendToAddr');
 			this.msg = {
 					method : 'POST',
 					uri : 'p2p:graviti/pns/rttprobe',
@@ -311,7 +315,7 @@ module.exports = {
 			this.msginfo = {
 					source_ap : '3.3.3.3:3333'
 			}
-			this.pns = new pns.Pns(this.overlayCallback);
+			this.pns = new pns.Pns(this.messagemgr);
 			
 			done();
 		},
@@ -324,7 +328,7 @@ module.exports = {
 		"when req id in rtt probe response is unknown, do nothing" : function(test) {
 			this.msg.content.req_id = 'unknown';
 			
-			this.overlayCallback.emit('graviti-message-received', this.msg, this.msginfo);
+			this.messagemgr.emit('graviti-message-received', this.msg, this.msginfo);
 			
 			test.equal(0, this.sendToAddr.callCount);
 			test.done();
@@ -335,7 +339,7 @@ module.exports = {
 			this.pns._sendLeafsetProbes(reqId, { '734F' : '9.9.9.9:9999', 'C105357' : '3.3.3.3:3333' });
 			this.msg.content.req_id = reqId;
 			
-			this.overlayCallback.emit('graviti-message-received', this.msg, this.msginfo);
+			this.messagemgr.emit('graviti-message-received', this.msg, this.msginfo);
 			
 			test.equal(undefined, this.pns._inProgress[reqId].leafset_probes);
 			test.equal('C105357', this.pns._inProgress[reqId].nearest.id);
@@ -360,7 +364,7 @@ module.exports = {
 			};
 			this.msg.content.req_id = reqId;
 			
-			this.overlayCallback.emit('graviti-message-received', this.msg, this.msginfo);
+			this.messagemgr.emit('graviti-message-received', this.msg, this.msginfo);
 			
 			test.equal(3, this.sendToAddr.callCount);
 			test.deepEqual(success.args[0][0], {
@@ -378,11 +382,11 @@ module.exports = {
 			var reqId = this.pns.findNearestNode('2.2.2.2:2222');
 			this.pns._sendLeafsetProbes(reqId, { '734F' : '9.9.9.9:9999', 'C105357' : '3.3.3.3:3333' });
 			this.msg.content.req_id = reqId;			
-			this.overlayCallback.emit('graviti-message-received', this.msg, this.msginfo);
+			this.messagemgr.emit('graviti-message-received', this.msg, this.msginfo);
 
 			this.msg.source_id = '734F';
 			this.msginfo.source_ap = '9.9.9.9';
-			this.overlayCallback.emit('graviti-message-received', this.msg, this.msginfo);
+			this.messagemgr.emit('graviti-message-received', this.msg, this.msginfo);
 			
 			test.equal(undefined, this.pns._inProgress[reqId].leafset_probes);
 			test.equal('C105357', this.pns._inProgress[reqId].nearest.id);
@@ -402,8 +406,8 @@ module.exports = {
 	"handling routing row request message" : testCase({
 		setUp : function(done) {
 			node.nodeId = '2222222222222222222222222222222222222222';
-			this.overlayCallback = langutil.extend(new events.EventEmitter(), { sendToAddr : function() {} });
-			this.sendToAddr = sinon.stub(this.overlayCallback, 'sendToAddr');
+			this.messagemgr = langutil.extend(new events.EventEmitter(), { sendToAddr : function() {} });
+			this.sendToAddr = sinon.stub(this.messagemgr, 'sendToAddr');
 			this.msg = {
 					method : 'GET',
 					uri : 'p2p:graviti/pns/routingrow',
@@ -416,19 +420,19 @@ module.exports = {
 			this.msginfo = {
 					source_ap : '3.3.3.3:3333'
 			}
-			this.pns = new pns.Pns(this.overlayCallback);
+			this.routingtable = new routingtable.RoutingTable();
+			this.pns = new pns.Pns(this.messagemgr, undefined, this.routingtable);
 			
 			done();
 		},
 		
 		tearDown : function(done) {
-			routingtable._table = {};
 			sinon.collection.restore();
 			done();
 		},
 		
 		"when routing row request received for empty routing table, return empty row and zero depth" : function(test) {
-			this.overlayCallback.emit('graviti-message-received', this.msg, this.msginfo);
+			this.messagemgr.emit('graviti-message-received', this.msg, this.msginfo);
 			
 			test.ok(this.sendToAddr.calledWith('p2p:graviti/pns/routingrow', {
 				req_id : 'moo',
@@ -439,10 +443,10 @@ module.exports = {
 		},
 		
 		"when routing row request received without depth, return empty row and zero depth" : function(test) {
-			routingtable.updateWithKnownGood('2221111111111111111111111111111111111111', '5.5.5.5:5555');
+			this.routingtable.updateWithKnownGood('2221111111111111111111111111111111111111', '5.5.5.5:5555');
 			this.msg.content.depth = undefined;
 			
-			this.overlayCallback.emit('graviti-message-received', this.msg, this.msginfo);
+			this.messagemgr.emit('graviti-message-received', this.msg, this.msginfo);
 			
 			test.ok(this.sendToAddr.calledWith('p2p:graviti/pns/routingrow', {
 				req_id : 'moo',
@@ -453,10 +457,10 @@ module.exports = {
 		},
 		
 		"when routing row request for non-empty routing table without required row, return next highest available row" : function(test) {
-			routingtable.updateWithKnownGood('2211111111111111111111111111111111111111', '4.4.4.4:4444');
-			routingtable.updateWithKnownGood('2222211111111111111111111111111111111111', '6.6.6.6:6666');
+			this.routingtable.updateWithKnownGood('2211111111111111111111111111111111111111', '4.4.4.4:4444');
+			this.routingtable.updateWithKnownGood('2222211111111111111111111111111111111111', '6.6.6.6:6666');
 			
-			this.overlayCallback.emit('graviti-message-received', this.msg, this.msginfo);
+			this.messagemgr.emit('graviti-message-received', this.msg, this.msginfo);
 			
 			test.ok(this.sendToAddr.calledWith('p2p:graviti/pns/routingrow', {
 				req_id : 'moo',
@@ -473,12 +477,12 @@ module.exports = {
 		},
 		
 		"when routing row request for non-empty routing table with required row, return that row" : function(test) {
-			routingtable.updateWithKnownGood('2211111111111111111111111111111111111111', '4.4.4.4:4444');
-			routingtable.updateWithKnownGood('2221111111111111111111111111111111111111', '5.5.5.5:5555');
-			routingtable.updateWithKnownGood('2222222222111111111111111111111111111111', '6.6.6.6:6666');
-			routingtable.updateWithKnownGood('2222222222211111111111111111111111111111', '7.7.7.7:7777');
+			this.routingtable.updateWithKnownGood('2211111111111111111111111111111111111111', '4.4.4.4:4444');
+			this.routingtable.updateWithKnownGood('2221111111111111111111111111111111111111', '5.5.5.5:5555');
+			this.routingtable.updateWithKnownGood('2222222222111111111111111111111111111111', '6.6.6.6:6666');
+			this.routingtable.updateWithKnownGood('2222222222211111111111111111111111111111', '7.7.7.7:7777');
 			
-			this.overlayCallback.emit('graviti-message-received', this.msg, this.msginfo);
+			this.messagemgr.emit('graviti-message-received', this.msg, this.msginfo);
 			
 			test.ok(this.sendToAddr.calledWith('p2p:graviti/pns/routingrow', {
 				req_id : 'moo',
@@ -494,12 +498,12 @@ module.exports = {
 			test.done();
 		}
 	}),
-	
+
 	"handling routing row response message" : testCase({
 		setUp : function(done) {
 			sinon.collection.stub(id, 'generateUuid').returns('generated-uuid');
-			this.overlayCallback = langutil.extend(new events.EventEmitter(), { sendToAddr : function() {} });
-			this.sendToAddr = sinon.stub(this.overlayCallback, 'sendToAddr');
+			this.messagemgr = langutil.extend(new events.EventEmitter(), { sendToAddr : function() {} });
+			this.sendToAddr = sinon.stub(this.messagemgr, 'sendToAddr');
 			this.msg = {
 					method : 'POST',
 					uri : 'p2p:graviti/pns/routingrow',
@@ -516,13 +520,12 @@ module.exports = {
 			this.msginfo = {
 					source_ap : '4.4.4.4:4444'
 			}
-			this.pns = new pns.Pns(this.overlayCallback);
+			this.pns = new pns.Pns(this.messagemgr);
 			
 			done();
 		},
 		
 		tearDown : function(done) {
-			routingtable._table = {};
 			sinon.collection.restore();
 			done();
 		},
@@ -534,7 +537,7 @@ module.exports = {
 			this.msg.content.req_id = reqId;
 			delete this.msg.content.routing_row;
 			
-			this.overlayCallback.emit('graviti-message-received', this.msg, this.msginfo);
+			this.messagemgr.emit('graviti-message-received', this.msg, this.msginfo);
 			
 			test.deepEqual(success.args[0][0], {
 				id : '1EAF5E7',
@@ -554,7 +557,7 @@ module.exports = {
 			this.msg.content.req_id = reqId;
 			this.msg.content.routing_row = {};
 			
-			this.overlayCallback.emit('graviti-message-received', this.msg, this.msginfo);
+			this.messagemgr.emit('graviti-message-received', this.msg, this.msginfo);
 			
 			test.deepEqual(success.args[0][0], {
 				id : '1EAF5E7',
@@ -575,7 +578,7 @@ module.exports = {
 				'F' : {id : 'FEDCBA9876FEDCBA9876FEDCBA9876FEDCBA9876', ap : '6.6.6.6:6666'}
 			};
 			
-			this.overlayCallback.emit('graviti-message-received', this.msg, this.msginfo);
+			this.messagemgr.emit('graviti-message-received', this.msg, this.msginfo);
 			
 			test.equal(6, this.pns._inProgress[reqId].depth);
 			test.equal(2, this.sendToAddr.callCount);
@@ -588,7 +591,7 @@ module.exports = {
 			var reqId = this.pns.findNearestNode('2.2.2.2:2222');
 			this.msg.content.req_id = reqId;
 			
-			this.overlayCallback.emit('graviti-message-received', this.msg, this.msginfo);
+			this.messagemgr.emit('graviti-message-received', this.msg, this.msginfo);
 			
 			test.equal(6, this.pns._inProgress[reqId].depth);
 			test.equal(3, this.sendToAddr.callCount);
@@ -604,7 +607,7 @@ module.exports = {
 			this.msg.content.req_id = reqId;
 			this.msg.content.depth = 0;
 			
-			this.overlayCallback.emit('graviti-message-received', this.msg, this.msginfo);
+			this.messagemgr.emit('graviti-message-received', this.msg, this.msginfo);
 			
 			test.equal(0, this.pns._inProgress[reqId].depth);
 			test.ok(this.sendToAddr.calledWith('p2p:graviti/pns/rttprobe', {req_id : reqId, probe_id : 'generated-uuid'}, {method : 'GET'}, '5.5.5.5', '5555'));
@@ -626,7 +629,7 @@ module.exports = {
 			this.pns._inProgress[reqId].discoveredPeers.push('6.6.6.6:6666');
 			this.pns._inProgress[reqId].publicSeedAp = '7.7.7.7:7777';
 			
-			this.overlayCallback.emit('graviti-message-received', this.msg, this.msginfo);
+			this.messagemgr.emit('graviti-message-received', this.msg, this.msginfo);
 			
 			test.deepEqual(['5.5.5.5:5555', '6.6.6.6:6666'].sort(),
 					this.pns._inProgress[reqId].discoveredPeers.sort());
@@ -637,11 +640,11 @@ module.exports = {
 	"handling routing row round trip probe response message" : testCase({
 		setUp : function(done) {
 			sinon.collection.stub(id, 'generateUuid').returns('generated-uuid');
-			this.overlayCallback = langutil.extend(new events.EventEmitter(), { sendToAddr : function() {} });
-			this.sendToAddr = sinon.stub(this.overlayCallback, 'sendToAddr');
+			this.messagemgr = langutil.extend(new events.EventEmitter(), { sendToAddr : function() {} });
+			this.sendToAddr = sinon.stub(this.messagemgr, 'sendToAddr');
 			this.success = sinon.stub();
 			
-			this.pns = new pns.Pns(this.overlayCallback);			
+			this.pns = new pns.Pns(this.messagemgr);			
 			this.reqId = this.pns.findNearestNode('2.2.2.2:2222', joiningNodeId, this.success);
 			this.pns._sendRoutingRowProbes(this.reqId, {
 					'7' : { id :'734F', ap : '9.9.9.9:9999'},
@@ -671,7 +674,7 @@ module.exports = {
 		"when req id in response not known, do nothing" : function(test) {			
 			this.msg.content.req_id = 'some-other-req-id';
 			
-			this.overlayCallback.emit('graviti-message-received', this.msg, this.msginfo);
+			this.messagemgr.emit('graviti-message-received', this.msg, this.msginfo);
 			
 			test.equal(3, this.sendToAddr.callCount);
 			test.ok(!this.success.called);
@@ -685,7 +688,7 @@ module.exports = {
 				rtt : -1
 			};
 			
-			this.overlayCallback.emit('graviti-message-received', this.msg, this.msginfo);
+			this.messagemgr.emit('graviti-message-received', this.msg, this.msginfo);
 			
 			test.equal(3, this.sendToAddr.callCount);
 			test.deepEqual(this.success.args[0][0], {
@@ -706,7 +709,7 @@ module.exports = {
 				rtt : 100000
 			};
 			
-			this.overlayCallback.emit('graviti-message-received', this.msg, this.msginfo);
+			this.messagemgr.emit('graviti-message-received', this.msg, this.msginfo);
 			
 			test.equal(undefined, this.pns._inProgress[this.reqId].routing_row_probes['generated-uuid']);
 			test.equal('C105357', this.pns._inProgress[this.reqId].nearest.id);
@@ -720,10 +723,10 @@ module.exports = {
 		
 		"when an unexpected routing row rtt probe response is received, throw it away" : function(test) {						
 			this.msg.content.probe_id = 'some-other-uuid';
-			this.overlayCallback.emit('graviti-message-received', this.msg, this.msginfo);
+			this.messagemgr.emit('graviti-message-received', this.msg, this.msginfo);
 
 			this.msg.content.probe_id = 'generated-uuid';
-			this.overlayCallback.emit('graviti-message-received', this.msg, this.msginfo);
+			this.messagemgr.emit('graviti-message-received', this.msg, this.msginfo);
 			
 			test.equal(undefined, this.pns._inProgress[this.reqId].routing_row_probes['generated-uuid']);
 			test.equal('C105357', this.pns._inProgress[this.reqId].nearest.id);
@@ -736,11 +739,11 @@ module.exports = {
 		},
 		
 		"when a late routing row rtt probe response is received, throw it away" : function(test) {									
-			this.overlayCallback.emit('graviti-message-received', this.msg, this.msginfo);
+			this.messagemgr.emit('graviti-message-received', this.msg, this.msginfo);
 
 			this.msg.source_id = '734F';
 			this.msginfo.source_ap = '9.9.9.9';
-			this.overlayCallback.emit('graviti-message-received', this.msg, this.msginfo);
+			this.messagemgr.emit('graviti-message-received', this.msg, this.msginfo);
 			
 			test.equal(undefined, this.pns._inProgress[this.reqId].routing_row_probes['generated-uuid']);
 			test.equal('C105357', this.pns._inProgress[this.reqId].nearest.id);
@@ -755,9 +758,9 @@ module.exports = {
 	
 	"reporting success" : testCase({
 		setUp : function(done) {
-			this.overlayCallback = langutil.extend(new events.EventEmitter(), { sendToAddr : function() {} });
+			this.messagemgr = langutil.extend(new events.EventEmitter(), { sendToAddr : function() {} });
 			pns.nearestNodeSearchTimeoutMsec = 50;
-			this.pns = new pns.Pns(this.overlayCallback);
+			this.pns = new pns.Pns(this.messagemgr);
 			this.success = sinon.stub();
 			this.error = sinon.stub();
 			this.reqId = this.pns.findNearestNode('2.2.2.2:2222', joiningNodeId, this.success, this.error);

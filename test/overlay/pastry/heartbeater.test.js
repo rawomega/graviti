@@ -59,6 +59,11 @@ module.exports = {
 			done();
 		},
 		
+		tearDown : function(done) {
+			sinon.collection.restore();
+			done();
+		},
+		
 		"should remove listener after stopping" : function(test) {
 			var cbk = sinon.stub(this.messagemgr, 'removeListener');
 
@@ -129,6 +134,7 @@ module.exports = {
 		
 		tearDown : function(done) {
 			Date.now = this.origNow;
+			sinon.collection.restore();				
 			done();
 		},
 		
@@ -253,6 +259,7 @@ module.exports = {
 		
 		tearDown : function(done) {
 			Date.now = this.origNow;
+			sinon.collection.restore();
 			done();
 		},
 		
@@ -325,6 +332,7 @@ module.exports = {
 		
 		tearDown : function(done) {
 			Date.now = this.origNow;
+			sinon.collection.restore();
 			done();
 		},
 
@@ -372,6 +380,11 @@ module.exports = {
 			this.heartbeater = new heartbeater.Heartbeater(this.messagemgr, this.leafset, this.routingtable);
 			
 			heartbeater.heartbeatCheckIntervalMsec = 5000;
+			done();
+		},
+		
+		tearDown : function(done) {
+			sinon.collection.restore();
 			done();
 		},
 		
@@ -446,6 +459,7 @@ module.exports = {
 		
 		tearDown : function(done) {
 			Date.now = this.origNow;
+			sinon.collection.restore();
 			done();
 		},
 
