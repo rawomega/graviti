@@ -26,9 +26,7 @@ module.exports = {
 		},
 		
 		tearDown : function(done) {
-			bootstrapmgr.usePns = true;
-			bootstrapmgr.pendingRequestCheckIntervalMsec = 1000;
-			bootstrapmgr.bootstrapRetryIntervalMsec = 30000;
+			this.bootstrapmgr.stop();
 			sinon.collection.restore();
 			done();
 		},
@@ -57,8 +55,8 @@ module.exports = {
 		
 		"bootstrap manager for node joining a ring should initiate sending of bootstrap requests without PNS when PNS off" : function(test) {
 			var sendToAddr = sinon.stub(this.messagemgr, 'sendToAddr');
-			bootstrapmgr.pendingRequestCheckIntervalMsec = 50;
-			bootstrapmgr.usePns = false;
+			this.bootstrapmgr.pendingRequestCheckIntervalMsec = 50;
+			this.bootstrapmgr.usePns = false;
 			
 			this.bootstrapmgr.start('1.2.3.4:1234,5.6.7.8:5678,myhost:8888', sinon.stub());
 			
@@ -74,7 +72,7 @@ module.exports = {
 		
 		"bootstrap manager for node joining a ring should initiate sending of bootstrap requests with PNS when PNS on" : function(test) {
 			var sendToAddr = sinon.collection.stub(this.messagemgr, 'sendToAddr');
-			bootstrapmgr.pendingRequestCheckIntervalMsec = 50;
+			this.bootstrapmgr.pendingRequestCheckIntervalMsec = 50;
 			sinon.collection.stub(this.pnsrunner, 'run', function(endpoint, success) {
 				success('6.6.6.6:6666');
 			});
@@ -91,9 +89,9 @@ module.exports = {
 		},
 		
 		"bootstrap manager for node joining a ring should be able to re-send unacknowledged bootstrap requests" : function(test) {
-			bootstrapmgr.pendingRequestCheckIntervalMsec = 50;
-			bootstrapmgr.bootstrapRetryIntervalMsec = 50;
-			bootstrapmgr.usePns = false;
+			this.bootstrapmgr.pendingRequestCheckIntervalMsec = 50;
+			this.bootstrapmgr.bootstrapRetryIntervalMsec = 50;
+			this.bootstrapmgr.usePns = false;
 			var callCount = 0;
 			var sendToAddr = sinon.stub(this.messagemgr, 'sendToAddr', function() {
 				callCount++;
@@ -117,6 +115,7 @@ module.exports = {
 		},
 		
 		tearDown : function(done) {
+			this.bootstrapmgr.stop();
 			sinon.collection.restore();
 			done();
 		},
@@ -134,7 +133,8 @@ module.exports = {
 			this.messagemgr = mockutil.stubProto(messagemgr.MessageMgr);
 			this.leafset = new leafset.Leafset();
 			this.routingtable = new routingtable.RoutingTable();
-			this.bootstrapmgr = new bootstrapmgr.BootstrapMgr(this.messagemgr, this.leafset, this.routingtable);
+			this.pnsrunner = mockutil.stubProto(pnsrunner.PnsRunner);
+			this.bootstrapmgr = new bootstrapmgr.BootstrapMgr(this.messagemgr, this.leafset, this.routingtable, undefined, this.pnsrunner);
 		
 			node.nodeId = '1234567890123456789012345678901234567890';
 			this.msginfo = {
@@ -155,8 +155,8 @@ module.exports = {
 		},
 		
 		tearDown : function(done) {
+			this.bootstrapmgr.stop();
 			sinon.collection.restore();
-			bootstrapmgr.usePns = true;
 			done();
 		},
 		
@@ -258,7 +258,8 @@ module.exports = {
 			this.leafset = new leafset.Leafset();
 			this.routingtable = new routingtable.RoutingTable();
 			this.heartbeater = mockutil.stubProto(heartbeater.Heartbeater);
-			this.bootstrapmgr = new bootstrapmgr.BootstrapMgr(this.messagemgr, this.leafset, this.routingtable, this.heartbeater);
+			this.pnsrunner = mockutil.stubProto(pnsrunner.PnsRunner);
+			this.bootstrapmgr = new bootstrapmgr.BootstrapMgr(this.messagemgr, this.leafset, this.routingtable, this.heartbeater, this.pnsrunner);
 			
 			node.nodeId = '1234567890123456789012345678901234567890';
 			this.leafsetContent = {'LS' : '5.5.5.5:5555'};
@@ -298,8 +299,8 @@ module.exports = {
 		},
 		
 		tearDown : function(done) {
+			this.bootstrapmgr.stop();
 			sinon.collection.restore();
-			bootstrapmgr.usePns = true;
 			done();
 		},
 		

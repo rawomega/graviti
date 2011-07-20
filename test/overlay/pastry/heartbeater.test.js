@@ -25,6 +25,7 @@ module.exports = {
 		},
 		
 		tearDown : function(done) {
+			this.heartbeater.stop();
 			sinon.collection.restore();
 			done();
 		},
@@ -60,6 +61,7 @@ module.exports = {
 		},
 		
 		tearDown : function(done) {
+			this.heartbeater.stop();
 			sinon.collection.restore();
 			done();
 		},
@@ -76,10 +78,10 @@ module.exports = {
 		"should not invoke timed tasks after stopping" : function(test) {
 			var _this = this;
 			this.leafset._put('ABCDEF0123ABCDEF0123ABCDEF0123ABCDEF0123','127.0.0.1:8888');
-			heartbeater.heartbeatIntervalMsec = 50;
-			heartbeater.heartbeatCheckIntervalMsec = 50;
-			heartbeater.timedOutPeerCheckIntervalMsec = 50;
-			heartbeater.routingTableCandidateCheckIntervalMsec = 50;
+			this.heartbeater.heartbeatIntervalMsec = 50;
+			this.heartbeater.heartbeatCheckIntervalMsec = 50;
+			this.heartbeater.timedOutPeerCheckIntervalMsec = 50;
+			this.heartbeater.routingTableCandidateCheckIntervalMsec = 50;
 			this.heartbeater.start();
 			
 			this.heartbeater.stop();
@@ -133,6 +135,7 @@ module.exports = {
 		},
 		
 		tearDown : function(done) {
+			this.heartbeater.stop();
 			Date.now = this.origNow;
 			sinon.collection.restore();				
 			done();
@@ -142,8 +145,8 @@ module.exports = {
 			var _this = this;
 			this.leafset._put('ABCDEF0123ABCDEF0123ABCDEF0123ABCDEF0123','127.0.0.1:8888');
 			this.leafset._put('1234567890123456789012345678901234567890','127.0.0.1:9999');
-			heartbeater.heartbeatIntervalMsec = 50;
-			heartbeater.heartbeatCheckIntervalMsec = 50;
+			this.heartbeater.heartbeatIntervalMsec = 50;
+			this.heartbeater.heartbeatCheckIntervalMsec = 50;
 			
 			this.heartbeater.start();
 
@@ -174,8 +177,8 @@ module.exports = {
 			this.leafset._put('ABCDEF0123ABCDEF0123ABCDEF0123ABCDEF0123','127.0.0.1:8888');
 			this.leafset._put('1234567890123456789012345678901234567890','127.0.0.1:9999');
 			
-			heartbeater.heartbeatIntervalMsec = 1000;
-			heartbeater.heartbeatCheckIntervalMsec = 50;
+			this.heartbeater.heartbeatIntervalMsec = 1000;
+			this.heartbeater.heartbeatCheckIntervalMsec = 50;
 			
 			this.heartbeater.start();
 			
@@ -194,8 +197,8 @@ module.exports = {
 			this.leafset._leafset['ABCDEF0123ABCDEF0123ABCDEF0123ABCDEF0123'].lastHeartbeatSent = Date.now();
 			this.leafset._leafset['1234567890123456789012345678901234567890'].lastHeartbeatSent = Date.now();
 			
-			heartbeater.heartbeatIntervalMsec = 1000;
-			heartbeater.heartbeatCheckIntervalMsec = 50;
+			this.heartbeater.heartbeatIntervalMsec = 1000;
+			this.heartbeater.heartbeatCheckIntervalMsec = 50;
 			
 			this.heartbeater.start();
 			
@@ -209,8 +212,8 @@ module.exports = {
 			var _this = this;
 			this.leafset.updateWithProvisional('ABCDEF0123ABCDEF0123ABCDEF0123ABCDEF0123','127.0.0.1:8888');
 			this.leafset.updateWithProvisional('1234567890123456789012345678901234567890','127.0.0.1:9999');
-			heartbeater.heartbeatIntervalMsec = 50;
-			heartbeater.heartbeatCheckIntervalMsec = 50;
+			this.heartbeater.heartbeatIntervalMsec = 50;
+			this.heartbeater.heartbeatCheckIntervalMsec = 50;
 			
 			this.heartbeater.start();
 			
@@ -258,6 +261,7 @@ module.exports = {
 		},
 		
 		tearDown : function(done) {
+			this.heartbeater.stop();
 			Date.now = this.origNow;
 			sinon.collection.restore();
 			done();
@@ -267,7 +271,7 @@ module.exports = {
 			var _this = this;
 			this.routingtable.updateWithProvisional('ABCDEF0123ABCDEF0123ABCDEF0123ABCDEF0123','127.0.0.1:8888');
 			this.routingtable.updateWithProvisional('1234567890123456789012345678901234567890','127.0.0.1:9999');
-			heartbeater.routingTableCandidateCheckIntervalMsec = 50;
+			this.heartbeater.routingTableCandidateCheckIntervalMsec = 50;
 			
 			this.heartbeater.start();
 			
@@ -301,7 +305,7 @@ module.exports = {
 			var _this = this;
 			this.routingtable.updateWithProvisional('ABCDEF0123ABCDEF0123ABCDEF0123ABCDEF0123','127.0.0.1:8888');
 			this.routingtable._candidatePeers['ABCDEF0123ABCDEF0123ABCDEF0123ABCDEF0123'].lastProbedAt = 123;
-			heartbeater.routingTableCandidateCheckIntervalMsec = 50;
+			this.heartbeater.routingTableCandidateCheckIntervalMsec = 50;
 			
 			this.heartbeater.start();
 			
@@ -317,7 +321,6 @@ module.exports = {
 			this.messagemgr = mockutil.stubProto(messagemgr.MessageMgr);			
 			this.leafset = new leafset.Leafset();
 			this.routingtable = new routingtable.RoutingTable();
-			this.heartbeater = new heartbeater.Heartbeater(this.messagemgr, this.leafset, this.routingtable);
 			
 			node.nodeId = '9876543210987654321098765432109876543210';
 			this.sharedRow = {'ABCD' : '1.2.3.4:5678'};
@@ -327,10 +330,12 @@ module.exports = {
 			this.origNow = Date.now;
 			Date.now = function() { return 234; };
 			
+			this.heartbeater = new heartbeater.Heartbeater(this.messagemgr, this.leafset, this.routingtable);
 			done();
 		},
 		
 		tearDown : function(done) {
+			this.heartbeater.stop();
 			Date.now = this.origNow;
 			sinon.collection.restore();
 			done();
@@ -341,8 +346,8 @@ module.exports = {
 			this.routingtable.updateWithKnownGood('ABCDEF0123ABCDEF0123ABCDEF0123ABCDEF0123','127.0.0.1:1111', 1);
 			this.routingtable.updateWithKnownGood('1234567890123456789012345678901234567890','127.0.0.1:2222', 2);
 			this.routingtable.updateWithKnownGood('9234567890123456789012345678901234567890','127.0.0.1:3333', 3);
-			heartbeater.routingTableCandidateCheckIntervalMsec = 50;
-			heartbeater.routingTableMaintenanceIntervalMsec = 50;
+			this.heartbeater.routingTableCandidateCheckIntervalMsec = 50;
+			this.heartbeater.routingTableMaintenanceIntervalMsec = 50;
 			
 			this.heartbeater.start();
 			
@@ -379,12 +384,12 @@ module.exports = {
 			this.routingtable = new routingtable.RoutingTable();
 			this.heartbeater = new heartbeater.Heartbeater(this.messagemgr, this.leafset, this.routingtable);
 			
-			heartbeater.heartbeatCheckIntervalMsec = 5000;
+			this.heartbeater.heartbeatCheckIntervalMsec = 5000;
 			done();
 		},
 		
 		tearDown : function(done) {
-			sinon.collection.restore();
+			this.heartbeater.stop();
 			done();
 		},
 		
@@ -394,7 +399,7 @@ module.exports = {
 			this.leafset._put('1234567890123456789012345678901234567890','127.0.0.1:9999');
 			this.leafset._leafset['ABCDEF0123ABCDEF0123ABCDEF0123ABCDEF0123'].lastHeartbeatReceived = (Date.now() - 1000000);
 			this.leafset._leafset['1234567890123456789012345678901234567890'].lastHeartbeatReceived = (Date.now() - 1000000);			
-			heartbeater.timedOutPeerCheckIntervalMsec = 50;
+			this.heartbeater.timedOutPeerCheckIntervalMsec = 50;
 			
 			this.heartbeater.start();
 			
@@ -409,6 +414,7 @@ module.exports = {
 			var lsClearCandidates = sinon.stub(this.leafset, 'clearExpiredDeadAndCandidatePeers');
 			var lsClearTimedOut = sinon.stub(this.leafset, 'clearTimedOutPeers');			
 			var rtHousekeep = sinon.stub(this.routingtable, 'housekeep');			
+			this.heartbeater.timedOutPeerCheckIntervalMsec = 50;
 			
 			this.heartbeater.start();
 			
@@ -458,6 +464,7 @@ module.exports = {
 		},
 		
 		tearDown : function(done) {
+			this.heartbeater.stop();
 			Date.now = this.origNow;
 			sinon.collection.restore();
 			done();
@@ -593,6 +600,11 @@ module.exports = {
 			this.routingtable = new routingtable.RoutingTable();
 			this.heartbeater = new heartbeater.Heartbeater(this.messagemgr, this.leafset, this.routingtable);
 			
+			done();
+		},
+		
+		tearDown : function(done) {
+			this.heartbeater.stop();
 			done();
 		},
 
