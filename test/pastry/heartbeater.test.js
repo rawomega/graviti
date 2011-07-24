@@ -1,12 +1,12 @@
 var sinon = require('sinon');
-var heartbeater = require('overlay/pastry/heartbeater');
-var leafset = require('overlay/pastry/leafset');
-var routingtable = require('overlay/routingtable');
+var heartbeater = require('pastry/heartbeater');
+var leafset = require('pastry/leafset');
+var routingtable = require('pastry/routingtable');
 var langutil = require('common/langutil');
 var events = require('events');
 var node = require('core/node');
 var testCase = require('nodeunit').testCase;
-var messagemgr = require('messaging/messagemgr');
+var transport = require('transport');
 var mockutil = require('testability/mockutil');
 var util = require('util');
 
@@ -15,11 +15,11 @@ module.exports = {
 		setUp : function(done) {
 			this.processOn = sinon.collection.stub(process, 'on');
 			
-			this.messagemgr = mockutil.stubProto(messagemgr.MessageMgr);			
-			this.on = sinon.stub(this.messagemgr, 'on').returns(undefined);			
+			this.transport = mockutil.stubProto(transport.TransportStack);			
+			this.on = sinon.stub(this.transport, 'on').returns(undefined);			
 			this.leafset = new leafset.Leafset();
 			this.routingtable = new routingtable.RoutingTable();
-			this.heartbeater = new heartbeater.Heartbeater(this.messagemgr, this.leafset, this.routingtable);
+			this.heartbeater = new heartbeater.Heartbeater(this.transport, this.leafset, this.routingtable);
 			
 			done();
 		},
@@ -45,17 +45,17 @@ module.exports = {
 		setUp : function(done) {
 			node.nodeId = '9876543210987654321098765432109876543210';
 			
-			this.messagemgr = mockutil.stubProto(messagemgr.MessageMgr);			
+			this.transport = mockutil.stubProto(transport.TransportStack);			
 			this.leafset = new leafset.Leafset();
 			this.routingtable = new routingtable.RoutingTable();
 
-			this.sendToAddr = sinon.stub(this.messagemgr, 'sendToAddr');
+			this.sendToAddr = sinon.stub(this.transport, 'sendToAddr');
 			this.lsClear = sinon.stub(this.leafset, 'clearExpiredDeadAndCandidatePeers');
 			this.rtHousekeep = sinon.stub(this.routingtable, 'housekeep');
 			this.rtEachCandidate = sinon.stub(this.routingtable, 'eachCandidate');
 			this.rtEachRow = sinon.stub(this.routingtable, 'eachRow');
 
-			this.heartbeater = new heartbeater.Heartbeater(this.messagemgr, this.leafset, this.routingtable);
+			this.heartbeater = new heartbeater.Heartbeater(this.transport, this.leafset, this.routingtable);
 
 			done();
 		},
@@ -67,7 +67,7 @@ module.exports = {
 		},
 		
 		"should remove listener after stopping" : function(test) {
-			var cbk = sinon.stub(this.messagemgr, 'removeListener');
+			var cbk = sinon.stub(this.transport, 'removeListener');
 
 			this.heartbeater.stop();
 			
@@ -122,13 +122,13 @@ module.exports = {
 
 	"sending heartbeat messages to leafset peers" : testCase({
 		setUp : function(done) {
-			this.messagemgr = mockutil.stubProto(messagemgr.MessageMgr);			
+			this.transport = mockutil.stubProto(transport.TransportStack);			
 			this.leafset = new leafset.Leafset();
 			this.routingtable = new routingtable.RoutingTable();
-			this.heartbeater = new heartbeater.Heartbeater(this.messagemgr, this.leafset, this.routingtable);
+			this.heartbeater = new heartbeater.Heartbeater(this.transport, this.leafset, this.routingtable);
 			
 			this.origNow = Date.now;
-			this.sendToAddr = sinon.stub(this.messagemgr, 'sendToAddr');			
+			this.sendToAddr = sinon.stub(this.transport, 'sendToAddr');			
 			Date.now = function() { return 234; };
 			
 			done();
@@ -246,14 +246,14 @@ module.exports = {
 	
 	"sending probe heartbeats to routing table peers" : testCase({
 		setUp : function(done) {
-			this.messagemgr = mockutil.stubProto(messagemgr.MessageMgr);			
+			this.transport = mockutil.stubProto(transport.TransportStack);			
 			this.leafset = new leafset.Leafset();
 			this.routingtable = new routingtable.RoutingTable();
-			this.heartbeater = new heartbeater.Heartbeater(this.messagemgr, this.leafset, this.routingtable);
+			this.heartbeater = new heartbeater.Heartbeater(this.transport, this.leafset, this.routingtable);
 			
 			this.sharedRow = {'ABCD' : '1.2.3.4:5678'};			
 			sinon.stub(this.routingtable, 'getSharedRow').returns(this.sharedRow);
-			this.sendToAddr = sinon.stub(this.messagemgr, 'sendToAddr');
+			this.sendToAddr = sinon.stub(this.transport, 'sendToAddr');
 			this.origNow = Date.now;
 			Date.now = function() { return 234; };
 			
@@ -318,19 +318,19 @@ module.exports = {
 
 	"performing routing table maintenance" : testCase({
 		setUp : function(done) {
-			this.messagemgr = mockutil.stubProto(messagemgr.MessageMgr);			
+			this.transport = mockutil.stubProto(transport.TransportStack);			
 			this.leafset = new leafset.Leafset();
 			this.routingtable = new routingtable.RoutingTable();
 			
 			node.nodeId = '9876543210987654321098765432109876543210';
 			this.sharedRow = {'ABCD' : '1.2.3.4:5678'};
 			sinon.stub(this.routingtable, 'getSharedRow').returns(this.sharedRow);
-			this.sendToAddr = sinon.stub(this.messagemgr, 'sendToAddr');
+			this.sendToAddr = sinon.stub(this.transport, 'sendToAddr');
 			
 			this.origNow = Date.now;
 			Date.now = function() { return 234; };
 			
-			this.heartbeater = new heartbeater.Heartbeater(this.messagemgr, this.leafset, this.routingtable);
+			this.heartbeater = new heartbeater.Heartbeater(this.transport, this.leafset, this.routingtable);
 			done();
 		},
 		
@@ -379,10 +379,10 @@ module.exports = {
 
 	"detecting timed out peers" : testCase({
 		setUp : function(done) {
-			this.messagemgr = mockutil.stubProto(messagemgr.MessageMgr);			
+			this.transport = mockutil.stubProto(transport.TransportStack);			
 			this.leafset = new leafset.Leafset();
 			this.routingtable = new routingtable.RoutingTable();
-			this.heartbeater = new heartbeater.Heartbeater(this.messagemgr, this.leafset, this.routingtable);
+			this.heartbeater = new heartbeater.Heartbeater(this.transport, this.leafset, this.routingtable);
 			
 			this.heartbeater.heartbeatCheckIntervalMsec = 5000;
 			done();
@@ -429,10 +429,10 @@ module.exports = {
 	
 	"handling received heartbeats" : testCase({
 		setUp : function(done) {
-			this.messagemgr = mockutil.stubProto(messagemgr.MessageMgr);			
+			this.transport = mockutil.stubProto(transport.TransportStack);			
 			this.leafset = new leafset.Leafset();
 			this.routingtable = new routingtable.RoutingTable();
-			this.heartbeater = new heartbeater.Heartbeater(this.messagemgr, this.leafset, this.routingtable);
+			this.heartbeater = new heartbeater.Heartbeater(this.transport, this.leafset, this.routingtable);
 
 			this.origNow = Date.now;
 			Date.now = function() { return 234; };
@@ -455,7 +455,7 @@ module.exports = {
 			this.lsUpdateWithKnownGood = sinon.stub(this.leafset, 'updateWithKnownGood');
 			this.rtUpdateWithKnownGood = sinon.stub(this.routingtable, 'updateWithKnownGood');			
 			this.rtMergeProvisional = sinon.stub(this.routingtable, 'mergeProvisional');
-			this.sendToAddr = sinon.stub(this.messagemgr, 'sendToAddr');
+			this.sendToAddr = sinon.stub(this.transport, 'sendToAddr');
 			this.sharedRow = {'ABCD' : '1.2.3.4:5678'};
 			sinon.stub(this.routingtable, 'getSharedRow').returns(this.sharedRow);
 			
@@ -595,10 +595,10 @@ module.exports = {
 				sender_ap : '127.0.0.1:1234'
 			};
 			
-			this.messagemgr = mockutil.stubProto(messagemgr.MessageMgr);			
+			this.transport = mockutil.stubProto(transport.TransportStack);			
 			this.leafset = new leafset.Leafset();
 			this.routingtable = new routingtable.RoutingTable();
-			this.heartbeater = new heartbeater.Heartbeater(this.messagemgr, this.leafset, this.routingtable);
+			this.heartbeater = new heartbeater.Heartbeater(this.transport, this.leafset, this.routingtable);
 			
 			done();
 		},
