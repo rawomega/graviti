@@ -1,6 +1,6 @@
 var assert = require('assert');
 var sinon = require('sinon');
-var routingtable = require('overlay/routingtable');
+var routingtable = require('pastry/routingtable');
 var node = require('core/node');
 var testCase = require("nodeunit").testCase;
 

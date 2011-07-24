@@ -13,6 +13,19 @@ var node = require('core/node');
 var uri = require('common/uri');
 
 module.exports = {
+	"stack creation" : testCase({
+		"create a transport stack with udp, tcp and a router" : function(test) {
+			var router = sinon.stub();
+		
+			var res = transport.createStack(1234, '1.2.3.4', router);
+
+			test.ok(res.udptran.port = 1234);
+			test.ok(res.tcptran.port = 1234);
+			test.ok(res.router === router);
+			test.done();
+		}
+	}),
+		
 	"starting transports" : testCase({
 		setUp : function(done) {
 			this.processOn = sinon.collection.stub(process, 'on');
@@ -21,7 +34,7 @@ module.exports = {
 			this.tcptran = mockutil.stubProto(transport.TcpTran);
 			this.readyCallback = sinon.stub();
 			
-			this.transport = new transport.Transport(this.udptran, this.tcptran);
+			this.transport = new transport.TransportStack(this.udptran, this.tcptran);
 			done();
 		},
 		
@@ -31,6 +44,8 @@ module.exports = {
 		},
 		
 		"should set up exit hook on start" : function(test) {
+			this.transport.start();
+			
 			test.ok(this.processOn.calledWith('exit', this.transport.stop));
 			test.done();
 		},
@@ -104,7 +119,7 @@ module.exports = {
 			this.udptran = new transport.UdpTran();
 			this.tcptran = new transport.TcpTran();
 			
-			this.transport = new transport.Transport(this.udptran, this.tcptran);
+			this.transport = new transport.TransportStack(this.udptran, this.tcptran);
 			
 			this.tcpStop = sinon.collection.stub(this.tcptran, 'stop');
 			this.udpStop = sinon.collection.stub(this.udptran, 'stop');
@@ -152,11 +167,6 @@ module.exports = {
 		tearDown : function(done) {
 			sinon.collection.restore();
 			done();
-		},
-
-		"should set up exit hook on start" : function(test) {
-			test.ok(this.processOn.calledWith('exit', this.tcptran.stop));
-			test.done();
 		},
 	
 		"should start to listen normally" : function(test) {
@@ -368,11 +378,6 @@ module.exports = {
 			done();
 		},
 		
-		"should set up exit hook on start" : function(test) {
-			test.ok(this.processOn.calledWith('exit', this.udptran.stop));
-			test.done();
-		},
-	
 		"should start to listen normally" : function(test) {
 			var on = sinon.collection.stub(this.server, 'on');
 			
@@ -548,7 +553,7 @@ module.exports = {
 			this.tcptran = new transport.TcpTran(1234);
 			this.readyCallback = sinon.stub();
 			
-			this.transport = new transport.Transport(this.udptran, this.tcptran);
+			this.transport = new transport.TransportStack(this.udptran, this.tcptran);
 
 			this.udpSend = sinon.collection.stub(this.udptran, 'send');
 			this.tcpSend = sinon.collection.stub(this.tcptran, 'send');
@@ -615,7 +620,7 @@ module.exports = {
 		setUp : function(done) {
 			this.udptran = mockutil.stubProto(transport.UdpTran);			
 			this.tcptran = mockutil.stubProto(transport.TcpTran);
-			this.transport = new transport.Transport(this.udptran, this.tcptran);
+			this.transport = new transport.TransportStack(this.udptran, this.tcptran);
 			sinon.collection.stub(this.transport, '_processMessage');
 			sinon.collection.stub(this.transport, 'sendMessage');
 			this.rawmsg = '{"uri" : "p2p:myapp/myresource", "key" : "val"}';
@@ -748,7 +753,7 @@ module.exports = {
 			this.router = { getNextHop : function() {}, suggestBetterHop : function() {} };
 			this.udptran = mockutil.stubProto(transport.UdpTran);			
 			this.tcptran = mockutil.stubProto(transport.TcpTran);
-			this.transport = new transport.Transport(this.udptran, this.tcptran, this.router);
+			this.transport = new transport.TransportStack(this.udptran, this.tcptran, this.router);
 			
 			node.nodeId = 'ABCD';
 			this.sendMessage = sinon.stub(this.transport, 'sendMessage');
@@ -840,7 +845,7 @@ module.exports = {
 			this.router = { getNextHop : function() {} };
 			this.udptran = mockutil.stubProto(transport.UdpTran);			
 			this.tcptran = mockutil.stubProto(transport.TcpTran);
-			this.transport = new transport.Transport(this.udptran, this.tcptran, this.router);
+			this.transport = new transport.TransportStack(this.udptran, this.tcptran, this.router);
 			
 			node.nodeId = 'ABCD';
 			sinon.collection.stub(Date, 'now').returns(12345678);
