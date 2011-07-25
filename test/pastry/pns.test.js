@@ -4,9 +4,9 @@ var pns = require('pastry/pns');
 var leafset = require('pastry/leafset');
 var routingtable = require('pastry/routingtable');
 var node = require('core/node');
-var id = require('common/id');
+var ringutil = require('ringutil');
 var transport = require('transport');
-var langutil = require('common/langutil');
+var langutil = require('langutil');
 var mockutil = require('testability/mockutil');
 
 var joiningNodeId = '1014149403101414940310141494031014149403';
@@ -24,8 +24,12 @@ module.exports = {
 					discovered_peers : ['other', 'peers']
 				};
 			this.success = sinon.stub();
-			this.pns = mockutil.stubProto(pns.Pns);
-			this.pnsrunner = new pns.PnsRunner(this.pns);
+			
+			this.transport = mockutil.stubProto(transport.TransportStack);
+			this.leafset = mockutil.stubProto(leafset.Leafset);
+			this.routingtable = mockutil.stubProto(routingtable.RoutingTable);
+			this.sendToAddr = sinon.stub(this.transport, 'sendToAddr');
+			this.pns = new pns.Pns(this.transport, this.leafset, this.routingtable);
 			this.pnsFind = sinon.collection.stub(this.pns, 'findNearestNode', function(seed, nodeId, success) {
 				success(_this.res);
 			});
@@ -38,14 +42,14 @@ module.exports = {
 		},
 		
 		"should initiate pns by starting the first pns run" : function(test) {
-			this.pnsrunner.run('seed', this.success);
+			this.pns.run('seed', this.success);
 			
 			test.ok(this.pnsFind.calledWith('seed', 'ABCDEF'));
 			test.done();
 		},
 		
 		"should do no more than max allowed num of finds in a pns run" : function(test) {
-			this.pnsrunner.run('seed', this.success);
+			this.pns.run('seed', this.success);
 			
 			test.equal(3, this.pnsFind.callCount);
 			test.ok(this.success.calledWith('1.1.1.0:1111'));
@@ -55,7 +59,7 @@ module.exports = {
 		"should only run once if no discovered peers" : function(test) {
 			this.res.discovered_peers = [];
 			
-			this.pnsrunner.run('seed', this.success);
+			this.pns.run('seed', this.success);
 			
 			test.equal(1, this.pnsFind.callCount);
 			test.ok(this.success.calledWith('1.1.1.0:1111'));
@@ -65,7 +69,7 @@ module.exports = {
 		"should only run once if discovered empty" : function(test) {
 			this.res.discovered_peers = undefined;
 			
-			this.pnsrunner.run('seed', this.success);
+			this.pns.run('seed', this.success);
 			
 			test.equal(1, this.pnsFind.callCount);
 			test.ok(this.success.calledWith('1.1.1.0:1111'));
@@ -73,7 +77,7 @@ module.exports = {
 		},
 		
 		"should use up discovered peers only once" : function(test) {
-			this.pnsrunner.run('seed', this.success);
+			this.pns.run('seed', this.success);
 
 			test.ok(this.pnsFind.calledWith('other', 'ABCDEF'));
 			test.ok(this.pnsFind.calledWith('peers', 'ABCDEF'));	
@@ -86,7 +90,7 @@ module.exports = {
 			while (!this.pnsFind.calledWith('a', 'ABCDEF') ||
 					!this.pnsFind.calledWith('b', 'ABCDEF') ||
 					!this.pnsFind.calledWith('c', 'ABCDEF'))
-				this.pnsrunner.run('seed', this.success);
+				this.pns.run('seed', this.success);
 			
 			test.done();
 		}
@@ -581,7 +585,7 @@ module.exports = {
 
 	"handling routing row response message" : testCase({
 		setUp : function(done) {
-			sinon.collection.stub(id, 'generateUuid').returns('generated-uuid');
+			sinon.collection.stub(ringutil, 'generateUuid').returns('generated-uuid');
 			this.transport = langutil.extend(new events.EventEmitter(), { sendToAddr : function() {} });
 			this.sendToAddr = sinon.stub(this.transport, 'sendToAddr');
 			this.msg = {
@@ -719,7 +723,7 @@ module.exports = {
 
 	"handling routing row round trip probe response message" : testCase({
 		setUp : function(done) {
-			sinon.collection.stub(id, 'generateUuid').returns('generated-uuid');
+			sinon.collection.stub(ringutil, 'generateUuid').returns('generated-uuid');
 			this.transport = langutil.extend(new events.EventEmitter(), { sendToAddr : function() {} });
 			this.sendToAddr = sinon.stub(this.transport, 'sendToAddr');
 			this.success = sinon.stub();

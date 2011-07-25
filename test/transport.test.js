@@ -4,13 +4,13 @@ var message = require('message');
 var events = require('events');
 var net = require('net');
 var dgram = require('dgram');
-var langutil = require('common/langutil');
+var langutil = require('langutil');
 var transport = require('transport');
 var logger = require('logmgr').getLogger('transport');
 var testCase = require('nodeunit').testCase;
 var mockutil = require('testability/mockutil');
 var node = require('core/node');
-var uri = require('common/uri');
+var ringutil = require('ringutil');
 
 module.exports = {
 	"stack creation" : testCase({
@@ -77,9 +77,8 @@ module.exports = {
 				readyCbk();
 			});
 			var udpStart = sinon.collection.stub(this.udptran, 'start');
-			this.transport.on('ready', this.readyCallback);
 			
-			this.transport.start();
+			this.transport.start(this.readyCallback);
 			
 			test.ok(!this.readyCallback.called);
 			test.done();
@@ -90,9 +89,8 @@ module.exports = {
 			var udpStart = sinon.collection.stub(this.udptran, 'start', function(dataCbk, readyCbk) {
 				readyCbk();
 			});
-			this.transport.on('ready', this.readyCallback);
 			
-			this.transport.start();
+			this.transport.start(this.readyCallback);
 			
 			test.ok(!this.readyCallback.called);
 			test.done();
@@ -105,9 +103,8 @@ module.exports = {
 			var udpStart = sinon.collection.stub(this.udptran, 'start', function(dataCbk, readyCbk) {
 				readyCbk();
 			});
-			this.transport.on('ready', this.readyCallback);
 			
-			this.transport.start(1111, '1.1.1.1');
+			this.transport.start(this.readyCallback);
 			
 			test.ok(this.readyCallback.called);
 			test.done();
@@ -879,7 +876,7 @@ module.exports = {
 		},
 		
 		"be able to send a message to a uri mapping to a remote node" : function(test) {
-			var destId = uri.parse(this.uri).hash;
+			var destId = ringutil.parseUri(this.uri).hash;
 			
 			this.transport.send(this.uri, this.content, {method : 'POST'});
 			
@@ -896,7 +893,7 @@ module.exports = {
 		},
 		
 		"be able to send a message to a uri mapping to the current node" : function(test) {
-			var destId =  uri.parse(this.uri).hash;
+			var destId =  ringutil.parseUri(this.uri).hash;
 			this.nextHop.id = node.nodeId;
 			
 			this.transport.send(this.uri, this.content, {method : 'POST'});
