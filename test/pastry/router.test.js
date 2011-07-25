@@ -1,9 +1,9 @@
 var assert = require('assert');
 var sinon = require('sinon');
-var routingmgr = require('overlay/pastry/routingmgr');
-var routingtable = require('overlay/routingtable');
-var leafset = require('overlay/pastry/leafset');
-var heartbeater = require('overlay/pastry/heartbeater');
+var router = require('pastry/router');
+var routingtable = require('pastry/routingtable');
+var leafset = require('pastry/leafset');
+var heartbeater = require('pastry/heartbeater');
 var node = require('core/node');
 var testCase = require("nodeunit").testCase;
 var mockutil = require('testability/mockutil');
@@ -23,7 +23,7 @@ module.exports = {
 			node.nodeId = anId;
 			this.leafset = new leafset.Leafset();
 			this.routingtable = new routingtable.RoutingTable();
-			this.routingmgr = new routingmgr.RoutingMgr(this.leafset, this.routingtable);
+			this.router = new router.Router(this.leafset, this.routingtable);
 			done();
 		},
 		
@@ -37,7 +37,7 @@ module.exports = {
 				id : 'F7DB7ACE15254C87B81D05DA8FA49588540B1950'
 			});
 			
-			var res = this.routingmgr.getNextHop('F7DB7ACE15254C87B81D05DA8FA49588540B1950');
+			var res = this.router.getNextHop('F7DB7ACE15254C87B81D05DA8FA49588540B1950');
 		
 			test.equal('F7DB7ACE15254C87B81D05DA8FA49588540B1950', res.id);
 			test.done();
@@ -46,7 +46,7 @@ module.exports = {
 		"routing via empty routing table should return self" : function(test) {
 			sinon.collection.stub(this.leafset, 'getRoutingHop').returns(undefined);
 			
-			var res = this.routingmgr.getNextHop('F7DB7ACE15254C87B81D05DA8FA49588540B1950');
+			var res = this.router.getNextHop('F7DB7ACE15254C87B81D05DA8FA49588540B1950');
 		
 			test.strictEqual(anId, res.id);
 			test.strictEqual(undefined, res.addr);
@@ -58,7 +58,7 @@ module.exports = {
 			sinon.collection.stub(this.leafset, 'getRoutingHop').returns(undefined);
 			this.routingtable.updateWithKnownGood('F7DB7ACE15254C87B81D05DA8FA49588540B1950', '1.1.1.1:1111', 1);
 
-			var res = this.routingmgr.getNextHop('F7DB7ACE15254C87B81D05DA8FA49588540B1950');
+			var res = this.router.getNextHop('F7DB7ACE15254C87B81D05DA8FA49588540B1950');
 
 			test.strictEqual("F7DB7ACE15254C87B81D05DA8FA49588540B1950", res.id);
 			test.strictEqual('1.1.1.1', res.addr);
@@ -67,7 +67,7 @@ module.exports = {
 		},
 		
 		"routing to same id as node id should return node id as nearest" : function(test) {
-			var res = this.routingmgr.getNextHop(anId);
+			var res = this.router.getNextHop(anId);
 		
 			test.strictEqual(anId, res.id);
 			test.strictEqual(undefined, res.addr);
@@ -79,7 +79,7 @@ module.exports = {
 			sinon.collection.stub(this.leafset, 'getRoutingHop').returns(undefined);
 			this.routingtable.updateWithKnownGood(  'F78147A002B4482EB6D912E3E6518F5CC80EBEE6', '1.1.1.1:1111', 1);
 			
-			var res = this.routingmgr.getNextHop('355607ACE1254C87B81D05DA8FA49588540B1950');
+			var res = this.router.getNextHop('355607ACE1254C87B81D05DA8FA49588540B1950');
 		
 			test.strictEqual(anId, res.id);
 			test.strictEqual(undefined, res.addr);
@@ -91,7 +91,7 @@ module.exports = {
 			sinon.collection.stub(this.leafset, 'getRoutingHop').returns(undefined);
 			this.routingtable.updateWithKnownGood(  'A78147A002B4482EB6D912E3E6518F5CC80EBEE6', '1.1.1.1:1111', 1);
 
-			var res = this.routingmgr.getNextHop('A45607ACE1254C87B81D05DA8FA49588540B1950');
+			var res = this.router.getNextHop('A45607ACE1254C87B81D05DA8FA49588540B1950');
 			
 			test.equal('A78147A002B4482EB6D912E3E6518F5CC80EBEE6', res.id);
 			test.strictEqual('1.1.1.1', res.addr);
@@ -103,7 +103,7 @@ module.exports = {
 			sinon.collection.stub(this.leafset, 'getRoutingHop').returns(undefined);
 			this.routingtable.updateWithKnownGood(  'F456337A002B4482EB6D912E3E6518F5CC80EBE6', '1.1.1.1:1111', 1);
 
-			var res = this.routingmgr.getNextHop('F45607ACE1254C87B81D05DA8FA49588540B1950');
+			var res = this.router.getNextHop('F45607ACE1254C87B81D05DA8FA49588540B1950');
 			
 			test.equal('F456337A002B4482EB6D912E3E6518F5CC80EBE6', res.id);
 			test.strictEqual('1.1.1.1', res.addr);
@@ -115,7 +115,7 @@ module.exports = {
 			sinon.collection.stub(this.leafset, 'getRoutingHop').returns(undefined);
 			this.routingtable.updateWithKnownGood(  'F756337A002B4482EB6D912E3E6518F5CC80EBE6', '1.1.1.1:1111', 1);
 
-			var res = this.routingmgr.getNextHop('F78607ACE1254C87B81D05DA8FA49588540B1950');
+			var res = this.router.getNextHop('F78607ACE1254C87B81D05DA8FA49588540B1950');
 			
 			test.equal('F756337A002B4482EB6D912E3E6518F5CC80EBE6', res.id);
 			test.strictEqual('1.1.1.1', res.addr);
@@ -127,7 +127,7 @@ module.exports = {
 			sinon.collection.stub(this.leafset, 'getRoutingHop').returns(undefined);
 			this.routingtable.updateWithKnownGood(  'EFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF', '1.1.1.1:1111', 1);
 
-			var res = this.routingmgr.getNextHop('F08607ACE1254C87B81D05DA8FA49588540B1950');
+			var res = this.router.getNextHop('F08607ACE1254C87B81D05DA8FA49588540B1950');
 			
 			test.equal('EFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF', res.id);
 			test.strictEqual('1.1.1.1', res.addr);
@@ -139,7 +139,7 @@ module.exports = {
 			sinon.collection.stub(this.leafset, 'getRoutingHop').returns(undefined);
 			this.routingtable.updateWithKnownGood( 'EFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF', '1.1.1.1:1111', 1);
 
-			var res = this.routingmgr.getNextHop('DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD');
+			var res = this.router.getNextHop('DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD');
 			
 			test.equal('EFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF', res.id);
 			test.strictEqual('1.1.1.1', res.addr);
@@ -153,7 +153,7 @@ module.exports = {
 			this.leafset._put('FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF', '5.6.7.8:5678');
 			this.routingtable.updateWithKnownGood('EFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF', '1.2.3.4:1234', 1);
 
-			var res = this.routingmgr.getNextHop('008607ACE1254C87B81D05DA8FA49588540B1950');
+			var res = this.router.getNextHop('008607ACE1254C87B81D05DA8FA49588540B1950');
 			
 			test.equal('FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF', res.id);
 			test.strictEqual('5.6.7.8', res.addr);
@@ -172,7 +172,7 @@ module.exports = {
 			this.routingtable.updateWithKnownGood(  '1110000000000000000000000000000000000000', '3.3.3.3:3333', 3);
 			this.routingtable.updateWithKnownGood(  '1111000000000000000000000000000000000000', '4.4.4.4:4444', 4);
 
-			var res = this.routingmgr.getNextHop('1010101010101010101010101010101010101010');
+			var res = this.router.getNextHop('1010101010101010101010101010101010101010');
 			
 			test.equal('1000000000000000000000000000000000000000', res.id);
 			test.strictEqual('1.1.1.1', res.addr);
@@ -192,7 +192,7 @@ module.exports = {
 			this.leafset = new leafset.Leafset();
 			this.routingtable = new routingtable.RoutingTable();
 			this.heartbeater = mockutil.stubProto(heartbeater.Heartbeater);
-			this.routingmgr = new routingmgr.RoutingMgr(this.leafset, this.routingtable, this.heartbeater);
+			this.router = new router.Router(this.leafset, this.routingtable, this.heartbeater);
 			done();
 		},
 	
@@ -207,7 +207,7 @@ module.exports = {
 				row : 'some row'
 			});
 			
-			this.routingmgr.suggestBetterHop(this.msg, this.msginfo);
+			this.router.suggestBetterHop(this.msg, this.msginfo);
 					
 			test.ok(sendHeartbeat.calledOnce);
 			test.equal('3.3.3.3', sendHeartbeat.args[0][0]);
