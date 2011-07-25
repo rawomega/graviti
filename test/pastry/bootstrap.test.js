@@ -1,52 +1,44 @@
 var sinon = require('sinon');
 var assert = require('assert');
-var bootstrapmgr = require('overlay/pastry/bootstrapmgr');
-var messagemgr = require('messaging/messagemgr');
+var bootstrap = require('pastry/bootstrap');
+var transport = require('transport');
 var langutil = require('common/langutil');
 var node = require('core/node');
-var leafset = require('overlay/pastry/leafset');
-var routingtable = require('overlay/routingtable');
+var leafset = require('pastry/leafset');
+var routingtable = require('pastry/routingtable');
 var testCase = require('nodeunit').testCase;
-var heartbeater = require('overlay/pastry/heartbeater');
-var pnsrunner = require('overlay/pastry/pnsrunner');
+var heartbeater = require('pastry/heartbeater');
+var pns = require('pastry/pns');
 var mockutil = require('testability/mockutil');
 
 module.exports = {
-	"bootstrap manager startup" : testCase({
+	"bootstrapper startup" : testCase({
 		setUp : function(done) {
-			this.processOn = sinon.collection.stub(process, 'on');
-			
-			this.messagemgr = mockutil.stubProto(messagemgr.MessageMgr);
-			this.pnsrunner = mockutil.stubProto(pnsrunner.PnsRunner);
-			this.bootstrapmgr = new bootstrapmgr.BootstrapMgr(this.messagemgr, undefined, undefined, undefined, this.pnsrunner);
+		this.transport = mockutil.stubProto(transport.TransportStack);
+			this.bootstrap = new bootstrap.Bootstrapper(this.transport);
 			
 			node.nodeId = '1234567890123456789012345678901234567890';
-			this.on = sinon.stub(this.messagemgr, 'on');
+			this.on = sinon.stub(this.transport, 'on');
 			done();
 		},
 		
 		tearDown : function(done) {
-			this.bootstrapmgr.stop();
+			this.bootstrap.stop();
 			sinon.collection.restore();
 			done();
-		},
-		
-		"should set up exit hook on start" : function(test) {
-			test.ok(this.processOn.calledWith('exit', this.bootstrapmgr.stop));
-			test.done();
 		},
 		
 		"should throw on startup when no completed callback given" : function(test) {			
 			var _this = this;
 			
 			assert.throws(function() {
-				_this.bootstrapmgr.start();
+				_this.bootstrap.start();
 			}, /no bootstrap completed/i);			
 			test.done();
 		},
 		
 		"should start bootstrap manager for node starting a new ring" : function(test) {			
-			this.bootstrapmgr.start('mybootstraps', sinon.stub());
+			this.bootstrap.start('mybootstraps', sinon.stub());
 			
 			test.ok(this.on.calledWith('graviti-message-received'));
 			test.ok(this.on.calledWith('graviti-message-forwarding'));
@@ -54,11 +46,11 @@ module.exports = {
 		},
 		
 		"bootstrap manager for node joining a ring should initiate sending of bootstrap requests without PNS when PNS off" : function(test) {
-			var sendToAddr = sinon.stub(this.messagemgr, 'sendToAddr');
-			this.bootstrapmgr.pendingRequestCheckIntervalMsec = 50;
-			this.bootstrapmgr.usePns = false;
+			var sendToAddr = sinon.stub(this.transport, 'sendToAddr');
+			this.bootstrap.pendingRequestCheckIntervalMsec = 50;
+			this.bootstrap.usePns = false;
 			
-			this.bootstrapmgr.start('1.2.3.4:1234,5.6.7.8:5678,myhost:8888', sinon.stub());
+			this.bootstrap.start('1.2.3.4:1234,5.6.7.8:5678,myhost:8888', sinon.stub());
 			
 			test.ok(this.on.calledWith('graviti-message-received'));
 			test.ok(this.on.calledWith('graviti-message-forwarding'));
@@ -71,13 +63,13 @@ module.exports = {
 		},
 		
 		"bootstrap manager for node joining a ring should initiate sending of bootstrap requests with PNS when PNS on" : function(test) {
-			var sendToAddr = sinon.collection.stub(this.messagemgr, 'sendToAddr');
-			this.bootstrapmgr.pendingRequestCheckIntervalMsec = 50;
-			sinon.collection.stub(this.pnsrunner, 'run', function(endpoint, success) {
+			var sendToAddr = sinon.collection.stub(this.transport, 'sendToAddr');
+			this.bootstrap.pendingRequestCheckIntervalMsec = 50;
+			sinon.collection.stub(pns, 'run', function(transport, leafset, rt, endpoint, success) {
 				success('6.6.6.6:6666');
 			});
 			
-			this.bootstrapmgr.start('1.2.3.4:1234,5.6.7.8:5678,myhost:8888', sinon.stub());
+			this.bootstrap.start('1.2.3.4:1234,5.6.7.8:5678,myhost:8888', sinon.stub());
 			
 			test.ok(this.on.calledWith('graviti-message-received'));
 			test.ok(this.on.calledWith('graviti-message-forwarding'));
@@ -89,15 +81,15 @@ module.exports = {
 		},
 		
 		"bootstrap manager for node joining a ring should be able to re-send unacknowledged bootstrap requests" : function(test) {
-			this.bootstrapmgr.pendingRequestCheckIntervalMsec = 50;
-			this.bootstrapmgr.bootstrapRetryIntervalMsec = 50;
-			this.bootstrapmgr.usePns = false;
+			this.bootstrap.pendingRequestCheckIntervalMsec = 50;
+			this.bootstrap.bootstrapRetryIntervalMsec = 50;
+			this.bootstrap.usePns = false;
 			var callCount = 0;
-			var sendToAddr = sinon.stub(this.messagemgr, 'sendToAddr', function() {
+			var sendToAddr = sinon.stub(this.transport, 'sendToAddr', function() {
 				callCount++;
 			});
 			
-			this.bootstrapmgr.start('1.2.3.4:1234,5.6.7.8:5678,myhost:8888', sinon.stub());
+			this.bootstrap.start('1.2.3.4:1234,5.6.7.8:5678,myhost:8888', sinon.stub());
 			
 			setTimeout(function() {
 				test.ok(callCount >= 6);
@@ -108,20 +100,21 @@ module.exports = {
 
 	"bootstrap manager shutdown" : testCase({
 		setUp : function(done) {
-			this.pnsrunner = mockutil.stubProto(pnsrunner.PnsRunner);
-			this.cancelAll = sinon.collection.stub(this.pnsrunner, 'cancelAll');
-			this.bootstrapmgr = new bootstrapmgr.BootstrapMgr(undefined, undefined, undefined, undefined, this.pnsrunner);
+			var pnsRun = mockutil.stubProto(pns.Pns);
+			this.cancelAll = sinon.collection.stub(pnsRun, 'cancelAll');
+			this.bootstrap = new bootstrap.Bootstrapper();
+			this.bootstrap.pnsRun = pnsRun;
 			done();
 		},
 		
 		tearDown : function(done) {
-			this.bootstrapmgr.stop();
+			this.bootstrap.stop();
 			sinon.collection.restore();
 			done();
 		},
 		
 		"should stop pns on stop" : function(test) {
-			this.bootstrapmgr.stop();
+			this.bootstrap.stop();
 			
 			test.ok(this.cancelAll.called);
 			test.done();
@@ -130,11 +123,10 @@ module.exports = {
 
 	"handling bootstrap requests" : testCase ({
 		setUp : function(done) {
-			this.messagemgr = mockutil.stubProto(messagemgr.MessageMgr);
+			this.transport = mockutil.stubProto(transport.TransportStack);
 			this.leafset = new leafset.Leafset();
 			this.routingtable = new routingtable.RoutingTable();
-			this.pnsrunner = mockutil.stubProto(pnsrunner.PnsRunner);
-			this.bootstrapmgr = new bootstrapmgr.BootstrapMgr(this.messagemgr, this.leafset, this.routingtable, undefined, this.pnsrunner);
+			this.bootstrap = new bootstrap.Bootstrapper(this.transport, this.leafset, this.routingtable);
 		
 			node.nodeId = '1234567890123456789012345678901234567890';
 			this.msginfo = {
@@ -147,15 +139,15 @@ module.exports = {
 			this.rtUpdateWithKnownGood= sinon.stub(this.routingtable, 'updateWithKnownGood');
 			this.getSharedRow = sinon.stub(this.routingtable, 'getSharedRow').returns(this.sharedRow);
 			
-			this.sendToAddr = sinon.collection.stub(this.messagemgr, 'sendToAddr');
-			this.send = sinon.collection.stub(this.messagemgr, 'send');
-			this.sendToId = sinon.collection.stub(this.messagemgr, 'sendToId');
+			this.sendToAddr = sinon.collection.stub(this.transport, 'sendToAddr');
+			this.send = sinon.collection.stub(this.transport, 'send');
+			this.sendToId = sinon.collection.stub(this.transport, 'sendToId');
 		
 			done();
 		},
 		
 		tearDown : function(done) {
-			this.bootstrapmgr.stop();
+			this.bootstrap.stop();
 			sinon.collection.restore();
 			done();
 		},
@@ -169,8 +161,8 @@ module.exports = {
 				}
 			};			
 			
-			this.bootstrapmgr.start('mybootstraps', sinon.stub);
-			this.bootstrapmgr._handleReceivedGravitiMessage(msg, this.msginfo);
+			this.bootstrap.start('mybootstraps', sinon.stub);
+			this.bootstrap._handleReceivedGravitiMessage(msg, this.msginfo);
 
 			test.ok(!this.send.called);
 			test.ok(!this.sendToId.called);
@@ -201,8 +193,8 @@ module.exports = {
 				}
 			};
 			
-			this.bootstrapmgr.start('', sinon.stub);
-			this.bootstrapmgr._handleReceivedGravitiMessage(msg, this.msginfo);
+			this.bootstrap.start('', sinon.stub);
+			this.bootstrap._handleReceivedGravitiMessage(msg, this.msginfo);
 
 			test.ok(!this.send.called);
 			test.ok(!this.sendToAddr.called);
@@ -231,8 +223,8 @@ module.exports = {
 				}
 			};
 				
-			this.bootstrapmgr.start('', sinon.stub);
-			this.bootstrapmgr._handleForwardingGravitiMessage(msg, this.msginfo);
+			this.bootstrap.start('', sinon.stub);
+			this.bootstrap._handleForwardingGravitiMessage(msg, this.msginfo);
 			
 			test.ok(!this.send.called);
 			test.ok(!this.sendToId.called);
@@ -254,12 +246,11 @@ module.exports = {
 		setUp : function(done) {
 			var _this = this;
 			
-			this.messagemgr = mockutil.stubProto(messagemgr.MessageMgr);
+			this.transport = mockutil.stubProto(transport.TransportStack);
 			this.leafset = new leafset.Leafset();
 			this.routingtable = new routingtable.RoutingTable();
 			this.heartbeater = mockutil.stubProto(heartbeater.Heartbeater);
-			this.pnsrunner = mockutil.stubProto(pnsrunner.PnsRunner);
-			this.bootstrapmgr = new bootstrapmgr.BootstrapMgr(this.messagemgr, this.leafset, this.routingtable, this.heartbeater, this.pnsrunner);
+			this.bootstrap = new bootstrap.Bootstrapper(this.transport, this.leafset, this.routingtable, this.heartbeater);
 			
 			node.nodeId = '1234567890123456789012345678901234567890';
 			this.leafsetContent = {'LS' : '5.5.5.5:5555'};
@@ -299,7 +290,7 @@ module.exports = {
 		},
 		
 		tearDown : function(done) {
-			this.bootstrapmgr.stop();
+			this.bootstrap.stop();
 			sinon.collection.restore();
 			done();
 		},
@@ -318,10 +309,10 @@ module.exports = {
 				}
 			};
 					
-			this.bootstrapmgr.start('cool-bootstrap', bootstrapCompletedCallback);			
-			this.bootstrapmgr._handleReceivedGravitiMessage(msg, this.msginfo);
+			this.bootstrap.start('cool-bootstrap', bootstrapCompletedCallback);			
+			this.bootstrap._handleReceivedGravitiMessage(msg, this.msginfo);
 			
-			test.ok(!this.bootstrapmgr.bootstrapping);
+			test.ok(!this.bootstrap.bootstrapping);
 			test.ok(bootstrapCompletedCallback.called);
 			test.done();
 		},		
@@ -338,10 +329,10 @@ module.exports = {
 					last_bootstrap_hop : true
 				}
 			};
-			this.bootstrapmgr.bootstrapping = true;
+			this.bootstrap.bootstrapping = true;
 
-			this.bootstrapmgr.start('mybootstrap', sinon.stub());
-			this.bootstrapmgr._handleReceivedGravitiMessage(msg, this.msginfo);
+			this.bootstrap.start('mybootstrap', sinon.stub());
+			this.bootstrap._handleReceivedGravitiMessage(msg, this.msginfo);
 	
 			test.ok(this.sendHeartbeatToAddr.callCount === 4);
 			test.ok(this.sendHeartbeatToAddr.calledWith ('1.1.1.1', '1111', {

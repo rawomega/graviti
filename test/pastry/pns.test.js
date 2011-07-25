@@ -12,28 +12,6 @@ var mockutil = require('testability/mockutil');
 var joiningNodeId = '1014149403101414940310141494031014149403';
 
 module.exports = {
-	"pns runner lifecycle events aka initialisation and cancellation" : testCase({
-		setUp : function(done) {
-			this.pns = mockutil.stubProto(pns.Pns);
-			this.pnsrunner = new pns.PnsRunner(this.pns);
-			done();
-		},
-		
-		tearDown : function(done) {
-			sinon.collection.restore();
-			done();
-		},
-		
-		"should delegate cancellation to pns" : function(test) {
-			var pnsCancelAll = sinon.collection.stub(this.pns, 'cancelAll');
-			
-			this.pnsrunner.cancelAll();
-			
-			test.ok(pnsCancelAll.called);
-			test.done();
-		}
-	}),
-	
 	"pns run execution" : testCase({
 		setUp : function(done) {
 			node.nodeId = 'ABCDEF';

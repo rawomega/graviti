@@ -13,8 +13,6 @@ var util = require('util');
 module.exports = {
 	"creation" : testCase({
 		setUp : function(done) {
-			this.processOn = sinon.collection.stub(process, 'on');
-			
 			this.transport = mockutil.stubProto(transport.TransportStack);			
 			this.on = sinon.stub(this.transport, 'on').returns(undefined);			
 			this.leafset = new leafset.Leafset();
@@ -30,11 +28,6 @@ module.exports = {
 			done();
 		},
 
-		"should set up exit hook on start" : function(test) {
-			test.ok(this.processOn.calledWith('exit', this.heartbeater.stop));
-			test.done();
-		},
-		
 		"should set up received message listening when created" : function(test) {			
 			test.ok(this.on.calledWith('graviti-message-received'));
 			test.done();
