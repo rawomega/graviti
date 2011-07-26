@@ -55,7 +55,7 @@ module.exports = {
 			
 			this.transport.start();
 			
-			test.strictEqual(tcpStart.args[0][0], this.transport.receiveRaw);
+			test.strictEqual(typeof(tcpStart.args[0][0]), 'function');
 			test.strictEqual(typeof(tcpStart.args[0][1]), 'function');
 			test.done();
 		},
@@ -66,7 +66,7 @@ module.exports = {
 			
 			this.transport.start();
 
-			test.strictEqual(udpStart.args[0][0], this.transport.receiveRaw);
+			test.strictEqual(typeof(udpStart.args[0][0]), 'function');
 			test.strictEqual(typeof(udpStart.args[0][1]), 'function');
 			test.done();
 		},
