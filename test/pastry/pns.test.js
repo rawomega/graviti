@@ -3,7 +3,6 @@ var testCase = require('nodeunit').testCase;
 var pns = require('pastry/pns');
 var leafset = require('pastry/leafset');
 var routingtable = require('pastry/routingtable');
-var node = require('core/node');
 var ringutil = require('ringutil');
 var transport = require('transport');
 var langutil = require('langutil');
@@ -14,7 +13,6 @@ var joiningNodeId = '1014149403101414940310141494031014149403';
 module.exports = {
 	"pns run execution" : testCase({
 		setUp : function(done) {
-			node.nodeId = 'ABCDEF';
 			var numCallbacks = 0;
 			var _this = this;
 			this.res = {
@@ -26,6 +24,7 @@ module.exports = {
 			this.success = sinon.stub();
 			
 			this.transport = mockutil.stubProto(transport.TransportStack);
+			this.transport.nodeId = 'ABCDEF';
 			this.leafset = mockutil.stubProto(leafset.Leafset);
 			this.routingtable = mockutil.stubProto(routingtable.RoutingTable);
 			this.sendToAddr = sinon.stub(this.transport, 'sendToAddr');
@@ -489,8 +488,9 @@ module.exports = {
 	
 	"handling routing row request message" : testCase({
 		setUp : function(done) {
-			node.nodeId = '2222222222222222222222222222222222222222';
+			var nodeId = '2222222222222222222222222222222222222222';
 			this.transport = langutil.extend(new events.EventEmitter(), { sendToAddr : function() {} });
+			this.transport.nodeId = nodeId;
 			this.sendToAddr = sinon.stub(this.transport, 'sendToAddr');
 			this.msg = {
 					method : 'GET',
@@ -504,7 +504,7 @@ module.exports = {
 			this.msginfo = {
 					source_ap : '3.3.3.3:3333'
 			}
-			this.routingtable = new routingtable.RoutingTable();
+			this.routingtable = new routingtable.RoutingTable(nodeId);
 			this.pns = new pns.Pns(this.transport, undefined, this.routingtable);
 			
 			done();

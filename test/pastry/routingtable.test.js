@@ -1,7 +1,6 @@
 var assert = require('assert');
 var sinon = require('sinon');
 var routingtable = require('pastry/routingtable');
-var node = require('core/node');
 var testCase = require("nodeunit").testCase;
 
 var anId = 'F45A18416DD849ACAA55D926C2D7946064A69EF2';
@@ -16,8 +15,7 @@ var overEdgeId= '0000000000000000000000000000000000000001';
 module.exports = {
 	"updating the routing table with a known good peer" : testCase({
 		setUp : function(done) {
-			node.nodeId = anId;
-			this.routingtable = new routingtable.RoutingTable();
+			this.routingtable = new routingtable.RoutingTable(anId);
 			done();
 		},
 		
@@ -147,8 +145,7 @@ module.exports = {
 	
 	"updating the routing table with provisional peers" : testCase({
 		setUp : function(done) {
-			node.nodeId = anId;
-			this.routingtable = new routingtable.RoutingTable();
+			this.routingtable = new routingtable.RoutingTable(anId);
 			done();
 		},
 		
@@ -241,8 +238,7 @@ module.exports = {
 
 	"merging another routing table into our one" : testCase({
 		setUp : function(done) {
-			node.nodeId = anId;
-			this.routingtable = new routingtable.RoutingTable();
+			this.routingtable = new routingtable.RoutingTable(anId);
 			done();
 		},
 		
@@ -352,8 +348,7 @@ module.exports = {
 	
 	"housekeeping local transient state" : testCase({
 		setUp : function(done) {
-			node.nodeId = anId;
-			this.routingtable = new routingtable.RoutingTable();
+			this.routingtable = new routingtable.RoutingTable(anId);
 			done();
 		},
 		
@@ -424,8 +419,7 @@ module.exports = {
 	
 	"getting a peer from the rooting table" : testCase({
 		setUp : function(done) {
-			node.nodeId = anId;
-			this.routingtable = new routingtable.RoutingTable();
+			this.routingtable = new routingtable.RoutingTable(anId);
 			done();
 		},
 		
@@ -478,10 +472,9 @@ module.exports = {
 	
 	"iterating over peers in the routing table" : testCase({
 		setUp : function(done) {
-			node.nodeId = anId;
 			var _this = this;
 			this.callback = sinon.stub();
-			this.routingtable = new routingtable.RoutingTable();
+			this.routingtable = new routingtable.RoutingTable(anId);
 			done();
 		},
 		
@@ -584,8 +577,7 @@ module.exports = {
 
 	"getting the routing table row shared with another peer's routing table" : testCase({
 		setUp : function(done) {
-			node.nodeId = anId;
-			this.routingtable = new routingtable.RoutingTable();
+			this.routingtable = new routingtable.RoutingTable(anId);
 			done();
 		},
 		
@@ -641,9 +633,8 @@ module.exports = {
 	
 	"finding a better hop than 'us' using information in our routing table" : testCase({
 		setUp : function(done) {
-			node.nodeId = 'ABCDEF1234ABCDEF1234ABCDEF1234ABCDEF1234';
 			sinon.collection.stub(Date, 'now').returns(1234);
-			this.routingtable = new routingtable.RoutingTable();
+			this.routingtable = new routingtable.RoutingTable('ABCDEF1234ABCDEF1234ABCDEF1234ABCDEF1234');
 			done();
 		},
 		

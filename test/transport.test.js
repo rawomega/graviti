@@ -9,7 +9,6 @@ var transport = require('transport');
 var logger = require('logmgr').getLogger('transport');
 var testCase = require('nodeunit').testCase;
 var mockutil = require('testability/mockutil');
-var node = require('core/node');
 var ringutil = require('ringutil');
 
 module.exports = {
@@ -17,7 +16,7 @@ module.exports = {
 		"create a transport stack with udp, tcp and a router" : function(test) {
 			var router = sinon.stub();
 		
-			var res = transport.createStack(1234, '1.2.3.4', router);
+			var res = transport.createStack('ABCD', 1234, '1.2.3.4', router);
 
 			test.ok(res.udptran.port = 1234);
 			test.ok(res.tcptran.port = 1234);
@@ -34,7 +33,7 @@ module.exports = {
 			this.tcptran = mockutil.stubProto(transport.TcpTran);
 			this.readyCallback = sinon.stub();
 			
-			this.transport = new transport.TransportStack(this.udptran, this.tcptran);
+			this.transport = new transport.TransportStack('ABCD', this.udptran, this.tcptran);
 			done();
 		},
 		
@@ -116,7 +115,7 @@ module.exports = {
 			this.udptran = new transport.UdpTran();
 			this.tcptran = new transport.TcpTran();
 			
-			this.transport = new transport.TransportStack(this.udptran, this.tcptran);
+			this.transport = new transport.TransportStack('ABCD', this.udptran, this.tcptran);
 			
 			this.tcpStop = sinon.collection.stub(this.tcptran, 'stop');
 			this.udpStop = sinon.collection.stub(this.udptran, 'stop');
@@ -550,7 +549,7 @@ module.exports = {
 			this.tcptran = new transport.TcpTran(1234);
 			this.readyCallback = sinon.stub();
 			
-			this.transport = new transport.TransportStack(this.udptran, this.tcptran);
+			this.transport = new transport.TransportStack('ABCD', this.udptran, this.tcptran);
 
 			this.udpSend = sinon.collection.stub(this.udptran, 'send');
 			this.tcpSend = sinon.collection.stub(this.tcptran, 'send');
@@ -580,6 +579,13 @@ module.exports = {
 			this.transport.sendMessage("1.1.1.1", 2222, this.msg);
 
 			test.ok(/hops: 12/.test(this.udpSend.args[0][2]));
+			test.done();
+		},
+		
+		"should add node id when absent" : function(test) {
+			this.transport.sendMessage("1.1.1.1", 2222, this.msg);
+
+			test.ok(/source_id: ABCD/.test(this.udpSend.args[0][2]));
 			test.done();
 		},
 		
@@ -617,7 +623,7 @@ module.exports = {
 		setUp : function(done) {
 			this.udptran = mockutil.stubProto(transport.UdpTran);			
 			this.tcptran = mockutil.stubProto(transport.TcpTran);
-			this.transport = new transport.TransportStack(this.udptran, this.tcptran);
+			this.transport = new transport.TransportStack('ABCD', this.udptran, this.tcptran);
 			sinon.collection.stub(this.transport, '_processMessage');
 			sinon.collection.stub(this.transport, 'sendMessage');
 			this.rawmsg = '{"uri" : "p2p:myapp/myresource", "key" : "val"}';
@@ -750,9 +756,8 @@ module.exports = {
 			this.router = { getNextHop : function() {}, suggestBetterHop : function() {} };
 			this.udptran = mockutil.stubProto(transport.UdpTran);			
 			this.tcptran = mockutil.stubProto(transport.TcpTran);
-			this.transport = new transport.TransportStack(this.udptran, this.tcptran, this.router);
+			this.transport = new transport.TransportStack('ABCD', this.udptran, this.tcptran, this.router);
 			
-			node.nodeId = 'ABCD';
 			this.sendMessage = sinon.stub(this.transport, 'sendMessage');
 			this.appForwarding = sinon.stub();
 			this.appReceived = sinon.stub();
@@ -780,7 +785,7 @@ module.exports = {
 		},
 		
 		"handle message destined for an app on this node" : function(test) {
-			this.nextHop.id = node.nodeId;
+			this.nextHop.id = this.transport.nodeId;
 			
 			this.transport._processMessage(this.msg, this.msginfo);
 			
@@ -793,7 +798,7 @@ module.exports = {
 		},
 		
 		"handle message destined for graviti on this node" : function(test) {
-			this.nextHop.id = node.nodeId;
+			this.nextHop.id = this.transport.nodeId;
 			this.msginfo.app_name = 'graviti';
 			
 			this.transport._processMessage(this.msg, this.msginfo);
@@ -839,12 +844,11 @@ module.exports = {
 	
 	"sending messages" : testCase({
 		setUp : function(done) {
-			this.router = { getNextHop : function() {} };
+			this.router = { getNextHop : function() {}, suggestBetterHop : function() {} };
 			this.udptran = mockutil.stubProto(transport.UdpTran);			
 			this.tcptran = mockutil.stubProto(transport.TcpTran);
-			this.transport = new transport.TransportStack(this.udptran, this.tcptran, this.router);
+			this.transport = new transport.TransportStack('ABCD', this.udptran, this.tcptran, this.router);
 			
-			node.nodeId = 'ABCD';
 			sinon.collection.stub(Date, 'now').returns(12345678);
 			this.nextHop = {
 					id : 'CDEF',
@@ -894,7 +898,7 @@ module.exports = {
 		
 		"be able to send a message to a uri mapping to the current node" : function(test) {
 			var destId =  ringutil.parseUri(this.uri).hash;
-			this.nextHop.id = node.nodeId;
+			this.nextHop.id = this.transport.nodeId;
 			
 			this.transport.send(this.uri, this.content, {method : 'POST'});
 						
@@ -941,7 +945,7 @@ module.exports = {
 		
 		"be able to send a message directly to an id when current node is nearest" : function(test) {
 			var destId = 'AAAA';
-			this.nextHop.id = node.nodeId;
+			this.nextHop.id = this.transport.nodeId;
 						
 			this.transport.sendToId(this.uri, this.content, {method : 'POST'}, 'AAAA');
 

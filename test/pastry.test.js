@@ -9,6 +9,8 @@ var pastry = require('pastry');
 var mockutil = require('testability/mockutil');
 var testCase = require('nodeunit').testCase;
 
+var nodeId = 'ABCDEF';
+
 module.exports = {
 	"should create a pastry node and its deps" : testCase({
 		setUp : function(done) {
@@ -25,19 +27,20 @@ module.exports = {
 		},
 		
 		"should create a good node object" : function(test) {
-			var res = pastry.createNode(1111, '1.1.1.1', this.cbk);
+			var res = pastry.createNode(nodeId, 1111, '1.1.1.1', this.cbk);
 			
+			test.ok(this.createStack.calledWith(nodeId, 1111, '1.1.1.1'));
 			test.ok(res.leafset !== undefined);
 			test.ok(res.transport === this.transportStack);
 			test.ok(res.bootstrapper !== undefined);
-			test.ok(res.heartbeater !== undefined);
+			test.ok(res.heartbeater !== undefined);			
 			test.done();
 		},
 		
 		"should set router for transport stack and start stack" : function(test) {
 			var transportStart = sinon.stub(this.transportStack, 'start');
 			
-			var res = pastry.createNode(1111, '1.1.1.1', {}, this.cbk);
+			var res = pastry.createNode(nodeId, 1111, '1.1.1.1', this.cbk);
 
 			test.ok(res.transport.router !== undefined);
 			test.ok(transportStart.calledWith(this.cbk));
@@ -45,7 +48,7 @@ module.exports = {
 		},
 		
 		"should create process exit handler to stop" : function(test) {
-			var res = pastry.createNode(1111, '1.1.1.1', this.cbk);
+			var res = pastry.createNode(nodeId, 1111, '1.1.1.1', this.cbk);
 			
 			test.ok(this.processOn.calledWith('exit', res.stop));
 			test.done();

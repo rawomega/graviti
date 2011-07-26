@@ -1,6 +1,5 @@
 var assert = require('assert');
 var leafset = require('pastry/leafset');
-var node = require('core/node');
 var sinon = require('sinon');
 var testCase = require('nodeunit').testCase;
 
@@ -167,10 +166,9 @@ module.exports = {
 
 	"updating leafset with known good peers" : testCase ({
 		setUp : function(done) {
-			node.nodeId = myId;
 			this.arrivedCallback = sinon.stub();
 			
-			this.leafset = new leafset.Leafset();
+			this.leafset = new leafset.Leafset(myId);
 			this.leafset.setMaxListeners(1000);
 			this.leafset.on('peer-arrived', this.arrivedCallback);
 			done();
@@ -338,7 +336,7 @@ module.exports = {
 		},
 		
 		"should enforce maxthis.leafset.size when adding closer known good peer in clockwise direction" : function(test) {
-			node.nodeId = anId;
+			this.leafset.nodeId = anId;
 			this.leafset.leafsetSize = 4;
 			this.leafset._leafset[lowerId] = { ap : "1.2.3.4", lastHeartbeatReceived : 1};
 			this.leafset._leafset[oneLessId] = { ap : "2.3.4.5", lastHeartbeatReceived : 2};
@@ -361,7 +359,7 @@ module.exports = {
 		},
 		
 		"should enforce maxthis.leafset.size when adding closer known good peer in counter-clockwise direction" : function(test) {
-			node.nodeId = anId;
+			this.leafset.nodeId = anId;
 			this.leafset.leafsetSize = 4;
 			this.leafset._leafset[lowerId] = { ap : "1.2.3.4", lastHeartbeatReceived : 1};
 			this.leafset._leafset[oneMoreId] = { ap : "2.3.4.5", lastHeartbeatReceived : 2};
@@ -384,7 +382,7 @@ module.exports = {
 		},
 		
 		"should do nothing for known good peer that isn't nearer than existingthis.leafset.peers" : function(test) {
-			node.nodeId = anId;
+			this.leafset.nodeId = anId;
 			this.leafset.leafsetSize = 4;
 			this.leafset._leafset[oneMoreId] = { ap : "1.2.3.4", lastHeartbeatReceived : 1};
 			this.leafset._leafset[oneLessId] = { ap : "2.3.4.5", lastHeartbeatReceived : 2};
@@ -408,9 +406,8 @@ module.exports = {
 	}),
 
 	"updating the leafset with provisional peers" : testCase ({
-		setUp : function(done) {
-			node.nodeId = myId;			
-			this.leafset = new leafset.Leafset();
+		setUp : function(done) {			
+			this.leafset = new leafset.Leafset(myId);
 			done();
 		},
 		
@@ -570,7 +567,7 @@ module.exports = {
 		},
 		
 		"should ignore any provisional peers outside leafset range where max leafset size already met" : function(test) {
-			node.nodeId = anId;
+			this.leafset.nodeId = anId;
 			this.leafset.leafsetSize = 4;
 			this.leafset._leafset[higherId] = { ap : "1.2.3.4", lastHeartbeatReceived : 1};
 			this.leafset._leafset[oneLessId] = { ap : "2.3.4.5", lastHeartbeatReceived : 2};
@@ -589,7 +586,7 @@ module.exports = {
 		},
 		
 		"should add any provisional peers within leafset range to candidateset even when max leafset size already met" : function(test) {
-			node.nodeId = anId;
+			this.leafset.nodeId = anId;
 			this.leafset.leafsetSize = 4;
 			this.leafset._leafset[higherId] = { ap : "1.2.3.4", lastHeartbeatReceived : 1};
 			this.leafset._leafset[lowerId] = { ap : "2.3.4.5", lastHeartbeatReceived : 2};
@@ -611,8 +608,7 @@ module.exports = {
 
 	"getting a compressed version of the leafset" : testCase({
 		setUp : function(done) {
-			node.nodeId = anId;
-			this.leafset = new leafset.Leafset();
+			this.leafset = new leafset.Leafset(anId);
 			done();
 		},
 		
@@ -642,8 +638,7 @@ module.exports = {
 	
 	"proximity to a given id" : testCase ({
 		setUp : function(done) {
-			node.nodeId = anId;
-			this.leafset = new leafset.Leafset();
+			this.leafset = new leafset.Leafset(anId);
 			done();
 		},
 		
@@ -681,13 +676,11 @@ module.exports = {
 	
 	"calculating next routing hop" : testCase ({
 		setUp : function(done) {
-			node.nodeId = anId;
-			this.leafset = new leafset.Leafset();
+			this.leafset = new leafset.Leafset(anId);
 			done();
 		},
 		
 		tearDown : function(done) {
-			node.nodeId = anId;
 			//leafset.leafsetSize = 20;
 			done();
 		},
@@ -734,7 +727,7 @@ module.exports = {
 		},
 		
 		"should return nearest node as next hop when within range and closer than node id" : function(test) {
-			node.nodeId = '1CD0814241C2413CA7DBDD7F70C1BDE3AE98A500';			
+			this.leafset.nodeId = '1CD0814241C2413CA7DBDD7F70C1BDE3AE98A500';			
 			this.leafset._put('079C239AB829495CB902D46E3BB242E9F9E5960A', "1.2.3.4:1234");
 			
 			var res = this.leafset.getRoutingHop('C8D86F13CCA340D7BDE0D69548C08C4EF111F24B');
@@ -775,14 +768,7 @@ module.exports = {
 
 	"checking if an id is within leafset range" : testCase({
 		setUp : function(done) {
-			node.nodeId = anId;
-			this.leafset = new leafset.Leafset();
-			done();
-		},
-		
-		tearDown : function(done) {
-			node.nodeId = anId;
-			//leafset.leafsetSize = 20;
+			this.leafset = new leafset.Leafset(anId);
 			done();
 		},
 		
@@ -924,7 +910,7 @@ module.exports = {
 		
 		"false when id just over edge of leafset on cw side" : function(test) {
 			this.leafset.leafsetSize = 2;
-			node.nodeId = myId;
+			this.leafset.nodeId = myId;
 			this.leafset._put(wrappedId, "1.2.3.4");
 			this.leafset._put(anId, "1.2.3.4");
 			
@@ -936,7 +922,7 @@ module.exports = {
 		
 		"false when id just over edge of leafset on ccw side" : function(test) {
 			this.leafset.leafsetSize = 2;
-			node.nodeId = higherId;
+			this.leafset.nodeId = higherId;
 			this.leafset._put(wrappedId, "1.2.3.4");
 			this.leafset._put(anId, "1.2.3.4");
 			
@@ -949,14 +935,7 @@ module.exports = {
 	
 	"getting edge peers for a given leafset" : testCase({
 		setUp : function(done) {
-			node.nodeId = anId;
-			this.leafset = new leafset.Leafset();
-			done();
-		},
-		
-		tearDown : function(done) {
-			node.nodeId = anId;
-			//leafset.leafsetSize = 20;
+			this.leafset = new leafset.Leafset(anId);
 			done();
 		},
 		

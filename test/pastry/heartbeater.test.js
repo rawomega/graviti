@@ -4,7 +4,6 @@ var leafset = require('pastry/leafset');
 var routingtable = require('pastry/routingtable');
 var langutil = require('langutil');
 var events = require('events');
-var node = require('core/node');
 var testCase = require('nodeunit').testCase;
 var transport = require('transport');
 var mockutil = require('testability/mockutil');
@@ -35,10 +34,9 @@ module.exports = {
 	}),
 
 	"stopping" : testCase({
-		setUp : function(done) {
-			node.nodeId = '9876543210987654321098765432109876543210';
-			
+		setUp : function(done) {			
 			this.transport = mockutil.stubProto(transport.TransportStack);			
+			this.transport.nodeId = '9876543210987654321098765432109876543210';
 			this.leafset = new leafset.Leafset();
 			this.routingtable = new routingtable.RoutingTable();
 
@@ -311,11 +309,11 @@ module.exports = {
 
 	"performing routing table maintenance" : testCase({
 		setUp : function(done) {
+			var nodeId = '9876543210987654321098765432109876543210';
 			this.transport = mockutil.stubProto(transport.TransportStack);			
-			this.leafset = new leafset.Leafset();
-			this.routingtable = new routingtable.RoutingTable();
+			this.leafset = new leafset.Leafset(nodeId);
+			this.routingtable = new routingtable.RoutingTable(nodeId);
 			
-			node.nodeId = '9876543210987654321098765432109876543210';
 			this.sharedRow = {'ABCD' : '1.2.3.4:5678'};
 			sinon.stub(this.routingtable, 'getSharedRow').returns(this.sharedRow);
 			this.sendToAddr = sinon.stub(this.transport, 'sendToAddr');

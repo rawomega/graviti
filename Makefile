@@ -3,7 +3,7 @@ all: clean lint test integration npm-deps
 .PHONY: test
 .PHONY: npm-deps
 
-export NODE_PATH = lib:apps
+export NODE_PATH = lib:samples
 
 clean:
 	-rm -rf build
@@ -12,7 +12,7 @@ lint:
 	jsl --conf etc/jsl.conf
 
 test: lint
-	nodeunit test/pastry test/core test
+	nodeunit test/pastry test
 
 test = test/integration/*.test.js
 integration: lint

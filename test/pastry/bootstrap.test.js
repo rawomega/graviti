@@ -3,7 +3,6 @@ var assert = require('assert');
 var bootstrap = require('pastry/bootstrap');
 var transport = require('transport');
 var langutil = require('langutil');
-var node = require('core/node');
 var leafset = require('pastry/leafset');
 var routingtable = require('pastry/routingtable');
 var testCase = require('nodeunit').testCase;
@@ -14,10 +13,10 @@ var mockutil = require('testability/mockutil');
 module.exports = {
 	"bootstrapper startup" : testCase({
 		setUp : function(done) {
-		this.transport = mockutil.stubProto(transport.TransportStack);
+			this.transport = mockutil.stubProto(transport.TransportStack);
+			this.transport.nodeId = '1234567890123456789012345678901234567890';
 			this.bootstrap = new bootstrap.Bootstrapper(this.transport);
 			
-			node.nodeId = '1234567890123456789012345678901234567890';
 			this.on = sinon.stub(this.transport, 'on');
 			done();
 		},
@@ -46,6 +45,7 @@ module.exports = {
 		},
 		
 		"bootstrap manager for node joining a ring should initiate sending of bootstrap requests without PNS when PNS off" : function(test) {
+			var self = this;
 			var sendToAddr = sinon.stub(this.transport, 'sendToAddr');
 			this.bootstrap.pendingRequestCheckIntervalMsec = 50;
 			this.bootstrap.usePns = false;
@@ -55,14 +55,15 @@ module.exports = {
 			test.ok(this.on.calledWith('graviti-message-received'));
 			test.ok(this.on.calledWith('graviti-message-forwarding'));
 			setTimeout(function() {
-				test.ok(sendToAddr.calledWith('p2p:graviti/peers', {joining_node_id : node.nodeId}, {method : 'GET'}, '1.2.3.4', '1234'));
-				test.ok(sendToAddr.calledWith('p2p:graviti/peers', {joining_node_id : node.nodeId}, {method : 'GET'}, '5.6.7.8', '5678'));
-				test.ok(sendToAddr.calledWith('p2p:graviti/peers', {joining_node_id : node.nodeId}, {method : 'GET'}, 'myhost', '8888'));
+				test.ok(sendToAddr.calledWith('p2p:graviti/peers', {joining_node_id : self.transport.nodeId}, {method : 'GET'}, '1.2.3.4', '1234'));
+				test.ok(sendToAddr.calledWith('p2p:graviti/peers', {joining_node_id : self.transport.nodeId}, {method : 'GET'}, '5.6.7.8', '5678'));
+				test.ok(sendToAddr.calledWith('p2p:graviti/peers', {joining_node_id : self.transport.nodeId}, {method : 'GET'}, 'myhost', '8888'));
 				test.done();
 			}, 200);
 		},
 		
 		"bootstrap manager for node joining a ring should initiate sending of bootstrap requests with PNS when PNS on" : function(test) {
+			var self = this;
 			var sendToAddr = sinon.collection.stub(this.transport, 'sendToAddr');
 			this.bootstrap.pendingRequestCheckIntervalMsec = 50;
 			sinon.collection.stub(pns, 'run', function(transport, leafset, rt, endpoint, success) {
@@ -75,7 +76,7 @@ module.exports = {
 			test.ok(this.on.calledWith('graviti-message-forwarding'));
 			setTimeout(function() {
 				test.equal(3, sendToAddr.callCount);
-				test.ok(sendToAddr.calledWith('p2p:graviti/peers', {joining_node_id : node.nodeId}, {method : 'GET'}, '6.6.6.6', '6666'));
+				test.ok(sendToAddr.calledWith('p2p:graviti/peers', {joining_node_id : self.transport.nodeId}, {method : 'GET'}, '6.6.6.6', '6666'));
 				test.done();
 			}, 200);
 		},
@@ -123,12 +124,13 @@ module.exports = {
 
 	"handling bootstrap requests" : testCase ({
 		setUp : function(done) {
+			var nodeId = '1234567890123456789012345678901234567890';
 			this.transport = mockutil.stubProto(transport.TransportStack);
-			this.leafset = new leafset.Leafset();
-			this.routingtable = new routingtable.RoutingTable();
+			this.transport.nodeId = nodeId;
+			this.leafset = new leafset.Leafset(nodeId);
+			this.routingtable = new routingtable.RoutingTable(nodeId);
 			this.bootstrap = new bootstrap.Bootstrapper(this.transport, this.leafset, this.routingtable);
 		
-			node.nodeId = '1234567890123456789012345678901234567890';
 			this.msginfo = {
 				sender_ap : '2.2.2.2:2222'
 			};
@@ -246,13 +248,14 @@ module.exports = {
 		setUp : function(done) {
 			var _this = this;
 			
+			var nodeId = '1234567890123456789012345678901234567890';
 			this.transport = mockutil.stubProto(transport.TransportStack);
-			this.leafset = new leafset.Leafset();
-			this.routingtable = new routingtable.RoutingTable();
+			this.transport.nodeId = nodeId;
+			this.leafset = new leafset.Leafset(nodeId);
+			this.routingtable = new routingtable.RoutingTable(nodeId);
 			this.heartbeater = mockutil.stubProto(heartbeater.Heartbeater);
 			this.bootstrap = new bootstrap.Bootstrapper(this.transport, this.leafset, this.routingtable, this.heartbeater);
-			
-			node.nodeId = '1234567890123456789012345678901234567890';
+
 			this.leafsetContent = {'LS' : '5.5.5.5:5555'};
 			this.routingTableContent = {'RT' : '5.5.5.5:5555'};
 			this.msginfo = {

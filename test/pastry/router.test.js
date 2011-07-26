@@ -4,7 +4,6 @@ var router = require('pastry/router');
 var routingtable = require('pastry/routingtable');
 var leafset = require('pastry/leafset');
 var heartbeater = require('pastry/heartbeater');
-var node = require('core/node');
 var testCase = require("nodeunit").testCase;
 var mockutil = require('testability/mockutil');
 
@@ -20,9 +19,8 @@ var overEdgeId= '0000000000000000000000000000000000000001';
 module.exports = {
 	"getting the next routing hop" : testCase({
 		setUp : function(done) {
-			node.nodeId = anId;
-			this.leafset = new leafset.Leafset();
-			this.routingtable = new routingtable.RoutingTable();
+			this.leafset = new leafset.Leafset(anId);
+			this.routingtable = new routingtable.RoutingTable(anId);
 			this.router = new router.Router(this.leafset, this.routingtable);
 			done();
 		},
@@ -162,7 +160,7 @@ module.exports = {
 		},
 		
 		"routing via routing table  and this.leafset with multiple 'contrived' entries should route correctly" : function(test) {
-			node.nodeId = '1111111111111111111111111111111111111111';
+			this.leafset.nodeId = '1111111111111111111111111111111111111111';
 			sinon.collection.stub(this.leafset, 'getRoutingHop').returns(undefined);
 			this.leafset._put('EFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF', '1.2.3.4:1234');
 			this.leafset._put('FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF','5.6.7.8:5678');
@@ -183,14 +181,13 @@ module.exports = {
 	
 	"suggesting a better routing hop" : testCase({
 		setUp : function(done) {
-			node.nodeId = anId;
 			this.msg = { dest_id : 'FEED', he : 'llo'};
 			this.msginfo = {
 					source_ap : '3.3.3.3:3333',
 					app_name : 'myapp'					
 			};
-			this.leafset = new leafset.Leafset();
-			this.routingtable = new routingtable.RoutingTable();
+			this.leafset = new leafset.Leafset(anId);
+			this.routingtable = new routingtable.RoutingTable(anId);
 			this.heartbeater = mockutil.stubProto(heartbeater.Heartbeater);
 			this.router = new router.Router(this.leafset, this.routingtable, this.heartbeater);
 			done();
