@@ -31,7 +31,9 @@ module.exports = {
 			
 			test.ok(this.createStack.calledWith(nodeId, 1111, '1.1.1.1'));
 			test.ok(res.leafset !== undefined);
+			test.ok(res.leafset.nodeId === nodeId);
 			test.ok(res.transport === this.transportStack);
+			test.ok(res.bootstrapper.routingtable.nodeId === nodeId);
 			test.ok(res.bootstrapper !== undefined);
 			test.ok(res.heartbeater !== undefined);			
 			test.done();

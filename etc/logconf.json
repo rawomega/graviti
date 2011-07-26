@@ -2,7 +2,7 @@
 	"console" :  {
 		"level" : "info",
 		"modules" : {
-			"messaging/transportmgr" : "verbose"
+			"transport" : "verbose"
 		}
 	},
 	
@@ -15,7 +15,5 @@
 
 	"modules" : {
 		"overlay/overlay" : "info",
-		"messaging/tcptran" : "info",
-		"messaging/udptran" : "info"
 	}
 }

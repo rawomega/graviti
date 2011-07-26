@@ -907,6 +907,7 @@ module.exports = {
 			test.strictEqual(this.appReceived.args[0][0].uri, this.uri);
 			test.strictEqual(this.appReceived.args[0][0].dest_id, destId);
 			test.strictEqual(this.appReceived.args[0][0].method, 'POST');
+			test.strictEqual(this.appReceived.args[0][0].source_id, 'ABCD');
 			test.deepEqual(this.appReceived.args[0][0].content, this.content);
 			test.deepEqual(this.appReceived.args[0][1], { app_name : 'myapp' });
 			test.done();
@@ -954,6 +955,7 @@ module.exports = {
 			test.strictEqual(this.appReceived.args[0][0].uri, this.uri);
 			test.strictEqual(this.appReceived.args[0][0].dest_id, destId);
 			test.strictEqual(this.appReceived.args[0][0].method, 'POST');
+			test.strictEqual(this.appReceived.args[0][0].source_id, 'ABCD');
 			test.deepEqual(this.appReceived.args[0][0].content, this.content);
 			test.deepEqual(this.appReceived.args[0][1], { app_name : 'myapp' });
 			test.done();
