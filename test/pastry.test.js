@@ -37,7 +37,7 @@ module.exports = {
 		"should set router for transport stack and start stack" : function(test) {
 			var transportStart = sinon.stub(this.transportStack, 'start');
 			
-			var res = pastry.createNode(1111, '1.1.1.1', this.cbk);
+			var res = pastry.createNode(1111, '1.1.1.1', {}, this.cbk);
 
 			test.ok(res.transport.router !== undefined);
 			test.ok(transportStart.calledWith(this.cbk));
@@ -49,7 +49,7 @@ module.exports = {
 			
 			test.ok(this.processOn.calledWith('exit', res.stop));
 			test.done();
-		},
+		}
 	}),
 
 	"stopping a pastry node" : testCase({
@@ -57,8 +57,8 @@ module.exports = {
 			this.transport = mockutil.stubProto(transport.TransportStack);
 			this.bootstrapper = mockutil.stubProto(bootstrap.Bootstrapper);
 			this.heartbeater = mockutil.stubProto(heartbeater.Heartbeater);
-
-			this.pastryNode = new pastry.PastryNode(this.transport, undefined, this.bootstrapper, this.heartbeater);
+			this.leafset = new leafset.Leafset();
+			this.pastryNode = new pastry.PastryNode(this.transport, this.leafset, this.bootstrapper, this.heartbeater);
 			done();
 		},
 		
@@ -83,7 +83,7 @@ module.exports = {
 
 	"staring and joining a pastry ring" : testCase({
 		setUp : function(done) {
-			this.transport = mockutil.stubProto(transport.TransportStack);
+			this.transport = new events.EventEmitter();
 			this.bootstrapper = mockutil.stubProto(bootstrap.Bootstrapper);
 			this.heartbeater = mockutil.stubProto(heartbeater.Heartbeater);
 			this.leafset = new leafset.Leafset();
@@ -147,6 +147,55 @@ module.exports = {
 			this.leafset.emit('peer-arrived', 'ABCDEF');
 			
 			test.ok(this.callback.calledWith('ABCDEF'));
+			test.done();
+		},
+		
+		"should re-emit app message forwarding events" : function(test) {
+			var msg = 'msg';
+			var msginfo = 'msginfo';			
+			this.pastryNode.on('app-message-forwarding', this.callback);			
+			
+			this.transport.emit('app-message-forwarding', msg, msginfo);
+			
+			test.ok(this.callback.calledWith(msg, msginfo));
+			test.done();
+		},
+		
+		"should re-emit app message received events" : function(test) {
+			var msg = 'msg';
+			var msginfo = 'msginfo';			
+			this.pastryNode.on('app-message-received', this.callback);			
+			
+			this.transport.emit('app-message-received', msg, msginfo);
+			
+			test.ok(this.callback.calledWith(msg, msginfo));
+			test.done();
+		}
+	}),
+	
+	"sending messages" : testCase({
+		setUp : function(done) {
+			this.transport = mockutil.stubProto(transport.TransportStack);
+			this.leafset = new leafset.Leafset();
+			this.pastryNode = new pastry.PastryNode(this.transport, this.leafset);
+			done();
+		},
+		
+		"send a messages" : function(test) {
+			var transportSend = sinon.stub(this.transport, 'send');
+			
+			this.pastryNode.send('uri', 'content', 'headers');
+			
+			test.ok(transportSend.calledWith('uri', 'content', 'headers'));
+			test.done();
+		},
+		
+		"reply to a messages" : function(test) {
+			var transportSendToId = sinon.stub(this.transport, 'sendToId');
+			
+			this.pastryNode.reply( {source_id : 'source_id'}, 'uri', 'content', 'headers');
+			
+			test.ok(transportSendToId.calledWith('uri', 'content', 'headers', 'source_id'));
 			test.done();
 		}
 	})

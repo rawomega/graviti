@@ -764,8 +764,8 @@ module.exports = {
 					app_name : 'myapp'					
 			};
 
-			this.transport.on('myapp-app-message-forwarding', this.appForwarding);
-			this.transport.on('myapp-app-message-received', this.appReceived);
+			this.transport.on('app-message-forwarding', this.appForwarding);
+			this.transport.on('app-message-received', this.appReceived);
 			this.transport.on('graviti-message-forwarding', this.gravitiForwarding);
 			this.transport.on('graviti-message-received', this.gravitiReceived);
 
@@ -865,8 +865,8 @@ module.exports = {
 					next_hop_port : 5555
 			};
 
-			this.transport.on('myapp-app-message-forwarding', this.appForwarding);
-			this.transport.on('myapp-app-message-received', this.appReceived);
+			this.transport.on('app-message-forwarding', this.appForwarding);
+			this.transport.on('app-message-received', this.appReceived);
 			done();
 		},
 		

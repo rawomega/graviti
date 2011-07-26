@@ -12,7 +12,7 @@ lint:
 	jsl --conf etc/jsl.conf
 
 test: lint
-	nodeunit test/common test/core test/messaging test/overlay/*
+	nodeunit test/pastry test/core test
 
 test = test/integration/*.test.js
 integration: lint
