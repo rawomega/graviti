@@ -55,32 +55,32 @@ module.exports = {
 			});
 		},
 
-//		"should send and receive a bundle of messages" : function(test) {
-//			var _this = this;
-//			var sendSmallMessage = function() {
-//				require('core/appmgr').apps[0].send(
-//						'p2p:echoapp/somewhere', {subject : 'test'}, {method : 'POST'});
-//			};
-//			var sendLargeMessage = function() {
-//				var content = '';
-//				for (var i = 0; i < 50000; i++)
-//					content += Math.round(9 * Math.random());
-//
-//				require('core/appmgr').apps[0].send(
-//						'p2p:echoapp/somewhere', content, {method : 'POST', content_type : 'text/plain'});
-//			};
-//
-//			// wait till leafset is sorted
-//			this.nodes.select(0).waitUntilEqual(3, evalfuncs.getLeafsetSize, test);				
-//			this.nodes.selectAll().eval(evalfuncs.trackReceivedMessages, test);
-//			this.nodes.selectAll().eval(sendSmallMessage, test);
-//			this.nodes.select(1).waitUntilAtLeast(4, evalfuncs.countMessages, test);
-//			this.nodes.selectAll().eval(sendLargeMessage, test);
-//			this.nodes.select(1).waitUntilAtLeast(8, evalfuncs.countMessages, test, function() {
-//				_this.nodes.done(test);
-//			});
-//		},
-//	
+		"should send and receive a bundle of messages" : function(test) {
+			var _this = this;
+			var sendSmallMessage = function() {
+				this.ring.nodes[0].send(
+						'p2p:echoapp/somewhere', {subject : 'test'}, {method : 'POST'});
+			};
+			var sendLargeMessage = function() {
+				var content = '';
+				for (var i = 0; i < 50000; i++)
+					content += Math.round(9 * Math.random());
+
+				this.ring.nodes[0].send(
+						'p2p:echoapp/somewhere', content, {method : 'POST', content_type : 'text/plain'});
+			};
+
+			// wait till leafset is sorted
+			this.ring.select(0).waitUntilEqual(3, evalfuncs.getLeafsetSize, test);				
+			this.ring.selectAll().eval(evalfuncs.trackReceivedMessages, test);
+			this.ring.selectAll().eval(sendSmallMessage, test);
+			this.ring.select(1).waitUntilAtLeast(4, evalfuncs.countMessages, test);
+			this.ring.selectAll().eval(sendLargeMessage, test);
+			this.ring.select(1).waitUntilAtLeast(8, evalfuncs.countMessages, test, function() {
+				_this.ring.done(test);
+			});
+		},
+	
 //		"should exchange heartbeats with leafset peers" : function(test) {
 //			var _this = this;
 //			
@@ -122,22 +122,22 @@ module.exports = {
 //			};
 //			
 //			// get leafset going, start tracking messages, make all nodes heartbeat every 1s
-//			this.nodes.select(0).waitUntilEqual(3, evalfuncs.getLeafsetSize, test);				
-//			this.nodes.selectAll().eval(trackReceivedHeartbeats, test);
-//			this.nodes.selectAll().eval(evalfuncs.heartbeatFrequently, test);
-//			this.nodes.select(1).waitUntilAtLeast(8, countReceivedHeartbeats, test);			
+//			this.ring.select(0).waitUntilEqual(3, evalfuncs.getLeafsetSize, test);				
+//			this.ring.selectAll().eval(trackReceivedHeartbeats, test);
+//			this.ring.selectAll().eval(evalfuncs.heartbeatFrequently, test);
+//			this.ring.select(1).waitUntilAtLeast(8, countReceivedHeartbeats, test);			
 //	
 //			// check that on 2 different nodes we've had at least 1 heartbeat from every other node
-//			this.nodes.select(0).eval(countReceivedHeartbeatsPerSender, test, function(res) {
+//			this.ring.select(0).eval(countReceivedHeartbeatsPerSender, test, function(res) {
 //				test.ok(res[_this.nodeIds[1]] >= 1);
 //				test.ok(res[_this.nodeIds[2]] >= 1);
 //				test.ok(res[_this.nodeIds[3]] >= 1);
 //			});
-//			this.nodes.select(2).eval(countReceivedHeartbeatsPerSender, test, function(res) {
+//			this.ring.select(2).eval(countReceivedHeartbeatsPerSender, test, function(res) {
 //				test.ok(res[_this.nodeIds[0]] >= 1);
 //				test.ok(res[_this.nodeIds[1]] >= 1);
 //				test.ok(res[_this.nodeIds[3]] >= 1);
-//				_this.nodes.done(test);
+//				_this.ring.done(test);
 //			});
 //		},
 //
@@ -145,34 +145,34 @@ module.exports = {
 //			var _this = this;
 //
 //			// initialisation stuff
-//			this.nodes.select(3).waitUntilEqual(3, evalfuncs.getLeafsetSize, test);
-//			this.nodes.selectAll().eval(evalfuncs.trackReceivedMessages, test);
-//			this.nodes.selectAll().eval(evalfuncs.trackReceivedPeerArrivedAndDepartedEvents, test);
+//			this.ring.select(3).waitUntilEqual(3, evalfuncs.getLeafsetSize, test);
+//			this.ring.selectAll().eval(evalfuncs.trackReceivedMessages, test);
+//			this.ring.selectAll().eval(evalfuncs.trackReceivedPeerArrivedAndDepartedEvents, test);
 //
 //			// stop node 3, make sure it is take out of 1's leafset, and that 2 receives a peer departed event
-//			this.nodes.select(3).stop();
-//			this.nodes.select(1).waitUntilEqual(2, evalfuncs.getLeafsetSize, test);
-//			this.nodes.select(2).waitUntilEqual([this.nodeIds[3]], evalfuncs.getPeerDepartedEvents, test);
+//			this.ring.select(3).stop();
+//			this.ring.select(1).waitUntilEqual(2, evalfuncs.getLeafsetSize, test);
+//			this.ring.select(2).waitUntilEqual([this.nodeIds[3]], evalfuncs.getPeerDepartedEvents, test);
 //			
 //			// send same message to same id, make sure it is now received on node 2
-//			this.nodes.select(1).eval(evalfuncs.sendMessageToId, test);
+//			this.ring.select(1).eval(evalfuncs.sendMessageToId, test);
 //// Re-enable this line after we're able to handle routing table failures / retries 			
-////			this.nodes.select(2).waitUntilEqual(1, evalfuncs.countMessages, test);
+////			this.ring.select(2).waitUntilEqual(1, evalfuncs.countMessages, test);
 //			
 //			// now bring node 3 back and wait for arrived event, after clearing departed node from dead peer set 
-//			this.nodes.select([0,1,2]).eval(evalfuncs.clearDeadPeersListInLeafset, test);
-//			this.nodes.select(3).start();
-//			this.nodes.select(0).waitUntilEqual(3, evalfuncs.getLeafsetSize, test);
-//			this.nodes.select(2).waitUntilEqual([this.nodeIds[3]], evalfuncs.getPeerArrivedEvents, test);
-//			this.nodes.select(3).eval(evalfuncs.trackReceivedMessages, test);
+//			this.ring.select([0,1,2]).eval(evalfuncs.clearDeadPeersListInLeafset, test);
+//			this.ring.select(3).start();
+//			this.ring.select(0).waitUntilEqual(3, evalfuncs.getLeafsetSize, test);
+//			this.ring.select(2).waitUntilEqual([this.nodeIds[3]], evalfuncs.getPeerArrivedEvents, test);
+//			this.ring.select(3).eval(evalfuncs.trackReceivedMessages, test);
 //			
 //			// ... and make sure that same message now goes there and not elsewhere
-//			this.nodes.select(0).eval(evalfuncs.sendMessageToId, test);
-//			this.nodes.select(3).waitUntilEqual(1, evalfuncs.countMessages, test);
-//			this.nodes.select(0).waitUntilEqual(0, evalfuncs.countMessages, test);
+//			this.ring.select(0).eval(evalfuncs.sendMessageToId, test);
+//			this.ring.select(3).waitUntilEqual(1, evalfuncs.countMessages, test);
+//			this.ring.select(0).waitUntilEqual(0, evalfuncs.countMessages, test);
 //// TODO: on this line the test should be deterministic - seems to be 0 or 1 ATM depending on routing table etc - check why			
-//			this.nodes.select(2).waitUntilAtLeast(0, evalfuncs.countMessages, test, function() {
-//				_this.nodes.done(test);		
+//			this.ring.select(2).waitUntilAtLeast(0, evalfuncs.countMessages, test, function() {
+//				_this.ring.done(test);		
 //			});
 //		},
 //
@@ -194,37 +194,37 @@ module.exports = {
 //			};
 //			
 //			// initialisation stuff
-//			this.nodes.select(3).waitUntilEqual(3, evalfuncs.getLeafsetSize, test);
-//			this.nodes.selectAll().eval(evalfuncs.heartbeatFrequently, test);
-//			this.nodes.selectAll().eval(setShortHeartbeatTimeout, test);
-//			this.nodes.selectAll().eval(evalfuncs.trackReceivedPeerArrivedAndDepartedEvents, test);
+//			this.ring.select(3).waitUntilEqual(3, evalfuncs.getLeafsetSize, test);
+//			this.ring.selectAll().eval(evalfuncs.heartbeatFrequently, test);
+//			this.ring.selectAll().eval(setShortHeartbeatTimeout, test);
+//			this.ring.selectAll().eval(evalfuncs.trackReceivedPeerArrivedAndDepartedEvents, test);
 //			
 //			// clear out leafset on 3 so it doesnt send out messages when departing
-//			this.nodes.select(3).eval(clearOutLeafset, test);
+//			this.ring.select(3).eval(clearOutLeafset, test);
 //			
 //			// stop node 3, make sure it is take out of 1's leafset, and that 2 receives a peer departed event
-//			this.nodes.select(3).stop();
-//			this.nodes.select([0,1,2]).waitUntilEqual(2, evalfuncs.getLeafsetSize, test);
-//			this.nodes.select(2).waitUntilEqual([this.nodeIds[3]], evalfuncs.getPeerDepartedEvents, test);
+//			this.ring.select(3).stop();
+//			this.ring.select([0,1,2]).waitUntilEqual(2, evalfuncs.getLeafsetSize, test);
+//			this.ring.select(2).waitUntilEqual([this.nodeIds[3]], evalfuncs.getPeerDepartedEvents, test);
 //			
 //			// send same message to same id, make sure it is now received on node 2
-//			this.nodes.select(1).eval(evalfuncs.sendMessageToId, test);
+//			this.ring.select(1).eval(evalfuncs.sendMessageToId, test);
 //// Re-enable this line after we're able to handle routing table failures / retries 			
-////			this.nodes.select(2).waitUntilEqual(1, evalfuncs.countMessages, test);
+////			this.ring.select(2).waitUntilEqual(1, evalfuncs.countMessages, test);
 //			
 //			// now bring node 3 back and wait for arrived event, after clearing departed node from dead peer set 
-//			this.nodes.select([0,1,2]).eval(evalfuncs.clearDeadPeersListInLeafset, test);
-//			this.nodes.select(3).start();
-//			this.nodes.select(0).waitUntilEqual(3, evalfuncs.getLeafsetSize, test);
-//			this.nodes.select(2).waitUntilEqual([this.nodeIds[3]], evalfuncs.getPeerArrivedEvents, test);
-//			this.nodes.select(3).eval(evalfuncs.trackReceivedMessages, test);
+//			this.ring.select([0,1,2]).eval(evalfuncs.clearDeadPeersListInLeafset, test);
+//			this.ring.select(3).start();
+//			this.ring.select(0).waitUntilEqual(3, evalfuncs.getLeafsetSize, test);
+//			this.ring.select(2).waitUntilEqual([this.nodeIds[3]], evalfuncs.getPeerArrivedEvents, test);
+//			this.ring.select(3).eval(evalfuncs.trackReceivedMessages, test);
 //			
 //			// ... and make sure that same message now goes there and not elsewhere
-//			this.nodes.select(0).eval(evalfuncs.sendMessageToId, test);
-//			this.nodes.select(3).waitUntilEqual(1, evalfuncs.countMessages, test);
-//			this.nodes.select(0).waitUntilEqual(0, evalfuncs.countMessages, test);			
-//			this.nodes.select(2).waitUntilEqual(0, evalfuncs.countMessages, test, function() {
-//				_this.nodes.done(test);
+//			this.ring.select(0).eval(evalfuncs.sendMessageToId, test);
+//			this.ring.select(3).waitUntilEqual(1, evalfuncs.countMessages, test);
+//			this.ring.select(0).waitUntilEqual(0, evalfuncs.countMessages, test);			
+//			this.ring.select(2).waitUntilEqual(0, evalfuncs.countMessages, test, function() {
+//				_this.ring.done(test);
 //			});
 //		}
  	})

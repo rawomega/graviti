@@ -38,19 +38,17 @@ module.exports = {
 		heartbeater.start(overlay);
 	},
 	
-	trackReceivedMessages : function() {
-		var app = require('core/appmgr').apps[0];
-		require('pastry/overlay').on(app.name + '-app-message-received', function(msg, msginfo) {
-			if (!app.receivedMessages)
-				app.receivedMessages = [];
+	trackReceivedMessages : function(node) {
+		node.on('app-message-received', function(msg, msginfo) {
+			if (!node.receivedMessages)
+				node.receivedMessages = [];
 			if (msg.content.subject === 'test' || msg.content_type === 'text/plain')
-				app.receivedMessages.push(msg);
+				node.receivedMessages.push(msg);
 		});
 	},
 	
-	countMessages : function() {
-		var app = require('core/appmgr').apps[0];
-		return app.receivedMessages === undefined ? 0 : app.receivedMessages.length;
+	countMessages : function(node) {
+		return node.receivedMessages === undefined ? 0 : node.receivedMessages.length;
 	},
 	
 	getReceivedMessages : function() {
