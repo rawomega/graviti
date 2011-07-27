@@ -1,37 +1,37 @@
 var nodeunit = require('nodeunit');
 
 module.exports = {
-	getLeafsetSize : function() {
-		return Object.keys(require('overlay/pastry/leafset').compressedLeafset()).length;
+	getLeafsetSize : function(node) {
+		return Object.keys(node.leafset.compressedLeafset()).length;
 	},
 	
 	clearDeadPeersListInLeafset : function() {
-		require('overlay/pastry/leafset')._deadset = {};
+		require('pastry/leafset')._deadset = {};
 	},
 	
-	getLeafset : function() {
-		return require('overlay/pastry/leafset').compressedLeafset();
+	getLeafset : function(node) {
+		return node.leafset.compressedLeafset();
 	},
 	
 	smallLeafsetSize : function() {
-		require('overlay/pastry/leafset').leafsetSize = 6;	
+		require('pastry/leafset').leafsetSize = 6;	
 	},
 	
-	getRoutingTable : function() {
-		return require('overlay/routingtable')._table;
+	getRoutingTable : function(node) {
+		return node.bootstrapper.routingtable._table;
 	},
 	
-	getRoutingTableSize : function() {
+	getRoutingTableSize : function(node) {
 		var res = 0;
-		require('overlay/routingtable').each(function() {
-			res++
+		node.bootstrapper.routingtable.each(function() {
+			res++;
 		});
 		return res;
 	},
 	
 	heartbeatFrequently : function() {
-		var heartbeater = require('overlay/pastry/heartbeater');
-		var overlay = require('overlay/pastry/overlay');
+		var heartbeater = require('pastry/heartbeater');
+		var overlay = require('pastry/overlay');
 		
 		heartbeater.heartbeatIntervalMsec = 1000;
 		heartbeater.stop(false);
@@ -40,7 +40,7 @@ module.exports = {
 	
 	trackReceivedMessages : function() {
 		var app = require('core/appmgr').apps[0];
-		require('overlay/pastry/overlay').on(app.name + '-app-message-received', function(msg, msginfo) {
+		require('pastry/overlay').on(app.name + '-app-message-received', function(msg, msginfo) {
 			if (!app.receivedMessages)
 				app.receivedMessages = [];
 			if (msg.content.subject === 'test' || msg.content_type === 'text/plain')
@@ -59,13 +59,13 @@ module.exports = {
 	},
 	
 	sendMessageToId : function() {
-		require('overlay/pastry/overlay').sendToId('p2p:echoapp/departednodetest',
+		require('pastry/overlay').sendToId('p2p:echoapp/departednodetest',
 				{subject : 'test'}, {method : 'POST'}, 'B111111111111111111111111111111111111111');
 	},
 	
 	sendMessageToRandomId : function() {
 		var randomId = require('common/id').generateNodeId();
-		require('overlay/pastry/overlay').sendToId('p2p:echoapp/departednodetest',
+		require('pastry/overlay').sendToId('p2p:echoapp/departednodetest',
 				{subject : 'test'}, {method : 'POST'}, randomId);
 		return randomId;
 	},

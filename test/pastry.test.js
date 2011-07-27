@@ -43,12 +43,14 @@ module.exports = {
 		},
 		
 		"should set router for transport stack and start stack" : function(test) {
-			var transportStart = sinon.stub(this.transportStack, 'start');
+			var transportStart = sinon.stub(this.transportStack, 'start', function(cbk) {
+				cbk();
+			});
 			
 			var res = pastry.createNode(nodeId, 1111, '1.1.1.1', this.cbk);
 
 			test.ok(res.transport.router !== undefined);
-			test.ok(transportStart.calledWith(this.cbk));
+			test.ok(this.cbk.calledWith(res));
 			test.done();
 		},
 		
