@@ -28,6 +28,7 @@ module.exports = {
 	"starting transports" : testCase({
 		setUp : function(done) {
 			this.processOn = sinon.collection.stub(process, 'on');
+			sinon.collection.stub(Function.prototype, 'bind', function() { return this; });
 			
 			this.udptran = mockutil.stubProto(transport.UdpTran);			
 			this.tcptran = mockutil.stubProto(transport.TcpTran);
@@ -55,7 +56,7 @@ module.exports = {
 			
 			this.transport.start();
 			
-			test.strictEqual(typeof(tcpStart.args[0][0]), 'function');
+			test.strictEqual(tcpStart.args[0][0], this.transport.receiveRaw);
 			test.strictEqual(typeof(tcpStart.args[0][1]), 'function');
 			test.done();
 		},
@@ -66,7 +67,7 @@ module.exports = {
 			
 			this.transport.start();
 
-			test.strictEqual(typeof(udpStart.args[0][0]), 'function');
+			test.strictEqual(udpStart.args[0][0], this.transport.receiveRaw);
 			test.strictEqual(typeof(udpStart.args[0][1]), 'function');
 			test.done();
 		},

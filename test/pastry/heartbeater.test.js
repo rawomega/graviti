@@ -12,6 +12,7 @@ var util = require('util');
 module.exports = {
 	"creation" : testCase({
 		setUp : function(done) {
+			sinon.collection.stub(Function.prototype, 'bind', function() { return this; });
 			this.transport = mockutil.stubProto(transport.TransportStack);			
 			this.on = sinon.stub(this.transport, 'on').returns(undefined);			
 			this.leafset = new leafset.Leafset();
@@ -28,7 +29,7 @@ module.exports = {
 		},
 
 		"should set up received message listening when created" : function(test) {			
-			test.ok(this.on.calledWith('graviti-message-received'));
+			test.ok(this.on.calledWith('graviti-message-received', this.heartbeater._handleReceivedGravitiMessage));
 			test.done();
 		}
 	}),

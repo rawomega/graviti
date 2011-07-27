@@ -14,9 +14,11 @@ var nodeId = 'ABCDEF';
 module.exports = {
 	"should create a pastry node and its deps" : testCase({
 		setUp : function(done) {
+			sinon.collection.stub(Function.prototype, 'bind', function() { return this; });
+			this.processOn = sinon.collection.stub(process, 'on');			
+			
 			this.transportStack = mockutil.stubProto(transport.TransportStack);
 			this.createStack = sinon.collection.stub(transport, 'createStack').returns(this.transportStack);
-			this.processOn = sinon.collection.stub(process, 'on');
 			this.cbk = sinon.stub();
 			done();
 		},
@@ -35,6 +37,7 @@ module.exports = {
 			test.ok(res.transport === this.transportStack);
 			test.ok(res.bootstrapper.routingtable.nodeId === nodeId);
 			test.ok(res.bootstrapper !== undefined);
+			test.ok(res.bootstrapper.pns !== undefined);
 			test.ok(res.heartbeater !== undefined);			
 			test.done();
 		},
@@ -51,7 +54,7 @@ module.exports = {
 		
 		"should create process exit handler to stop" : function(test) {
 			var res = pastry.createNode(nodeId, 1111, '1.1.1.1', this.cbk);
-			
+
 			test.ok(this.processOn.calledWith('exit', res.stop));
 			test.done();
 		}
