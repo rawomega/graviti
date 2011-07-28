@@ -15,7 +15,6 @@ module.exports = {
 	"should create a pastry node and its deps" : testCase({
 		setUp : function(done) {
 			sinon.collection.stub(Function.prototype, 'bind', function() { return this; });
-			this.processOn = sinon.collection.stub(process, 'on');			
 			
 			this.transportStack = mockutil.stubProto(transport.TransportStack);
 			this.createStack = sinon.collection.stub(transport, 'createStack').returns(this.transportStack);
@@ -31,6 +30,7 @@ module.exports = {
 		"should create a good node object" : function(test) {
 			var res = pastry.createNode(nodeId, 1111, '1.1.1.1', this.cbk);
 			
+			test.equal(res.port, 1111);
 			test.ok(this.createStack.calledWith(nodeId, 1111, '1.1.1.1'));
 			test.ok(res.leafset !== undefined);
 			test.ok(res.leafset.nodeId === nodeId);
@@ -53,13 +53,6 @@ module.exports = {
 			test.ok(this.cbk.calledWith(res));
 			test.done();
 		},
-		
-		"should create process exit handler to stop" : function(test) {
-			var res = pastry.createNode(nodeId, 1111, '1.1.1.1', this.cbk);
-
-			test.ok(this.processOn.calledWith('exit', res.stop));
-			test.done();
-		}
 	}),
 
 	"stopping a pastry node" : testCase({

@@ -5,16 +5,16 @@ module.exports = {
 		return Object.keys(node.leafset.compressedLeafset()).length;
 	},
 	
-	clearDeadPeersListInLeafset : function() {
-		require('pastry/leafset')._deadset = {};
+	clearDeadPeersListInLeafset : function(node) {
+		node.leafset._deadset = {};
 	},
 	
 	getLeafset : function(node) {
 		return node.leafset.compressedLeafset();
 	},
 	
-	smallLeafsetSize : function() {
-		require('pastry/leafset').leafsetSize = 6;	
+	smallLeafsetSize : function(node) {
+		node.leafset.leafsetSize = 6;	
 	},
 	
 	getRoutingTable : function(node) {
@@ -29,13 +29,12 @@ module.exports = {
 		return res;
 	},
 	
-	heartbeatFrequently : function() {
-		var heartbeater = require('pastry/heartbeater');
-		var overlay = require('pastry/overlay');
+	heartbeatFrequently : function(node) {
+		var heartbeater = node.heartbeater;
 		
 		heartbeater.heartbeatIntervalMsec = 1000;
 		heartbeater.stop(false);
-		heartbeater.start(overlay);
+		heartbeater.start();
 	},
 	
 	trackReceivedMessages : function(node) {
@@ -51,42 +50,40 @@ module.exports = {
 		return node.receivedMessages === undefined ? 0 : node.receivedMessages.length;
 	},
 	
-	getReceivedMessages : function() {
-		var app = require('core/appmgr').apps[0];
-		return app.receivedMessages === undefined ? [] : app.receivedMessages;
+	getReceivedMessages : function(node) {
+		return node.receivedMessages === undefined ? [] : node.receivedMessages;
 	},
 	
-	sendMessageToId : function() {
-		require('pastry/overlay').sendToId('p2p:echoapp/departednodetest',
+	trackReceivedPeerArrivedAndDepartedEvents : function(node) {
+		node.peerArrived = function(id) {						
+			if (!node.arrivedPeers)
+				node.arrivedPeers = [];
+			node.arrivedPeers.push(id);
+		};
+		node.peerDeparted = function(id) {						
+			if (!node.departedPeers)
+				node.departedPeers = [];
+			node.departedPeers.push(id);
+		};
+	},
+	
+	getPeerArrivedEvents : function(node) {
+		return node.arrivedPeers;
+	},
+	
+	getPeerDepartedEvents : function(node) {
+		return node.departedPeers;
+	},
+	
+	sendMessageToId : function(node) {
+		node.transport.sendToId('p2p:echoapp/departednodetest',
 				{subject : 'test'}, {method : 'POST'}, 'B111111111111111111111111111111111111111');
 	},
 	
-	sendMessageToRandomId : function() {
-		var randomId = require('common/id').generateNodeId();
-		require('pastry/overlay').sendToId('p2p:echoapp/departednodetest',
+	sendMessageToRandomId : function(node) {
+		var randomId = require('ringutil').generateNodeId();
+		node.transport.sendToId('p2p:echoapp/departednodetest',
 				{subject : 'test'}, {method : 'POST'}, randomId);
 		return randomId;
-	},
-	
-	trackReceivedPeerArrivedAndDepartedEvents : function() {
-		var app = require('core/appmgr').apps[0];
-		app.peerArrived = function(id) {						
-			if (!app.arrivedPeers)
-				app.arrivedPeers = [];
-			app.arrivedPeers.push(id);
-		};
-		app.peerDeparted = function(id) {						
-			if (!app.departedPeers)
-				app.departedPeers = [];
-			app.departedPeers.push(id);
-		};
-	},
-	
-	getPeerArrivedEvents : function() {
-		return require('core/appmgr').apps[0].arrivedPeers;
-	},
-	
-	getPeerDepartedEvents : function() {
-		return require('core/appmgr').apps[0].departedPeers;
 	}
 }

@@ -27,9 +27,7 @@ module.exports = {
 		
 	"starting transports" : testCase({
 		setUp : function(done) {
-			this.processOn = sinon.collection.stub(process, 'on');
 			sinon.collection.stub(Function.prototype, 'bind', function() { return this; });
-			
 			this.udptran = mockutil.stubProto(transport.UdpTran);			
 			this.tcptran = mockutil.stubProto(transport.TcpTran);
 			this.readyCallback = sinon.stub();
@@ -41,13 +39,6 @@ module.exports = {
 		tearDown : function(done) {
 			sinon.collection.restore();
 			done();
-		},
-		
-		"should set up exit hook on start" : function(test) {
-			this.transport.start();
-			
-			test.ok(this.processOn.calledWith('exit', this.transport.stop));
-			test.done();
 		},
 		
 		"start tcp transport on start" : function(test) {
@@ -146,6 +137,7 @@ module.exports = {
 	"starting a tcp listener" : testCase({
 		setUp : function(done) {
 			this.processOn = sinon.collection.stub(process, 'on');
+			sinon.collection.stub(Function.prototype, 'bind', function() { return this; });
 			
 			this.tcptran = new transport.TcpTran(1234, "127.0.0.1");
 			this.rawmsg = '{"uri" : "p2p:myapp/myresource", "key" : "val"}';
@@ -172,7 +164,7 @@ module.exports = {
 			this.tcptran.start();
 	
 			test.ok(on.calledWith('error'));
-			test.ok(on.calledWith('connection'));
+			test.ok(on.calledWith('connection', this.tcptran._initSocket));
 			test.ok(on.calledWith('close'));
 			test.ok(this.server.listen.called);
 			test.done();
