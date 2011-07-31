@@ -41,12 +41,15 @@ module.exports = {
 		node.on('app-message-received', function(msg, msginfo) {
 			if (!node.receivedMessages)
 				node.receivedMessages = [];
-			if (msg.content.subject === 'test' || msg.content_type === 'text/plain')
+			if (msg.content.subject === 'test' || msg.content_type === 'text/plain') {
+				console.log('\n\nNNNNNNNNNNNNN ' + node.transport.nodeId + '\n' + JSON.stringify(msg));
 				node.receivedMessages.push(msg);
+			}
 		});
 	},
 	
 	countMessages : function(node) {
+		console.log('\n\nMMMMMMMMMMMMMM\n' + JSON.stringify(node.receivedMessages));
 		return node.receivedMessages === undefined ? 0 : node.receivedMessages.length;
 	},
 	
@@ -55,16 +58,16 @@ module.exports = {
 	},
 	
 	trackReceivedPeerArrivedAndDepartedEvents : function(node) {
-		node.peerArrived = function(id) {						
+		node.on('peer-arrived', function(id) {						
 			if (!node.arrivedPeers)
 				node.arrivedPeers = [];
 			node.arrivedPeers.push(id);
-		};
-		node.peerDeparted = function(id) {						
+		});
+		node.on('peer-departed', function(id) {						
 			if (!node.departedPeers)
 				node.departedPeers = [];
 			node.departedPeers.push(id);
-		};
+		});
 	},
 	
 	getPeerArrivedEvents : function(node) {
