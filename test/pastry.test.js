@@ -39,20 +39,9 @@ module.exports = {
 			test.ok(res.bootstrapper !== undefined);
 			test.ok(res.bootstrapper.pns !== undefined);
 			test.ok(res.heartbeater !== undefined);			
-			test.done();
-		},
-		
-		"should set router for transport stack and start stack" : function(test) {
-			var transportStart = sinon.stub(this.transportStack, 'start', function(cbk) {
-				cbk();
-			});
-			
-			var res = pastry.createNode(nodeId, 1111, '1.1.1.1', this.cbk);
-
 			test.ok(res.transport.router !== undefined);
-			test.ok(this.cbk.calledWith(res));
 			test.done();
-		},
+		}
 	}),
 
 	"stopping a pastry node" : testCase({
@@ -86,7 +75,12 @@ module.exports = {
 
 	"staring and joining a pastry ring" : testCase({
 		setUp : function(done) {
-			this.transport = new events.EventEmitter();
+			this.transportStack = mockutil.stubProto(transport.TransportStack);
+			sinon.stub(this.transportStack, 'start', function(cbk) {
+				cbk();
+			});
+			this.transportStackOn = sinon.stub(this.transportStack, 'on');
+
 			this.bootstrapper = mockutil.stubProto(bootstrap.Bootstrapper);
 			this.heartbeater = mockutil.stubProto(heartbeater.Heartbeater);
 			this.leafset = new leafset.Leafset();
@@ -96,7 +90,7 @@ module.exports = {
 			this.heartbeaterStart = sinon.stub(this.heartbeater, 'start');			
 			this.callback = sinon.stub();
 			
-			this.pastryNode = new pastry.PastryNode(this.transport, this.leafset, this.bootstrapper, this.heartbeater);
+			this.pastryNode = new pastry.PastryNode(this.transportStack, this.leafset, this.bootstrapper, this.heartbeater);
 			done();
 		},
 		
@@ -136,7 +130,7 @@ module.exports = {
 		"should re-emit peer departed event for node leaving the ring, when this node has started a new ring" : function(test) {
 			this.pastryNode.startRing(this.callback);
 			this.pastryNode.on('peer-departed', this.callback);
-			
+
 			this.leafset.emit('peer-departed', 'ABCDEF');
 			
 			test.ok(this.callback.calledWith('ABCDEF'));
@@ -154,23 +148,27 @@ module.exports = {
 		},
 		
 		"should re-emit app message forwarding events" : function(test) {
+			var forwardingHandler = this.transportStackOn.args[0][1];
 			var msg = 'msg';
-			var msginfo = 'msginfo';			
-			this.pastryNode.on('app-message-forwarding', this.callback);			
+			var msginfo = 'msginfo';
+			this.pastryNode.on('app-message-forwarding', this.callback);
 			
-			this.transport.emit('app-message-forwarding', msg, msginfo);
+			forwardingHandler(msg, msginfo);
 			
+			test.strictEqual(this.transportStackOn.args[0][0], 'app-message-forwarding');
 			test.ok(this.callback.calledWith(msg, msginfo));
 			test.done();
 		},
 		
 		"should re-emit app message received events" : function(test) {
+			var receivedHandler = this.transportStackOn.args[1][1];
 			var msg = 'msg';
-			var msginfo = 'msginfo';			
-			this.pastryNode.on('app-message-received', this.callback);			
-			
-			this.transport.emit('app-message-received', msg, msginfo);
-			
+			var msginfo = 'msginfo';
+			this.pastryNode.on('app-message-received', this.callback);
+
+			receivedHandler(msg, msginfo);
+
+			test.strictEqual(this.transportStackOn.args[1][0], 'app-message-received');
 			test.ok(this.callback.calledWith(msg, msginfo));
 			test.done();
 		}
