@@ -39,7 +39,7 @@ module.exports = {
 			sinon.collection.restore();
 			done();
 		},
-		
+
 		"should initiate pns by starting the first pns run" : function(test) {
 			this.pns.run('seed', this.success);
 			
@@ -94,7 +94,7 @@ module.exports = {
 			test.done();
 		}
 	}),
-		
+
 	"initiating single pns nearest node search" : testCase({
 		setUp : function(done) {
 			this.transport = mockutil.stubProto(transport.TransportStack);
@@ -106,11 +106,12 @@ module.exports = {
 		
 		tearDown : function(done) {
 			this.pns.nearestNodeSearchTimeoutMsec = 20000;
+			this.pns.cancelAll();
 			sinon.collection.restore();
 			done();
 		},
 		
-		"sholud store state when initiating search for nearest node" : function(test) {			
+		"should store state when initiating search for nearest node" : function(test) {			
 			var success = sinon.stub();
 			var error = sinon.stub();
 
@@ -123,7 +124,7 @@ module.exports = {
 			test.done();
 		},
 		
-		"sholud initiate search for nearest node by sending a requrest for leafset" : function(test) {			
+		"should initiate search for nearest node by sending a requrest for leafset" : function(test) {			
 			var res = this.pns.findNearestNode('2.2.2.2:2222');
 			
 			test.ok(this.sendToAddr.calledWith('p2p:graviti/pns/leafset', {req_id : res}, {method : 'GET'}, '2.2.2.2', '2222'));
@@ -200,6 +201,7 @@ module.exports = {
 		},
 		
 		tearDown : function(done) {
+			this.pns.cancelAll();
 			sinon.collection.restore();
 			done();
 		},
@@ -239,6 +241,7 @@ module.exports = {
 		},
 		
 		tearDown : function(done) {
+			this.pns.cancelAll();
 			sinon.collection.restore();
 			done();
 		},
@@ -360,6 +363,7 @@ module.exports = {
 		},
 		
 		tearDown : function(done) {
+			this.pns.cancelAll();
 			sinon.collection.restore();
 			done();
 		},
@@ -404,6 +408,7 @@ module.exports = {
 		},
 		
 		tearDown : function(done) {
+			this.pns.cancelAll();
 			sinon.collection.restore();
 			done();
 		},
@@ -511,6 +516,7 @@ module.exports = {
 		},
 		
 		tearDown : function(done) {
+			this.pns.cancelAll();
 			sinon.collection.restore();
 			done();
 		},
@@ -610,6 +616,7 @@ module.exports = {
 		},
 		
 		tearDown : function(done) {
+			this.pns.cancelAll();
 			sinon.collection.restore();
 			done();
 		},
@@ -751,6 +758,7 @@ module.exports = {
 		},
 		
 		tearDown : function(done) {
+			this.pns.cancelAll();
 			sinon.collection.restore();
 			done();
 		},
