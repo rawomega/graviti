@@ -3,7 +3,7 @@ var logger = logmgr.getDefaultLogger();
 var logrotator = require('logrotator');
 var nodeunit = require('nodeunit');
 var fs = require('fs');
-var langutil = require('common/langutil');
+var langutil = require('langutil');
 
 module.exports = {
 	"logfile rotation" : nodeunit.testCase({

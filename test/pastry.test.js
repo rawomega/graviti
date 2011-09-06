@@ -31,6 +31,7 @@ module.exports = {
 			var res = pastry.createNode(nodeId, 1111, '1.1.1.1', this.cbk);
 			
 			test.equal(res.port, 1111);
+			test.equal(res.nodeId, nodeId);
 			test.ok(this.createStack.calledWith(nodeId, 1111, '1.1.1.1'));
 			test.ok(res.leafset !== undefined);
 			test.ok(res.leafset.nodeId === nodeId);
