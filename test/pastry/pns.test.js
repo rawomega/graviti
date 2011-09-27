@@ -1,4 +1,5 @@
 var sinon = require('sinon');
+var events = require('events');
 var testCase = require('nodeunit').testCase;
 var pns = require('pastry/pns');
 var leafset = require('pastry/leafset');
@@ -183,7 +184,8 @@ module.exports = {
 
 	"handling leafset request message" : testCase({
 		setUp : function(done) {
-			this.transport = langutil.extend(new events.EventEmitter(), { sendToAddr : function() {} });
+			this.transport = langutil.extend(new events.EventEmitter(),
+				{ sendToAddr : function() {} });
 			this.sendToAddr = sinon.stub(this.transport, 'sendToAddr');
 			this.leafset = mockutil.stubProto(leafset.Leafset);
 			sinon.collection.stub(this.leafset, 'compressedLeafset').returns({ dummy : 'leafset'});
@@ -196,7 +198,6 @@ module.exports = {
 					source_ap : '1.1.1.1:1111'
 			}
 			this.pns = new pns.Pns(this.transport, this.leafset);
-			
 			done();
 		},
 		
