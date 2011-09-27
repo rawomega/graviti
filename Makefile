@@ -19,9 +19,6 @@ integration: lint
 	export GRAVITI_LOG_CONF_FILE=test/integration/logconf.json; \
 	nodeunit $(test)
 
-npm-deps:
-	-npm ls installed > npm-deps
-
 run-multi: kill-all
 	bin/graviti --port 7111 &
 	sleep 1
