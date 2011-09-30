@@ -28,24 +28,35 @@ module.exports = {
 					    '7000000000000000000000000000000000000017'
 					];
 			
-			this.delaySendsByPortDistance = function() {
-				var transportmgr = require('messaging/transportmgr');
-				var oldSendFunc = transportmgr.send;
+            // this.delaySendsByPortDistance = function() {
+            //     var transportmgr = require('messaging/transportmgr');
+            //     var oldSendFunc = transportmgr.send;
 				
-				require('util').log('TEST: Adding a delay to all sends that is proportional to distance');
-				transportmgr.send = function(port, host, data) {
-					var dist = Math.abs(transportmgr.port - port);
+            //     require('util').log('TEST: Adding a delay to all sends that is proportional to distance');
+            //     transportmgr.send = function(port, host, data) {
+            //         var dist = Math.abs(transportmgr.port - port);
 					
-					setTimeout(function() {
-						oldSendFunc(port, host, data);
-					}, 60 * dist);
-				};
-			};
+            //         setTimeout(function() {
+            //             oldSendFunc(port, host, data);
+            //         }, 60 * dist);
+            //     };
+            // };
 			
 			testing.createRing({
 				node_ids : this.nodeIds,
 				wait_timeout_msec : 60000,
-				success : function(ring) {				
+                nodeCreated : function(node) {
+                    //node.eval(self.delaySendsByPortDistance);
+                    var oldSendFunc = node.transport.sendMessage.bind(node.transport);
+                    logger.info('TEST: Adding a delay to all sends that is proportional to distance');
+                    node.transport.sendMessage = function(port, host, msg) {
+                        var dist = Math.abs(node.port - port);
+                        setTimeout(function() {
+                            oldSendFunc(port, host, msg);
+                        }, 60 * dist);
+                    };
+                },
+                success : function(ring) {
 					self.ring = ring;
 					done();
 				}
@@ -54,6 +65,7 @@ module.exports = {
 		
 		tearDown : function(done) {
 			this.ring.stopNow();
+            
 			setTimeout(function() {
 				logger.info('\n\n========\n\n');	
 				done();
@@ -61,7 +73,7 @@ module.exports = {
 		},
 
 		"prefer closer peers" : function(test) {
-			var self = this;			
+            var self = this;
 			
 			// wait till leafset is sorted
 			this.ring.select(0).waitUntilAtLeast(this.nodeIds.length-1, evalfuncs.getLeafsetSize, test);			
