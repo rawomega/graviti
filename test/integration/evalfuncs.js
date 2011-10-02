@@ -42,7 +42,6 @@ module.exports = {
 			if (!node.receivedMessages)
 				node.receivedMessages = [];
 			if (msg.content.subject === 'test' || msg.content_type === 'text/plain') {
-				console.log('\n\nNNNNNNNNNNNNN ' + node.transport.nodeId + '\n' + JSON.stringify(msg));
 				node.receivedMessages.push(msg);
 			}
 		});
