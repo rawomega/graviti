@@ -49,7 +49,6 @@ module.exports = {
 	},
 	
 	countMessages : function(node) {
-		console.log('\n\nMMMMMMMMMMMMMM\n' + JSON.stringify(node.receivedMessages));
 		return node.receivedMessages === undefined ? 0 : node.receivedMessages.length;
 	},
 	
