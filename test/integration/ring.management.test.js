@@ -30,7 +30,7 @@ module.exports = {
 			}, 2000);
 		},
 
-		"should populate leafsets after bootstrapping" : function(test) {
+/*        "should populate leafsets after bootstrapping" : function(test) {
 			var self = this;
 			
 			// wait till leafset is sorted
@@ -139,18 +139,18 @@ module.exports = {
 				self.ring.done(test);
 			});
 		},
-
+*/
 		"should be able to deal with orderly departure and return of a node" : function(test) {
 			var self = this;
 
 			// initialisation stuff
-			this.ring.select(3).waitUntilEqual(3, evalfuncs.getLeafsetSize, test);
-			this.ring.selectAll().eval(evalfuncs.trackReceivedMessages, test);
+            this.ring.selectAll().waitUntilEqual(3, evalfuncs.getLeafsetSize, test);
+            this.ring.selectAll().eval(evalfuncs.trackReceivedMessages, test);            
 			this.ring.selectAll().eval(evalfuncs.trackReceivedPeerArrivedAndDepartedEvents, test);
 
 			// stop node 3, make sure it is take out of 1's leafset, and that 2 receives a peer departed event
-			this.ring.select(3).eval( function(node) {node.stop();}, test);
-			this.ring.select(1).waitUntilEqual(2, evalfuncs.getLeafsetSize, test);
+            this.ring.select(3).eval( function(node) { node.stop(); }, test);
+            this.ring.select([0,1,2]).waitUntilEqual(2, evalfuncs.getLeafsetSize, test);
 			this.ring.select(2).waitUntilEqual([this.nodeIds[3]], evalfuncs.getPeerDepartedEvents, test);
 			
 			// send same message to same id, make sure it is now received on node 2
@@ -159,9 +159,9 @@ module.exports = {
 //			this.ring.select(2).waitUntilEqual(1, evalfuncs.countMessages, test);
 			
 			// now bring node 3 back and wait for arrived event, after clearing departed node from dead peer set 
-			this.ring.select([0,1,2]).eval(evalfuncs.clearDeadPeersListInLeafset, test);
+            this.ring.select([0,1,2]).eval(evalfuncs.clearDeadPeersListInLeafset, test);            
 			this.ring.select(3).eval( function(node) {node.joinRing('localhost:7100');}, test);
-			this.ring.select(1).waitUntilEqual(3, evalfuncs.getLeafsetSize, test);
+            this.ring.select([0,1,2]).waitUntilEqual(3, evalfuncs.getLeafsetSize, test);
 			this.ring.select(2).waitUntilEqual([this.nodeIds[3]], evalfuncs.getPeerArrivedEvents, test);
 			
 			// ... and make sure that same message now goes there and not elsewhere
@@ -174,7 +174,7 @@ module.exports = {
 			});
 		},
 
-		"should be able to deal with sudden departure of a node" : function(test) {
+/*        "should be able to deal with sudden departure of a node" : function(test) {
 			var self = this;
 			
 			var clearOutLeafset = function(node) {
@@ -223,5 +223,5 @@ module.exports = {
 				self.ring.done(test);
 			});
 		}
- 	})
+*/     })
 };
