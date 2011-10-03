@@ -30,7 +30,7 @@ module.exports = {
 			}, 2000);
 		},
 
-/*        "should populate leafsets after bootstrapping" : function(test) {
+        "should populate leafsets after bootstrapping" : function(test) {
 			var self = this;
 			
 			// wait till leafset is sorted
@@ -139,7 +139,7 @@ module.exports = {
 				self.ring.done(test);
 			});
 		},
-*/
+
 		"should be able to deal with orderly departure and return of a node" : function(test) {
 			var self = this;
 
@@ -168,13 +168,12 @@ module.exports = {
 			this.ring.select(0).eval(evalfuncs.sendMessageToId, test);
 			this.ring.select(3).waitUntilEqual(1, evalfuncs.countMessages, test);
 			this.ring.select(0).waitUntilEqual(0, evalfuncs.countMessages, test);
-// TODO: on this line the test should be deterministic - seems to be 0 or 1 ATM depending on routing table etc - check why			
-			this.ring.select(2).waitUntilAtLeast(0, evalfuncs.countMessages, test, function() {
+            this.ring.select(2).waitUntilAtLeast(1, evalfuncs.countMessages, test, function() {
 				self.ring.done(test);		
 			});
 		},
 
-/*        "should be able to deal with sudden departure of a node" : function(test) {
+        "should be able to deal with sudden departure of a node" : function(test) {
 			var self = this;
 			
 			var clearOutLeafset = function(node) {
@@ -190,7 +189,7 @@ module.exports = {
 			};
 			
 			// initialisation stuff
-			this.ring.select(3).waitUntilEqual(3, evalfuncs.getLeafsetSize, test);
+            this.ring.selectAll().waitUntilEqual(3, evalfuncs.getLeafsetSize, test);
 			this.ring.selectAll().eval(evalfuncs.heartbeatFrequently, test);
 			this.ring.selectAll().eval(setShortHeartbeatTimeout, test);
 			this.ring.selectAll().eval(evalfuncs.trackReceivedPeerArrivedAndDepartedEvents, test);
@@ -211,7 +210,7 @@ module.exports = {
 			// now bring node 3 back and wait for arrived event, after clearing departed node from dead peer set 
 			this.ring.select([0,1,2]).eval(evalfuncs.clearDeadPeersListInLeafset, test);
 			this.ring.select(3).eval( function(node) {node.joinRing('localhost:7100');}, test);
-			this.ring.select(0).waitUntilEqual(3, evalfuncs.getLeafsetSize, test);
+            this.ring.select([0,1,2]).waitUntilEqual(3, evalfuncs.getLeafsetSize, test);
 			this.ring.select(2).waitUntilEqual([this.nodeIds[3]], evalfuncs.getPeerArrivedEvents, test);
 			this.ring.select(3).eval(evalfuncs.trackReceivedMessages, test);
 			
@@ -223,5 +222,5 @@ module.exports = {
 				self.ring.done(test);
 			});
 		}
-*/     })
+     })
 };

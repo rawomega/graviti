@@ -14,10 +14,11 @@ lint:
 test: lint
 	nodeunit test/pastry test
 
-test = test/integration/*.test.js
+# test = test/integration/*.test.js
 integration: lint
 	export GRAVITI_LOG_CONF_FILE=test/integration/logconf.json; \
-	nodeunit $(test)
+    #nodeunit $(test)
+    nodeunit test/integration/*.test.js
 
 run-multi: kill-all
 	bin/graviti --port 7111 &
