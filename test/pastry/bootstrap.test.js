@@ -11,6 +11,34 @@ var pns = require('pastry/pns');
 var mockutil = require('testability/mockutil');
 
 module.exports = {
+    "bootstrapper initialisation" : testCase({
+        setUp : function(done) {
+            sinon.collection.stub(Function.prototype, 'bind', function() { return this; });
+            
+            this.transport = mockutil.stubProto(transport.TransportStack);
+            this.on = sinon.stub(this.transport, 'on');
+
+            this.bootstrap = new bootstrap.Bootstrapper(this.transport);
+
+            this.pns = mockutil.stubProto(pns.Pns);
+            this.bootstrap.pns = this.pns;
+
+            done();
+        },
+        
+        tearDown : function(done) {
+            this.bootstrap.stop();
+            sinon.collection.restore();
+            done();
+        },
+
+        "should initialise listening for graviti messages on bootstrap creation" : function(test) {            
+            test.ok(this.on.calledWith('graviti-message-received', this.bootstrap._handleReceivedGravitiMessage));
+            test.ok(this.on.calledWith('graviti-message-forwarding', this.bootstrap._handleForwardingGravitiMessage));
+            test.done();
+        }
+    }),
+
 	"bootstrapper startup" : testCase({
 		setUp : function(done) {
 			sinon.collection.stub(Function.prototype, 'bind', function() { return this; });
@@ -38,15 +66,7 @@ module.exports = {
 				_this.bootstrap.start();
 			}, /no bootstrap completed/i);			
 			test.done();
-		},
-		
-		"should start bootstrap manager for node starting a new ring" : function(test) {			
-			this.bootstrap.start('mybootstraps', sinon.stub());
-			
-			test.ok(this.on.calledWith('graviti-message-received', this.bootstrap._handleReceivedGravitiMessage));
-			test.ok(this.on.calledWith('graviti-message-forwarding', this.bootstrap._handleForwardingGravitiMessage));
-			test.done();
-		},
+        },        
 		
 		"bootstrap manager for node joining a ring should initiate sending of bootstrap requests without PNS when PNS off" : function(test) {
 			var self = this;
@@ -56,8 +76,6 @@ module.exports = {
 			
 			this.bootstrap.start('1.2.3.4:1234,5.6.7.8:5678,myhost:8888', sinon.stub());
 			
-			test.ok(this.on.calledWith('graviti-message-received', this.bootstrap._handleReceivedGravitiMessage));
-			test.ok(this.on.calledWith('graviti-message-forwarding', this.bootstrap._handleForwardingGravitiMessage));
 			setTimeout(function() {
 				test.ok(sendToAddr.calledWith('p2p:graviti/peers', {joining_node_id : self.transport.nodeId}, {method : 'GET'}, '1.2.3.4', '1234'));
 				test.ok(sendToAddr.calledWith('p2p:graviti/peers', {joining_node_id : self.transport.nodeId}, {method : 'GET'}, '5.6.7.8', '5678'));
@@ -76,8 +94,6 @@ module.exports = {
 			
 			this.bootstrap.start('1.2.3.4:1234,5.6.7.8:5678,myhost:8888', sinon.stub());
 			
-			test.ok(this.on.calledWith('graviti-message-received', this.bootstrap._handleReceivedGravitiMessage));
-			test.ok(this.on.calledWith('graviti-message-forwarding', this.bootstrap._handleForwardingGravitiMessage));
 			setTimeout(function() {
 				test.equal(3, sendToAddr.callCount);
 				test.ok(sendToAddr.calledWith('p2p:graviti/peers', {joining_node_id : self.transport.nodeId}, {method : 'GET'}, '6.6.6.6', '6666'));
@@ -105,16 +121,11 @@ module.exports = {
 
 	"bootstrap manager shutdown" : testCase({
 		setUp : function(done) {
+            this.transport = mockutil.stubProto(transport.TransportStack);
 			this.pns = mockutil.stubProto(pns.Pns);
 			this.cancelAll = sinon.collection.stub(this.pns, 'cancelAll');
-			this.bootstrap = new bootstrap.Bootstrapper();			
+            this.bootstrap = new bootstrap.Bootstrapper(this.transport);
 			this.bootstrap.pns = this.pns;
-			done();
-		},
-		
-		tearDown : function(done) {
-			this.bootstrap.stop();
-			sinon.collection.restore();
 			done();
 		},
 		
@@ -123,6 +134,19 @@ module.exports = {
 			
 			test.ok(this.cancelAll.called);
 			test.done();
+        },
+
+        "should reset state on stop" : function(test) {
+            this.bootstrap.bootstrapping = true;
+            this.bootstrap.bootstrapEndpoints = {'1234' : 'localhost'};
+            this.bootstrap.bootstrappingIntervalId = setInterval(function() {}, 100000);
+
+            this.bootstrap.stop();
+            
+            test.equal(false, this.bootstrap.bootstrapping);
+            test.deepEqual({}, this.bootstrap.bootstrapEndpoints);
+            test.equal(undefined, this.bootstrap.bootstrappingIntervalId);
+            test.done();
 		}
 	}),
 
