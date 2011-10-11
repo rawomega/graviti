@@ -30,7 +30,7 @@ module.exports = {
 			}, 2000);
 		},
 
-        "should populate leafsets after bootstrapping" : function(test) {
+/*        "should populate leafsets after bootstrapping" : function(test) {
 			var self = this;
 			
 			// wait till leafset is sorted
@@ -155,8 +155,7 @@ module.exports = {
 			
 			// send same message to same id, make sure it is now received on node 2
 			this.ring.select(1).eval(evalfuncs.sendMessageToId, test);
-// Re-enable this line after we're able to handle routing table failures / retries 			
-//			this.ring.select(2).waitUntilEqual(1, evalfuncs.countMessages, test);
+            this.ring.select(2).waitUntilEqual(1, evalfuncs.countMessages, test);
 			
 			// now bring node 3 back and wait for arrived event, after clearing departed node from dead peer set 
             this.ring.select([0,1,2]).eval(evalfuncs.clearDeadPeersListInLeafset, test);            
@@ -168,11 +167,11 @@ module.exports = {
 			this.ring.select(0).eval(evalfuncs.sendMessageToId, test);
 			this.ring.select(3).waitUntilEqual(1, evalfuncs.countMessages, test);
 			this.ring.select(0).waitUntilEqual(0, evalfuncs.countMessages, test);
-            this.ring.select(2).waitUntilAtLeast(1, evalfuncs.countMessages, test, function() {
+            this.ring.select(2).waitUntilEqual(1, evalfuncs.countMessages, test, function() {
 				self.ring.done(test);		
 			});
 		},
-
+*/
         "should be able to deal with sudden departure of a node" : function(test) {
 			var self = this;
 			

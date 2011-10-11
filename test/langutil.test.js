@@ -71,8 +71,7 @@ module.exports = {
 		},
 	}),
 	
-	"testing arrays" : testCase({
-		
+    "testing for arrays" : testCase({
 		"should be able to tell that empty object is not an array" : function(test) {
 			test.strictEqual(false, langutil.isArray({}));
 			test.done();
@@ -149,5 +148,70 @@ module.exports = {
 			test.deepEqual([2, 3], a);
 			test.done();
 		},
+    }),
+
+    "array priority queue" : testCase({
+        "should insert element into empty pq" : function(test) {
+            var pq = [];
+            var el = { a : 1 };
+
+            langutil.pqInsert(pq, el, 'a');
+
+            test.deepEqual(el, pq.shift());
+            test.equal(0, pq.length);
+            test.done();
+        },
+
+        "should insert element into non-empty pq in key order in middle" : function(test) {
+            var pq = [{a : 0}, {a : 2}];
+            var el = { a : 1 };
+
+            langutil.pqInsert(pq, el, 'a');
+
+            test.deepEqual(el, pq[1]);
+            test.equal(3, pq.length);
+            test.done();
+        },
+
+        "should insert element into non-empty pq in key order at beginning" : function(test) {
+            var pq = [{a : 3}, {a : 7}];
+            var el = { a : 2 };
+
+            langutil.pqInsert(pq, el, 'a');
+
+            test.deepEqual(el, pq[0]);
+            test.equal(3, pq.length);
+            test.done();
+        },
+
+        "should insert element into non-empty pq in key order at end" : function(test) {
+            var pq = [{a : 0}, {a : 2}];
+            var el = { a : 5 };
+
+            langutil.pqInsert(pq, el, 'a');
+
+            test.deepEqual(el, pq[2]);
+            test.equal(3, pq.length);
+            test.done();
+        },
+
+        "should reject element that does not contain specified key" : function(test) {
+            var el = { a : 1 };
+
+            assert.throws(function() {
+                langutil.pqInsert([], el, 'b');
+            }, /does not contain key b/i);            
+            test.done();
+        },
+
+        "should throw if one or more existing elements do not contain required key" : function(test) {
+            var pq = [ {a : 0}, {b : 3}]
+            var el = { a : 1 };
+
+            assert.throws(function() {
+                langutil.pqInsert(pq, el, 'a');
+            }, /do not contain key a/i);
+            test.done();
+        },
 	})
 };
