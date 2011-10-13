@@ -38,6 +38,7 @@ module.exports = {
 		
 		tearDown : function(done) {
 			sinon.collection.restore();
+            this.transport.stop();
 			done();
 		},
 		
@@ -546,7 +547,7 @@ module.exports = {
 
 			this.udpSend = sinon.collection.stub(this.udptran, 'send');
 			this.tcpSend = sinon.collection.stub(this.tcptran, 'send');
-			this.msg = new message.Message('p2p:myapp/myuri', {"key" : "val"});			
+            this.msg = new message.Message('p2p:myapp/myuri', {"key" : "val"});
 			done();
 		},
 		
@@ -953,5 +954,105 @@ module.exports = {
 			test.deepEqual(this.appReceived.args[0][1], { app_name : 'myapp' });
 			test.done();
 		}
+    }),
+
+    "handling resending of messages" : testCase({
+        setUp : function(done) {
+            this.udptran = mockutil.stubProto(transport.UdpTran);            
+            this.tcptran = mockutil.stubProto(transport.TcpTran);
+            this.udpSend = sinon.collection.stub(this.udptran, 'send');
+            this.tcpSend = sinon.collection.stub(this.tcptran, 'send');            
+
+            this.transport = new transport.TransportStack('ABCD', this.udptran, this.tcptran);
+            
+            this.msg = new message.Message('p2p:myapp/myuri', {"key" : "val"});
+            this.msginfo = {
+                    source_ap : '3.3.3.3:3333',
+                    app_name : 'myapp'                    
+            };
+            
+            this.originalMessageResendIntervals = this.transport.messageResendIntervals;
+            this.originalResendQueuePollInterval = this.transport.resendQueuePollInterval;
+            done();
+        },
+
+        tearDown : function(done) {
+            sinon.collection.restore();
+            this.transport.stop();
+            this.transport.resendQueuePollInterval = this.originalResendQueuePollInterval;
+            this.transport.messageResendIntervals = this.originalMessageResendIntervals;
+            done();
+        },
+
+        "enqueue message for resending" : function(test) {
+            sinon.collection.stub(Date, 'now').returns(12345678);
+
+            this.transport.sendMessage(2222, "1.1.1.1", this.msg);
+
+            test.equal(1, this.transport.pendingMessageResendQueue.length);
+            test.deepEqual(this.msg, this.transport.pendingMessageResendQueue[0].msg);
+            test.equal('1.1.1.1', this.transport.pendingMessageResendQueue[0].host);
+            test.equal(2222, this.transport.pendingMessageResendQueue[0].port);
+            test.equal(1, this.transport.pendingMessageResendQueue[0].retry_number);
+            test.equal(12345678 + this.transport.messageResendIntervals[0], this.transport.pendingMessageResendQueue[0].retry_after);
+            test.ok(this.transport.unacknowledgedMessages[this.msg.msg_id] !== undefined);
+            test.done();
+        },
+
+        "enqueue messages for resending in retry_after order" : function(test) {
+            sinon.collection.stub(Date, 'now').returns(12345678);
+            this.transport.sendMessage(2222, "2.2.2.2", this.msg);
+            this.transport.pendingMessageResendQueue[0].retry_after
+                = this.transport.pendingMessageResendQueue[0].retry_after - 50;
+            this.transport.sendMessage(3333, "3.3.3.3", this.msg);
+            this.transport.pendingMessageResendQueue[1].retry_after
+                = this.transport.pendingMessageResendQueue[1].retry_after + 50;
+            
+            this.transport.sendMessage(4444, "4.4.4.4", this.msg);
+
+            test.equal(3, this.transport.pendingMessageResendQueue.length);
+            test.deepEqual(this.msg, this.transport.pendingMessageResendQueue[0].msg);
+            test.equal(4444, this.transport.pendingMessageResendQueue[1].port);
+            test.equal(3333, this.transport.pendingMessageResendQueue[2].port);
+            test.done();
+        },
+
+        "do not enqueue ACK message for resending" : function(test) {
+            this.transport.sendMessage(2222, "1.1.1.1", new message.Ack('1234'));
+
+            test.equal(0, this.transport.pendingMessageResendQueue.length);
+            test.deepEqual({}, this.transport.unacknowledgedMessages);
+            test.done();
+        },
+
+        "resend enqueued message after interval" : function(test) {
+            this.transport.messageResendIntervals = [100, 200];
+            this.transport.resendQueuePollInterval = 50;
+            this.transport.start();
+
+            this.transport.sendMessage(4444, "4.4.4.4", this.msg);
+
+            var self = this;
+            setTimeout(function() {
+                test.equal(3, self.udpSend.callCount);
+                test.done();
+            }, 500);
+        },
+
+        "do not resend message more than expected number of times" : function(test) {
+            var self = this;
+            this.transport.messageResendIntervals = [100, 100];
+            this.transport.resendQueuePollInterval = 50;
+            this.transport.start();
+
+            this.transport.sendMessage(4444, "4.4.4.4", this.msg);
+
+            test.ok(this.transport.unacknowledgedMessages[this.msg.msg_id] !== undefined);
+            setTimeout(function() {
+                test.equal(3, self.udpSend.callCount);
+                test.ok(self.transport.unacknowledgedMessages[self.msg.msg_id] === undefined);
+                test.done();
+            }, 500);
+        }
 	})
 };
