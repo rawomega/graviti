@@ -8,9 +8,6 @@
 		"rotateSizeKb" : 1024,
 		"rotateGenerations" : 10,
 		"modules" : {
-			"core/node" : "info",
-			"messaging/tcptran" : "verbose",
-			"messaging/udptran" : "verbose"
 		}		
 	}
 }

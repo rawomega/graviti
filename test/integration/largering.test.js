@@ -1,21 +1,24 @@
 var logger = require('logmgr').getDefaultLogger();
-var multinode = require('testability/multinode');
+var testing = require('testing');
 var nodeunit = require('nodeunit');
 var evalfuncs = require('./evalfuncs');
 
 module.exports = {
 	"large ring setup and management" : nodeunit.testCase({
 		setUp : function(done) {
-			this.nodes = multinode.start({
+			var self = this;
+			testing.createRing({
 				wait_timeout_msec : 10000,
-				num_nodes : 16
-			});			
-
-			done();
+				num_nodes : 16,
+				success : function(ring) {				
+					self.ring = ring;
+					done();
+				}
+			});
 		},
 		
 		tearDown : function(done) {
-			this.nodes.stopNow();
+			this.ring.stopNow();
 			setTimeout(function() {
 				logger.info('\n\n========\n\n');	
 				done();
@@ -23,12 +26,12 @@ module.exports = {
 		},
 
 		"a set of nodes starting up simulaneously should self-organise" : function(test) {
-			var _this = this;			
+			var self = this;			
 			
 			// wait till leafset is sorted
-			_this.nodes.select(0).waitUntilAtLeast(15, evalfuncs.getLeafsetSize, test);
-			_this.nodes.select(15).waitUntilAtLeast(15, evalfuncs.getLeafsetSize, test, function() {
-				_this.nodes.done(test);
+			self.ring.select(0).waitUntilAtLeast(15, evalfuncs.getLeafsetSize, test);
+			self.ring.select(15).waitUntilAtLeast(15, evalfuncs.getLeafsetSize, test, function() {
+				self.ring.done(test);
 			});
 		}
 	})

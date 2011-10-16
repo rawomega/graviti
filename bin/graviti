@@ -1,5 +1,5 @@
 #!/bin/sh
 BASEDIR="$( cd "$( dirname "$0" )" && pwd )/.."
-export NODE_PATH=$BASEDIR/lib:$BASEDIR/apps
+export NODE_PATH=$BASEDIR/lib:$BASEDIR/samples
 
 node $BASEDIR/lib/main.js "$@"

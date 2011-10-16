@@ -1,94 +1,90 @@
 var nodeunit = require('nodeunit');
 
 module.exports = {
-	getLeafsetSize : function() {
-		return Object.keys(require('overlay/leafset').compressedLeafset()).length;
+	getLeafsetSize : function(node) {
+		return Object.keys(node.leafset.compressedLeafset()).length;
 	},
 	
-	clearDeadPeersListInLeafset : function() {
-		require('overlay/leafset')._deadset = {};
+	clearDeadPeersListInLeafset : function(node) {
+		node.leafset._deadset = {};
 	},
 	
-	getLeafset : function() {
-		return require('overlay/leafset').compressedLeafset();
+	getLeafset : function(node) {
+		return node.leafset.compressedLeafset();
 	},
 	
-	smallLeafsetSize : function() {
-		require('overlay/leafset').leafsetSize = 6;	
+	smallLeafsetSize : function(node) {
+		node.leafset.leafsetSize = 6;	
 	},
 	
-	getRoutingTable : function() {
-		return require('overlay/routingtable')._table;
+	getRoutingTable : function(node) {
+		return node.bootstrapper.routingtable._table;
 	},
 	
-	getRoutingTableSize : function() {
+	getRoutingTableSize : function(node) {
 		var res = 0;
-		require('overlay/routingtable').each(function() {
-			res++
+		node.bootstrapper.routingtable.each(function() {
+			res++;
 		});
 		return res;
 	},
 	
-	heartbeatFrequently : function() {
-		var heartbeater = require('overlay/heartbeater');
-		var overlay = require('overlay/overlay');
+	heartbeatFrequently : function(node) {
+		var heartbeater = node.heartbeater;
 		
 		heartbeater.heartbeatIntervalMsec = 1000;
 		heartbeater.stop(false);
-		heartbeater.start(overlay);
+		heartbeater.start();
 	},
 	
-	trackReceivedMessages : function() {
-		var app = require('core/appmgr').apps[0];
-		require('overlay/overlay').on(app.name + '-app-message-received', function(msg, msginfo) {
-			if (!app.receivedMessages)
-				app.receivedMessages = [];
-			if (msg.content.subject === 'test' || msg.content_type === 'text/plain')
-				app.receivedMessages.push(msg);
+	trackReceivedMessages : function(node) {
+		node.on('app-message-received', function(msg, msginfo) {
+			if (!node.receivedMessages)
+				node.receivedMessages = [];
+			if (msg.content.subject === 'test' || msg.content_type === 'text/plain') {
+				node.receivedMessages.push(msg);
+			}
 		});
 	},
 	
-	countMessages : function() {
-		var app = require('core/appmgr').apps[0];
-		return app.receivedMessages === undefined ? 0 : app.receivedMessages.length;
+	countMessages : function(node) {
+		return node.receivedMessages === undefined ? 0 : node.receivedMessages.length;
 	},
 	
-	getReceivedMessages : function() {
-		var app = require('core/appmgr').apps[0];
-		return app.receivedMessages === undefined ? [] : app.receivedMessages;
+	getReceivedMessages : function(node) {
+		return node.receivedMessages === undefined ? [] : node.receivedMessages;
 	},
 	
-	sendMessageToId : function() {
-		require('overlay/overlay').sendToId('p2p:echoapp/departednodetest',
+	trackReceivedPeerArrivedAndDepartedEvents : function(node) {
+		node.on('peer-arrived', function(id) {						
+			if (!node.arrivedPeers)
+				node.arrivedPeers = [];
+			node.arrivedPeers.push(id);
+		});
+		node.on('peer-departed', function(id) {						
+			if (!node.departedPeers)
+				node.departedPeers = [];
+			node.departedPeers.push(id);
+		});
+	},
+	
+	getPeerArrivedEvents : function(node) {
+		return node.arrivedPeers;
+	},
+	
+	getPeerDepartedEvents : function(node) {
+		return node.departedPeers;
+	},
+	
+	sendMessageToId : function(node) {
+		node.transport.sendToId('p2p:echoapp/departednodetest',
 				{subject : 'test'}, {method : 'POST'}, 'B111111111111111111111111111111111111111');
 	},
 	
-	sendMessageToRandomId : function() {
-		var randomId = require('common/id').generateNodeId();
-		require('overlay/overlay').sendToId('p2p:echoapp/departednodetest',
+	sendMessageToRandomId : function(node) {
+		var randomId = require('ringutil').generateNodeId();
+		node.transport.sendToId('p2p:echoapp/departednodetest',
 				{subject : 'test'}, {method : 'POST'}, randomId);
 		return randomId;
-	},
-	
-	trackReceivedPeerArrivedAndDepartedEvents : function() {
-		var app = require('core/appmgr').apps[0];
-		app.peerArrived = function(id) {						
-			if (!app.arrivedPeers)
-				app.arrivedPeers = [];
-			app.arrivedPeers.push(id);
-		};
-		app.peerDeparted = function(id) {						
-			if (!app.departedPeers)
-				app.departedPeers = [];
-			app.departedPeers.push(id);
-		};
-	},
-	
-	getPeerArrivedEvents : function() {
-		return require('core/appmgr').apps[0].arrivedPeers;
-	},
-	
-	getPeerDepartedEvents : function() {
-		return require('core/appmgr').apps[0].departedPeers;
 	}
 }
